@@ -1,0 +1,179 @@
+// Contractor/Job Mobile App - Entity-Relationship Diagram
+// Complete database schema for contractor/job matching mobile application
+// For use with dbdiagram.io
+
+Table contractor {
+  contractor_id int [pk, increment]
+  contractor_type varchar(20) [note: 'hourly or subcontractor']
+  name varchar(255)
+  contact_info varchar(255)
+  years_experience int
+  average_rating decimal(3,2)
+  verified_by_platform boolean [default: false]
+  background_check_passed boolean [default: false]
+  preferred_job_types json
+  work_hours_preference json
+  created_at timestamp [default: `now()`]
+  updated_at timestamp
+}
+
+Table job {
+  job_id int [pk, increment]
+  client_id int
+  vendor_id int
+  job_type varchar(100)
+  location varchar(255)
+  scheduled_start timestamp
+  scheduled_end timestamp
+  quote_amount decimal(10,2)
+  required_licenses json
+  required_certifications json
+  job_status varchar(50) [note: 'open, assigned, in_progress, completed, cancelled']
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table job_session {
+  session_id int [pk, increment]
+  job_id int [not null]
+  contractor_id int [not null]
+  job_accepted boolean
+  check_in_time timestamp
+  check_out_time timestamp
+  job_completed boolean
+  session_status varchar(50) [note: 'pending, in_progress, completed, cancelled']
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table license {
+  license_id int [pk, increment]
+  contractor_id int [not null]
+  license_type varchar(100)
+  provider varchar(100)
+  expiration_date date
+  is_verified boolean
+  document_url varchar(500)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table certification {
+  certification_id int [pk, increment]
+  contractor_id int [not null]
+  certification_type varchar(100)
+  provider varchar(100)
+  expiration_date date
+  is_verified boolean
+  document_url varchar(500)
+  created_at timestamp
+  updated_at timestamp
+}
+
+Table insurance_policy {
+  insurance_policy_id int [pk, increment]
+  contractor_id int [not null]
+  provider varchar(100)
+  policy_number varchar(100)
+  expiration_date date
+  is_verified boolean
+  document_url varchar(500)
+  created_at timestamp
+}
+
+Table registered_device {
+  device_id int [pk, increment]
+  contractor_id int [not null]
+  device_type varchar(50)
+  os varchar(50)
+  notification_preferences json
+  first_seen_at timestamp
+  last_seen_at timestamp
+}
+
+Table task {
+  task_id int [pk, increment]
+  session_id int [not null]
+  task_type varchar(100)
+  description text
+  task_duration_minutes int
+  task_quality_rating int
+  created_at timestamp
+}
+
+Table issue {
+  issue_id int [pk, increment]
+  session_id int [not null]
+  issue_category varchar(100)
+  issue_severity varchar(50) [note: 'low, medium, high, critical']
+  description text
+  created_at timestamp
+  resolved_at timestamp
+}
+
+Table field_note {
+  note_id int [pk, increment]
+  session_id int [not null]
+  note_text text
+  note_latitude decimal(10,8)
+  note_longitude decimal(11,8)
+  created_at timestamp
+}
+
+Table progress_update {
+  progress_update_id int [pk, increment]
+  session_id int [not null]
+  completion_percentage int
+  barriers_to_completion text
+  created_at timestamp
+}
+
+Table delivery {
+  delivery_id int [pk, increment]
+  session_id int [not null]
+  delivery_ticket_number varchar(100)
+  delivered_at timestamp
+  description text
+}
+
+Table photo {
+  photo_id int [pk, increment]
+  session_id int [not null]
+  photoable_type varchar(50) [note: 'job_session, task, issue, delivery']
+  photoable_id int
+  url varchar(500)
+  captured_at timestamp
+}
+
+Table submission {
+  submission_id int [pk, increment]
+  session_id int [unique, not null]
+  submission_status varchar(50) [note: 'draft, pending_review, complete']
+  submission_package_url varchar(500)
+  submitted_at timestamp
+}
+
+Table invoice {
+  invoice_id int [pk, increment]
+  session_id int [not null]
+  invoice_amount decimal(10,2)
+  invoice_date date
+  payment_status varchar(50) [note: 'unpaid, paid, disputed']
+  created_at timestamp
+}
+
+// Relationships
+Ref: contractor.contractor_id < job_session.contractor_id
+Ref: job.job_id < job_session.job_id
+Ref: contractor.contractor_id < license.contractor_id
+Ref: contractor.contractor_id < certification.contractor_id
+Ref: contractor.contractor_id < insurance_policy.contractor_id
+Ref: contractor.contractor_id < registered_device.contractor_id
+Ref: job_session.session_id < task.session_id
+Ref: job_session.session_id < issue.session_id
+Ref: job_session.session_id < field_note.session_id
+Ref: job_session.session_id < progress_update.session_id
+Ref: job_session.session_id < delivery.session_id
+Ref: job_session.session_id < photo.session_id
+Ref: job_session.session_id < submission.session_id
+Ref: job_session.session_id < invoice.session_id
