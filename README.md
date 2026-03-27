@@ -11,7 +11,7 @@
 - Troy Wenzel - Frontend
 - Johnna Auman - Cybersecurity
 - Charlie Estrada - Frontend
-- James Bustamante - Backend
+- James Bustamante - Data 
 - Aldo Pena Herrera - Fullstack
 
 
