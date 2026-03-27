@@ -10,7 +10,6 @@
 - Jonathan Hubbard - Full Stack (Frontend focus)
 - Troy Wenzel - Frontend
 - Johnna Auman - Cybersecurity
-- Justin Wold - Backend
 - Charlie Estrada - Frontend
 - James Bustamante - Backend
 - Aldo Pena Herrera - Fullstack
