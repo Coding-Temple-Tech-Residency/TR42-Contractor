@@ -4,7 +4,7 @@ import os
 class DevelopmentConfig:
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL",
-        "mysql+mysqlconnector://tr42_user:StrongPassword123!@localhost/tr42_contractor_db",
+        "mysql+mysqlconnector://tr42_user:changeme@localhost/tr42_contractor_db",
     )
     DEBUG = True
     CACHE_TYPE = "SimpleCache"
