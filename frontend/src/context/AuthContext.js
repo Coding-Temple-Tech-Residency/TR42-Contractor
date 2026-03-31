@@ -5,6 +5,25 @@ import { loginUser, registerUser } from '../api/authApi';
 const AuthContext = createContext(null);
 
 const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'auth_user';
+
+// Decode a JWT payload without a library.
+// Returns null if the token is malformed.
+function decodeTokenPayload(token) {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
+}
+
+function isTokenExpired(token) {
+  const payload = decodeTokenPayload(token);
+  if (!payload || !payload.exp) return true;
+  // exp is in seconds; Date.now() is in milliseconds
+  return payload.exp * 1000 < Date.now();
+}
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
@@ -14,18 +33,32 @@ export function AuthProvider({ children }) {
 
   // Restore session on app launch
   useEffect(() => {
-    SecureStore.getItemAsync(TOKEN_KEY)
-      .then((stored) => {
-        if (stored) setToken(stored);
-      })
-      .finally(() => setIsLoading(false));
+    async function restore() {
+      try {
+        const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+        const storedUser = await SecureStore.getItemAsync(USER_KEY);
+
+        if (storedToken && !isTokenExpired(storedToken)) {
+          setToken(storedToken);
+          if (storedUser) setUser(JSON.parse(storedUser));
+        } else if (storedToken) {
+          // Token expired — clean up stale credentials
+          await SecureStore.deleteItemAsync(TOKEN_KEY);
+          await SecureStore.deleteItemAsync(USER_KEY);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    restore();
   }, []);
 
-  // Calls the API, persists token, updates state.
+  // Calls the API, persists token + user, updates state.
   // Throws on invalid credentials so the screen can show the error.
   const login = async (username, password) => {
     const data = await loginUser(username, password);
     await SecureStore.setItemAsync(TOKEN_KEY, data.token);
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
     return data;
@@ -40,6 +73,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await SecureStore.deleteItemAsync(USER_KEY);
     setToken(null);
     setUser(null);
   };

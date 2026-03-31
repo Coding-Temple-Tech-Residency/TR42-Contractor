@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import DashboardScreen from '../screens/DashboardScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,14 +19,13 @@ function AuthStack() {
   );
 }
 
-// Authenticated flow — placeholder until future sprints add real screens.
-// Replace the Dashboard screen with actual protected screens as they are built.
+// Authenticated flow — add more protected screens here as they are built.
 function AppStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen
         name="Dashboard"
-        component={() => <View style={styles.center} />}
+        component={DashboardScreen}
         options={{ title: 'Dashboard' }}
       />
     </Stack.Navigator>
