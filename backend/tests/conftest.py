@@ -94,6 +94,7 @@ def test_contractor(app, test_user, test_vendor):
 
 
 @pytest.fixture()
-def auth_header(test_user):
-    token = encode_token(test_user.id, test_user.role)
+def auth_header(app, test_user):
+    with app.app_context():
+        token = encode_token(test_user.id, test_user.role)
     return {"Authorization": f"Bearer {token}"}
