@@ -201,7 +201,7 @@ npm test
 
 ## Future Improvements
 
-- **AI anomaly detection** — Flag suspicious task completions using pattern analysis
+- **AI anomaly detection** — Flag suspicious task completions using pattern analysis 
 - **Offline sync** — Queue field data locally and sync when connectivity returns
 - **GPS tracking** — Verify contractor location at job sites during check-in/check-out
 - **Photo uploads** — Attach before/after evidence to completed tasks
