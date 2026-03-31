@@ -13,8 +13,8 @@ def create_app(config_name):
     db.init_app(app)
     ma.init_app(app)
 
-    app.register_blueprint(auth_users_bp, url_prefix='/auth')
-    app.register_blueprint(field_contractors_bp, url_prefix='/contractors')
+    app.register_blueprint(auth_users_bp, url_prefix='/api/auth')
+    app.register_blueprint(field_contractors_bp, url_prefix='/api/contractors')
 
    
     return app

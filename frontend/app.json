@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "TR42 Contractor",
+    "slug": "tr42-contractor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tr42.contractor"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.tr42.contractor"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
