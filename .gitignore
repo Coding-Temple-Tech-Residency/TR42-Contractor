@@ -1,5 +1,6 @@
 # Local tool folders
 .claude/
+.github/
 
 # Virtual environments
 venv/
