@@ -18,3 +18,4 @@ six==1.17.0
 SQLAlchemy==2.0.48
 typing_extensions==4.15.0
 Werkzeug==3.1.6
+pytest==8.3.5

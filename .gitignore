@@ -1,3 +1,49 @@
-backend/venv
-**/__pycache__/
-.idea
+# Local tool folders
+.claude/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+backend/venv/
+
+# Python cache and tooling
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Coverage and build output
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Flask / SQLite local data
+instance/*.db
+instance/*.sqlite
+instance/*.sqlite3
+backend/instance/*.db
+backend/instance/*.sqlite
+backend/instance/*.sqlite3
+
+# Frontend dependencies and build output
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# Editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
