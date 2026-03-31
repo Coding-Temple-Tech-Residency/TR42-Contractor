@@ -4,18 +4,21 @@ import { AuthProvider, useAuth } from '../AuthContext';
 
 // ── Mocks ───────────────────────────────────────────────────────────────────
 
-// In-memory SecureStore stub
+// In-memory storage stub
 const store = {};
-jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn((key) => Promise.resolve(store[key] ?? null)),
-  setItemAsync: jest.fn((key, val) => {
-    store[key] = val;
-    return Promise.resolve();
-  }),
-  deleteItemAsync: jest.fn((key) => {
-    delete store[key];
-    return Promise.resolve();
-  }),
+jest.mock('../../util/storage', () => ({
+  __esModule: true,
+  default: {
+    getItem: jest.fn((key) => Promise.resolve(store[key] ?? null)),
+    setItem: jest.fn((key, val) => {
+      store[key] = val;
+      return Promise.resolve();
+    }),
+    deleteItem: jest.fn((key) => {
+      delete store[key];
+      return Promise.resolve();
+    }),
+  },
 }));
 
 // Mock the API layer
@@ -24,7 +27,7 @@ jest.mock('../../api/authApi', () => ({
   registerUser: jest.fn(),
 }));
 
-const SecureStore = require('expo-secure-store');
+const storage = require('../../util/storage').default;
 const { loginUser, registerUser } = require('../../api/authApi');
 
 // Helper: build a fake JWT with a given exp (seconds since epoch)
@@ -83,8 +86,8 @@ describe('AuthContext', () => {
 
     expect(result.current.token).toBeNull();
     expect(result.current.user).toBeNull();
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_token');
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_user');
+    expect(storage.deleteItem).toHaveBeenCalledWith('auth_token');
+    expect(storage.deleteItem).toHaveBeenCalledWith('auth_user');
   });
 
   it('login stores token and user, then logout clears them', async () => {
@@ -102,8 +105,8 @@ describe('AuthContext', () => {
 
     expect(result.current.token).toBe(token);
     expect(result.current.user).toEqual(user);
-    expect(SecureStore.setItemAsync).toHaveBeenCalledWith('auth_token', token);
-    expect(SecureStore.setItemAsync).toHaveBeenCalledWith('auth_user', JSON.stringify(user));
+    expect(storage.setItem).toHaveBeenCalledWith('auth_token', token);
+    expect(storage.setItem).toHaveBeenCalledWith('auth_user', JSON.stringify(user));
 
     // Logout
     await act(async () => {
@@ -112,8 +115,8 @@ describe('AuthContext', () => {
 
     expect(result.current.token).toBeNull();
     expect(result.current.user).toBeNull();
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_token');
-    expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_user');
+    expect(storage.deleteItem).toHaveBeenCalledWith('auth_token');
+    expect(storage.deleteItem).toHaveBeenCalledWith('auth_user');
   });
 
   it('login propagates API errors', async () => {

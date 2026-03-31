@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import storage from '../util/storage';
 import { loginUser, registerUser } from '../api/authApi';
 
 const AuthContext = createContext(null);
@@ -35,16 +35,16 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     async function restore() {
       try {
-        const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
-        const storedUser = await SecureStore.getItemAsync(USER_KEY);
+        const storedToken = await storage.getItem(TOKEN_KEY);
+        const storedUser = await storage.getItem(USER_KEY);
 
         if (storedToken && !isTokenExpired(storedToken)) {
           setToken(storedToken);
           if (storedUser) setUser(JSON.parse(storedUser));
         } else if (storedToken) {
           // Token expired — clean up stale credentials
-          await SecureStore.deleteItemAsync(TOKEN_KEY);
-          await SecureStore.deleteItemAsync(USER_KEY);
+          await storage.deleteItem(TOKEN_KEY);
+          await storage.deleteItem(USER_KEY);
         }
       } finally {
         setIsLoading(false);
@@ -57,8 +57,8 @@ export function AuthProvider({ children }) {
   // Throws on invalid credentials so the screen can show the error.
   const login = async (username, password) => {
     const data = await loginUser(username, password);
-    await SecureStore.setItemAsync(TOKEN_KEY, data.token);
-    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user));
+    await storage.setItem(TOKEN_KEY, data.token);
+    await storage.setItem(USER_KEY, JSON.stringify(data.user));
     setToken(data.token);
     setUser(data.user);
     return data;
@@ -72,8 +72,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USER_KEY);
+    await storage.deleteItem(TOKEN_KEY);
+    await storage.deleteItem(USER_KEY);
     setToken(null);
     setUser(null);
   };
