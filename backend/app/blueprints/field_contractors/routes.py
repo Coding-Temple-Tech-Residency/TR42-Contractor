@@ -1,11 +1,13 @@
 from flask import request, jsonify
 from app.models import Auth_users, Contractors, db
-from .schemas import contractor_schema, contractor_update_schema
+from .schemas import contractor_schema, contractor_update_schema, vendor_update_contractor_schema
 from ..auth_users.schemas import auth_user_update_schema, auth_user_create_schema
 from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import field_contractors_bp
 from app.util.auth import encode_token, token_required, vendor_required
+from datetime import datetime, timezone
+
 
 
 @field_contractors_bp.route('/register', methods=['POST'])
@@ -73,6 +75,66 @@ def get_contractor():
     if user:
         return contractor_schema.jsonify(user), 200
     return jsonify ({'error': 'Invalid user id'}), 400
+
+#Vendor viewing contractor profile
+@field_contractors_bp.route('/<int:contractor_id>', methods=['GET'])
+@vendor_required
+def get_contractor_as_vendor(contractor_id):
+    user = db.session.get(Contractors, contractor_id)
+    if user:
+        return contractor_schema.jsonify(user), 200
+    return jsonify ({'error': 'Invalid user id'}), 400
+
+#Vendor updating contractor profile (includes licensing info)
+@field_contractors_bp.route('/<int:contractor_id>', methods=['PUT'])
+@vendor_required
+def update_contractor_as_vendor(contractor_id):
+    json_data = request.get_json()
+
+    if not json_data:
+         return jsonify({'error': 'No input data provided'}), 400
+
+    # Validate and deserialize new updated input
+    try:
+        auth_user_data = auth_user_update_schema.load(json_data.get('auth_user', {})) 
+        contractor_data = vendor_update_contractor_schema.load(json_data.get('contractor', {}))
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+    if not auth_user_data and not contractor_data:
+        return jsonify({'error': 'No data to update'}), 400
+    
+    contractor = db.session.get(Contractors, contractor_id)
+
+    
+    if not contractor or not contractor.auth_user:
+            return jsonify({'error': 'Invalid User Id'}), 404
+    
+    auth_user = contractor.auth_user
+
+    vendor_id = request.user_id
+    auth_user["updated_by"] = vendor_id
+    auth_user["updated_at"] = datetime.now(timezone.utc)
+
+    try: 
+        for key, value in auth_user_data.items():
+            setattr(auth_user, key, value)
+        for key, value in contractor_data.items():
+            setattr(contractor, key, value)
+
+        db.session.commit()    
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Updating failed'}), 500
+
+
+    return jsonify({
+        'message': 'Profile updated successfully',
+        'auth_user': auth_user_update_schema.dump(auth_user),
+        'contractor': contractor_update_schema.dump(contractor)
+    }), 200
+
+
 
 # Update Profile (need to be able to update email, contact number, address - anything else will be through vendor)
 @field_contractors_bp.route('/profile', methods=['PUT'])
