@@ -16,7 +16,7 @@
 
 
 **Tech Stack:** 
-Python Flask, SQL ALCHAMEY 
+Python Flask, SQL ALCHEMY 
 REACT NATIVE EXPO
 
 ## Project Overview

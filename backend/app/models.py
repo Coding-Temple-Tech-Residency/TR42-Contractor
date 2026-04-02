@@ -67,8 +67,8 @@ class Work_orders(Base):
 
 
 
-class Tasks(Base):
-    __tablename__ = 'tasks'
+class Tickets(Base):
+    __tablename__ = 'tickets'
 
     id: Mapped[int] = mapped_column(primary_key = True)
     work_order_id: Mapped[int] = mapped_column(ForeignKey('work_orders.id'), index=True, nullable=False)
