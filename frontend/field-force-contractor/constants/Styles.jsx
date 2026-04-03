@@ -25,7 +25,14 @@ export const Styles = {
             fontSize: 20,
             color:"white"
 
+        },
+        TopSpaceHeader:{
+
+            backgroundColor : "black",
+            width: "100%",
+            height: "45"
         }
+        
     }
     
 }

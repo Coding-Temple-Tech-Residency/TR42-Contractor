@@ -5,11 +5,12 @@ import LoadFonts from "./utils/LoadFonts";
 import {Styles} from "./constants/Styles";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import blank from "./screens/blank";
+import Blank from "./screens/Blank";
+import {screenConfig} from "./constants/ScreenConfig";
 
 const StackNavigator = createNativeStackNavigator();
 
-export default function Index() {
+export default function App() {
   const [externalFontsLoaded,setExternalFontsLoaded] = useState(false);
 
   useEffect(()=>{
@@ -26,10 +27,13 @@ export default function Index() {
   return (
  
   <NavigationContainer>
-    <StackNavigator.Navigator screenOptions={{headerShown:false}}>
-      <StackNavigator.Screen name="Home" component={blank}/>
+
+    <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="Home">
+
+      <StackNavigator.Screen name="Home" component={Blank}/>
 
     </StackNavigator.Navigator>
+
   </NavigationContainer>
 
 
