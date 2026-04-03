@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from marshmallow import ValidationError
 
-from app.models import Tasks, Work_orders, db
+from app.models import Tickets, Work_orders, db
 from app.util.auth import token_required
 
 from . import work_orders_bp
@@ -10,10 +10,10 @@ from .schemas import work_order_schema, work_order_status_update_schema
 
 def _contractor_is_assigned(work_order_id, contractor_id):
     return (
-        db.session.query(Tasks.id)
+        db.session.query(Tickets.id)
         .filter(
-            Tasks.work_order_id == work_order_id,
-            Tasks.assigned_contractor == contractor_id,
+            Tickets.work_order_id == work_order_id,
+            Tickets.assigned_contractor == contractor_id,
         )
         .first()
         is not None
