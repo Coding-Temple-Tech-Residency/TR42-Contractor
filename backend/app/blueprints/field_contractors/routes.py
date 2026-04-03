@@ -1,7 +1,8 @@
 from flask import request, jsonify
-from app.models import Auth_users, Contractors, db
+from app.models import Auth_users, Contractors, Tickets, db
 from .schemas import contractor_schema, contractor_update_schema, vendor_update_contractor_schema
 from ..auth_users.schemas import auth_user_update_schema, auth_user_create_schema
+from ..tickets.schemas import tickets_schema
 from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import field_contractors_bp
@@ -9,7 +10,7 @@ from app.util.auth import encode_token, token_required, vendor_required
 from datetime import datetime, timezone
 
 
-
+#route for testing purposes, will be deleted after
 @field_contractors_bp.route('/register', methods=['POST'])
 @vendor_required
 def register_contractor():
@@ -75,6 +76,7 @@ def get_contractor():
     if user:
         return contractor_schema.jsonify(user), 200
     return jsonify ({'error': 'Invalid user id'}), 400
+
 
 #Vendor viewing contractor profile
 @field_contractors_bp.route('/<int:contractor_id>', methods=['GET'])
@@ -188,3 +190,33 @@ def update_contractor():
 #Update offline pin route
 
 
+# View all Tickets assigned to contractor
+@field_contractors_bp.route('/assigned-tickets', methods=['GET'])
+@token_required
+def get_assigned_tickets():
+    user_id = request.user_id
+
+    try:
+        tickets = db.session.query(Tickets).filter(Tickets.assigned_contractor == user_id).all()
+        return tickets_schema.jsonify(tickets), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to retrieve tickets'}), 500
+
+
+# View all Tickets assigned to contractor's vendor (get by vendor id)
+@field_contractors_bp.route('/assigned-tickets', methods=['GET'])
+@token_required
+def get_vendor_unassigned_tickets():
+    user_id = request.user_id
+    
+    try:
+        user = db.session.get(Contractors, user_id)
+        if not user:
+            return jsonify ({'error': 'Invalid user id'}), 400
+        
+        vendor_id = user.vendor_id
+
+        tickets = db.session.query(Tickets).filter(Tickets.vendor_id == vendor_id).all()
+        return tickets_schema.jsonify(tickets), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to retrieve tickets'}), 500

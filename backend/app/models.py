@@ -67,14 +67,15 @@ class Work_orders(Base):
 
 
 
-class Tasks(Base):
-    __tablename__ = 'tasks'
+class Tickets(Base):
+    __tablename__ = 'tickets'
 
     id: Mapped[int] = mapped_column(primary_key = True)
     work_order_id: Mapped[int] = mapped_column(ForeignKey('work_orders.id'), index=True, nullable=False)
+    vendor_id: Mapped[int] = mapped_column(ForeignKey('vendors.id'), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     priority: Mapped[str] = mapped_column(String(360), nullable=False)
-    task_status: Mapped[str] = mapped_column(String(360), nullable=False)
+    status: Mapped[str] = mapped_column(String(360), nullable=False)
 
     assigned_contractor: Mapped[int] = mapped_column(ForeignKey('contractors.id'))
     contractor_assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

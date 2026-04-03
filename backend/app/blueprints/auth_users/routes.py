@@ -28,7 +28,7 @@ def login():
     return jsonify({'error': 'invalid username or password'}), 401
 
 
-# Register/Create Users
+# Register/Create Users - for testing
 @auth_users_bp.route('', methods=['POST'])
 def create_user():
 
