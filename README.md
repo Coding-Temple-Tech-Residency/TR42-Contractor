@@ -38,6 +38,27 @@ Include any necessary documentation below:
 - Test credentials (if applicable)  
 - Deployment link (if available)  
 
+
+## Authentication
+
+The backend uses JWT-based authentication for protected API routes.
+
+### Token Expiry
+
+JWT access tokens expire **14 hours** after they are issued.
+
+The token payload includes:
+
+- `iat`: token issued time
+- `exp`: token expiration time
+- `sub`: authenticated user ID
+- `role`: authenticated user role
+
+Current configuration:
+
+```python
+'exp': datetime.now(timezone.utc) + timedelta(hours=14)
+
 ## Notes
 
 List any known limitations, incomplete features, or important technical considerations.
