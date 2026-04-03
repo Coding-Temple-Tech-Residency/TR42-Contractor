@@ -6,7 +6,7 @@ export default function Blank(){
     return(<>
     
        <MainFrame>
-            <Text style={Styles.MainFrame.DefaultText}>The main page using main frame</Text>
+            <Text style={Styles.MainFrame.DefaultText}>Main Frame</Text>
        </MainFrame>
     
     

@@ -1,8 +1,5 @@
-import { Text, View } from "react-native";
-import  {MainFrame} from "./components/MainFrame";
 import {useEffect, useState} from "react";
-import LoadFonts from "./utils/LoadFonts";
-import {Styles} from "./constants/Styles";
+import {LoadFonts} from "./utils/LoadFonts";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Blank from "./screens/Blank";
@@ -12,6 +9,7 @@ const StackNavigator = createNativeStackNavigator();
 
 export default function App() {
   const [externalFontsLoaded,setExternalFontsLoaded] = useState(false);
+
 
   useEffect(()=>{
    
@@ -25,7 +23,7 @@ export default function App() {
   },[])
 
   return (
-    
+
    (externalFontsLoaded) && 
   <NavigationContainer>
 

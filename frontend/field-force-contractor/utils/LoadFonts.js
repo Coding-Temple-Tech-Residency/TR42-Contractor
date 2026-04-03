@@ -1,17 +1,16 @@
 import * as Font from "expo-font";
+ export const FontList = {
 
- const fonts = {
+"poppins-regular" : require("../assets/fonts/Poppins-Regular.ttf"),
+"poppins-bold" : require("../assets/fonts/Poppins-Bold.ttf"),
 
-     "poppins-regular": require("../assets/fonts/Poppins-Regular.ttf"),
-     "poppins-bold": require("../assets/fonts/Poppins-Bold.ttf")
+ };
 
-        
-}
-export default async function LoadFonts(){
+export async function LoadFonts(){
 
    
  try{
-    await Font.loadAsync(fonts)
+    await Font.loadAsync(FontList)
     return(true);
 }
 catch(e){
