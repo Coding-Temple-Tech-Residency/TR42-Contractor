@@ -193,8 +193,8 @@ def update_contractor():
 # View all Tickets assigned to contractor
 @field_contractors_bp.route('/assigned-tickets', methods=['GET'])
 @token_required
-def get_contractor():
-    user_id= request.user_id
+def get_assigned_tickets():
+    user_id = request.user_id
 
     try:
         tickets = db.session.query(Tickets).filter(Tickets.assigned_contractor == user_id).all()
@@ -203,4 +203,20 @@ def get_contractor():
         return jsonify({'error': 'Failed to retrieve tickets'}), 500
 
 
+# View all Tickets assigned to contractor's vendor (get by vendor id)
+@field_contractors_bp.route('/assigned-tickets', methods=['GET'])
+@token_required
+def get_vendor_unassigned_tickets():
+    user_id = request.user_id
+    
+    try:
+        user = db.session.get(Contractors, user_id)
+        if not user:
+            return jsonify ({'error': 'Invalid user id'}), 400
+        
+        vendor_id = user.vendor_id
 
+        tickets = db.session.query(Tickets).filter(Tickets.vendor_id == vendor_id).all()
+        return tickets_schema.jsonify(tickets), 200
+    except Exception as e:
+        return jsonify({'error': 'Failed to retrieve tickets'}), 500

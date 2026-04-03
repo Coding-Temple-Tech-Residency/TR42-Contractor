@@ -72,6 +72,7 @@ class Tickets(Base):
 
     id: Mapped[int] = mapped_column(primary_key = True)
     work_order_id: Mapped[int] = mapped_column(ForeignKey('work_orders.id'), index=True, nullable=False)
+    vendor_id: Mapped[int] = mapped_column(ForeignKey('vendors.id'), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     priority: Mapped[str] = mapped_column(String(360), nullable=False)
     status: Mapped[str] = mapped_column(String(360), nullable=False)
