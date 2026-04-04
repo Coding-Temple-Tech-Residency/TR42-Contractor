@@ -1,8 +1,9 @@
 const DefaultFont = "poppins-bold";
-
+const DefaultColor = "white";
+import { StyleSheet } from "react-native";
 export const Styles = {
 
-   MainFrame:{
+   MainFrame: StyleSheet.create({
     
             Window:{
                 display: "flex",
@@ -12,26 +13,24 @@ export const Styles = {
         },
         Body:{
 
-             display: "flex",
-             flexDirection: "row",
-             justifyContent : "center",
              alignItems:"center",
              width: "100%",
-             height: 150,
+             height: "100%",
+             overflow: "hidden",
+            
              
         },
         Header:{
-             display: "flex",
+            
              width: "100%",
-             backgroundColor:"yellow",
              alignItems:"center",
           
 
         },
         Footer:{
-             display: "flex",
-             flexDirection: "row",
-              justifyContent : "center",
+            
+            
+             justifyContent : "center",
              alignItems:"center",
              width: "100%",
 
@@ -40,22 +39,38 @@ export const Styles = {
 
                 width:"100%",
                 height:"100%",
-                resizeMode: "stretch"
+                
         },
           DefaultText:{
 
             fontFamily: DefaultFont,
             fontSize: 20,
-            color:"white"
+            color:DefaultColor
 
         },
-        TopSpaceHeader:{
+        SpaceHeader:{
 
             backgroundColor : "black",
             width: "100%",
             height: 45
         }
         
-    }
+    }),
+    TestStyles : StyleSheet.create({
+
+        Style1:{
+            width: "80%",
+            height: "80%",
+            marginTop:20,
+            backgroundColor: "red",
+            justifyContent:"center",
+        },
+        Style2:{
+            fontFamily: DefaultFont,
+            fontSize: 30,
+            color:DefaultColor, 
+            textAlign: "center",
+        }
+    })
     
 }
