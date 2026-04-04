@@ -1,8 +1,8 @@
 const DefaultFont = "poppins-bold";
-
+import { StyleSheet } from "react-native";
 export const Styles = {
 
-   MainFrame:{
+   MainFrame: StyleSheet.create({
     
             Window:{
                 display: "flex",
@@ -12,16 +12,16 @@ export const Styles = {
         },
         Body:{
 
-             display: "flex",
+           
              flexDirection: "row",
              justifyContent : "center",
              alignItems:"center",
              width: "100%",
-             height: 150,
+             height: 500,
              
         },
         Header:{
-             display: "flex",
+            
              width: "100%",
              backgroundColor:"yellow",
              alignItems:"center",
@@ -29,9 +29,9 @@ export const Styles = {
 
         },
         Footer:{
-             display: "flex",
+            
              flexDirection: "row",
-              justifyContent : "center",
+             justifyContent : "center",
              alignItems:"center",
              width: "100%",
 
@@ -40,7 +40,7 @@ export const Styles = {
 
                 width:"100%",
                 height:"100%",
-                resizeMode: "stretch"
+                
         },
           DefaultText:{
 
@@ -56,6 +56,6 @@ export const Styles = {
             height: 45
         }
         
-    }
+    })
     
 }

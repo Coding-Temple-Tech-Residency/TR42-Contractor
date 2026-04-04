@@ -1,4 +1,4 @@
-export const Assets = {
+export const Assets:any = {
     
     backgrounds : {
        
