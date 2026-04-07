@@ -7,6 +7,7 @@ from app.util.auth import token_required
 from . import work_orders_bp
 from .schemas import work_order_schema, work_order_status_update_schema
 
+#Note: contractor can be assigned to ticket not workorder
 
 def contractor_is_assigned(work_order_id, contractor_id):
     return (
