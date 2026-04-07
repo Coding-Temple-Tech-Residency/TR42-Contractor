@@ -3,6 +3,7 @@ import {Styles} from '../constants/Styles';
 import {Children, FC, ReactNode} from "react";
 import { Assets } from "../constants/Assets";
 import {useState} from "react";
+import { Background } from '@react-navigation/elements';
 type props = {
 
     placeHolder?:string,
@@ -17,7 +18,14 @@ export const SearchBar:FC<props> = (props) => {
         <Pressable style={Styles.SearchBar.SearchButton}>
           <Text style={Styles.SearchBar.SearchButtonText}> {buttonText}</Text>
         </Pressable>
-          <Pressable style={Styles.SearchBar.TextToSpeechButton}>
+          <Pressable style={({pressed}) =>[
+
+            Styles.SearchBar.TextToSpeechButton,
+            {
+              backgroundColor: (pressed) ? Styles.SearchBar.TextToSpeechButtonPressed.backgroundColor : Styles.SearchBar.TextToSpeechButton.backgroundColor
+            }
+
+    ]}>
             <View style={Styles.SearchBar.TextToSpeechInset}>
               <Image source={Assets.icons.TextToSpeech} style={Styles.SearchBar.TextToSpeechIcon}/>
             </View>

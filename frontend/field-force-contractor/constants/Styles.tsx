@@ -108,6 +108,11 @@ export const Styles = {
             marginRight:10
 
         },
+        TextToSpeechButtonPressed:{
+
+            backgroundColor:"#FFE9AE",
+
+        },
         TextToSpeechInset:{
             
             width:35,
