@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {LoadFonts} from "./utils/LoadFonts";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Blank from "./screens/Blank";
+import {Blank} from "./screens/Blank";
 import {screenConfig} from "./constants/ScreenConfig";
 
 const StackNavigator = createNativeStackNavigator();

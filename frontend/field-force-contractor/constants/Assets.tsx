@@ -1,4 +1,4 @@
-export const Assets:any = {
+export const Assets = {
     
     backgrounds : {
        
@@ -10,7 +10,8 @@ export const Assets:any = {
     },
     icons:{
 
-        
+      TextToSpeech: require("../assets/images/SpeechToTextIconBlack.png")
+              
     }
 
 }
