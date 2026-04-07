@@ -4,6 +4,7 @@ export const Assets: any = {
     MainFrame: {
       MainbackgroundImage: require("../assets/images/SplashScreenBackGround.png"),
     },
+<<<<<<< HEAD
   },
 
   // ── Logos ─────────────────────────────────────────────────
@@ -13,6 +14,15 @@ export const Assets: any = {
   logos: {
     ffLogoName: require("../assets/images/icon.png"),  // swap for real logo asset
   },
+=======
+    icons:{
+        profileIcon: require("../assets/images/profile-icon.png")
+    },
+    logos: {
+        ffLogoName: require("../assets/images/ff-logo-name.png")
+        
+    }
+>>>>>>> becb9b8b116401500b04e827827b0635410e7d32
 
   // ── Icons ─────────────────────────────────────────────────
   // profileIcon is used by HeaderHome (the main-app header variant).
