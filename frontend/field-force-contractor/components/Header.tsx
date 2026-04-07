@@ -1,14 +1,17 @@
 import {Styles} from "../constants/Styles"
 import {Assets} from "../constants/Assets"
-import {useState,FC,ReactNode} from "react"
-import {View,ImageBackground,Text,ScrollView,Image,} from "react-native"
+import {FC} from "react"
+import {View,Image} from "react-native"
 
-type HeaderVariant = 'default' | 'home'
+export type HeaderVariant = 'default' | 'home'
 
 type Props ={
   
   header?: HeaderVariant
 }
+export const Header:FC<Props> = (props) =>{
+
+
 
 // Header with just the logo and "Field Force" text
 const HeaderDefault: FC = () => (
@@ -33,5 +36,14 @@ const HeaderHome: FC = () => (
 const headers: Record<HeaderVariant, FC> = {
   default: HeaderDefault,
   home:    HeaderHome,
+}
+
+const Head = (props.header) ? headers[props.header] : null
+return(<>
+
+{Head && <Head/>}
+
+</>)
+ 
 }
 

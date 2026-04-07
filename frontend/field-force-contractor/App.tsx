@@ -3,6 +3,7 @@ import {LoadFonts} from "./utils/LoadFonts";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Blank from "./screens/Blank";
+import HomeScreen from "./screens/HomeScreen"
 import {screenConfig} from "./constants/ScreenConfig";
 
 const StackNavigator = createNativeStackNavigator();
@@ -29,7 +30,8 @@ export default function App() {
 
     <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="Home">
 
-      <StackNavigator.Screen name="Home" component={Blank}/>
+      <StackNavigator.Screen name="Blank" component={Blank}/>
+      <StackNavigator.Screen name="Home" component={HomeScreen}/>
 
     </StackNavigator.Navigator>
 
