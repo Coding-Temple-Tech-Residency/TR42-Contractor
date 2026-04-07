@@ -9,7 +9,10 @@ export const Assets:any = {
 
     },
     icons:{
-
+        profileIcon: require("../assets/images/profile-icon.png")
+    },
+    logos: {
+        ffLogoName: require("../assets/images/ff-logo-name.png")
         
     }
 

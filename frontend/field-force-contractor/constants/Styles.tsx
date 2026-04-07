@@ -71,6 +71,32 @@ export const Styles = {
             color:DefaultColor, 
             textAlign: "center",
         }
-    })
+    }),
+
+    HeaderVariants: StyleSheet.create({
+
+        container: {
+            width: '100%',
+        },
+        row: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+        },
+        logo: {
+            height: 48,
+            aspectRatio: 4,
+        },
+        profileIcon: {
+            height: 48,
+            width: 48,
+        },
+        centered: {
+            alignItems: 'center',
+            paddingVertical: 10,
+        },
+    }),
     
 }
