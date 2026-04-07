@@ -75,7 +75,7 @@ class Tickets(Base):
     vendor_id: Mapped[int] = mapped_column(ForeignKey('vendors.id'), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     priority: Mapped[str] = mapped_column(String(360), nullable=False)
-    status: Mapped[str] = mapped_column(String(360), nullable=False)
+    status: Mapped[str] = mapped_column(String(360), nullable=False) #ex. to_do, in_progress, completed
 
     assigned_contractor: Mapped[int] = mapped_column(ForeignKey('contractors.id'))
     contractor_assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

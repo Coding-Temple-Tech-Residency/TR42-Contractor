@@ -32,11 +32,36 @@ def update_ticket(ticket_id):
         return jsonify({'error': 'No valid fields to update'}), 400
 
     for key, value in ticket_update_data.items():
+
+        #IF UPDATING STATUS: Check for time start/end and location start/end
+        if key == "status":
+            if value not in ["to_do", "in_progress", "completed"]:
+                return jsonify({'error': 'Invalid status value'}), 400
+            
+            if value == "in_progress":
+                if ticket.start_time:
+                    return jsonify({'error': 'Ticket already started'}), 400
+                
+                if "start_time" not in ticket_update_data:
+                    return jsonify({'error': 'start_time required when starting'}), 400
+                if "start_location" not in ticket_update_data:
+                    return jsonify({'error': 'start_location required when starting'}), 400
+
+            elif value == "completed":
+                if not ticket.start_time:
+                    return jsonify({'error': 'Cannot complete before starting'}), 400
+
+                if ticket.end_time:
+                    return jsonify({'error': 'Ticket already completed'}), 400
+
+                if "end_time" not in ticket_update_data:
+                    return jsonify({'error': 'end_time required when completing'}), 400
+                if "end_location" not in ticket_update_data:
+                    return jsonify({'error': 'end_location required when completing'}), 400
+                   
         setattr(ticket, key, value)
 
     db.session.commit()
 
     return ticket_update_schema.jsonify(ticket), 200
-
-
 
