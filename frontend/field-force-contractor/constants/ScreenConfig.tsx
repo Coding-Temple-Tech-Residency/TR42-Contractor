@@ -5,5 +5,5 @@ export const screenConfig ={
         headerShown:false,
        
         
-    }
-}
+    },
+};
