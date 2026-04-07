@@ -89,6 +89,12 @@ export const Styles = {
 
 
         },
+        SearchButtonPressed:{
+
+            backgroundColor: "#FAEECE",
+            color: "black",
+
+        },
         SearchButtonText:{
 
             fontFamily:DefaultFont,

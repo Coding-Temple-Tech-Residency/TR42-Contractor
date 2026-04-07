@@ -8,7 +8,7 @@ export const Blank:FC = () =>{
     return(<>
     
        <MainFrame header="default">
-        <SearchBar buttonText="Send"/>
+        <SearchBar buttonText="Search"/>
            <View style={Styles.TestStyles.Style1}>
                 
                 <Text style={Styles.TestStyles.Style2}>children in styled container here</Text>
