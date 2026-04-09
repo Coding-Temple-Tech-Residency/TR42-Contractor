@@ -9,6 +9,8 @@ export const Assets = {
   // ffLogoName is used by both HeaderDefault and HeaderHome in MainFrame.
   logos: {
     ffLogoName: require("../assets/images/ff-logo-name.png"), // placeholder, swap for real logo asset
+    FieldForceLogo: require("../assets/images/ForceFiledicon.png"),
+    FieldForceLogoText: require("../assets/images/FileForceText.png")
   },
 
   // ── Icons ─────────────────────────────────────────────────
@@ -19,6 +21,7 @@ export const Assets = {
     HomeIcon: require("../assets/images/home.png"),
     TaskIcon: require("../assets/images/Jobs.png"),
     ContactIcon:require("../assets/images/contacts.png"),
-    BackArrow:require("../assets/images/BackArrow.png")
+    BackArrow:require("../assets/images/BackArrow.png"),
+  
   },
 };

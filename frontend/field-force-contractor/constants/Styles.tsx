@@ -118,7 +118,14 @@ export const Styles = {
     headerMenuStyle2Text:{fontFamily:DefaultFont, fontSize:21, color:DefaultColor, flex:1, textAlign:"center", paddingRight:"8%"},
   
   }),
+  SplashScreen: StyleSheet.create({
+   Block: {width:"100%", flex:1, alignItems:"center", justifyContent:"center", marginTop:"10%"},
+   LogoImage:{width:350,height:250, resizeMode:"contain"},
+   LogoText:{width:250,height:150,resizeMode:"contain", marginTop:-45}
 
+
+
+  }),
   TestStyles: StyleSheet.create({
     Style1: { width: "80%", flex:1, marginTop:20, backgroundColor: "red", justifyContent:"center" },
     Style2: { fontFamily: DefaultFont, fontSize: 30, color: DefaultColor, textAlign: "center" },
