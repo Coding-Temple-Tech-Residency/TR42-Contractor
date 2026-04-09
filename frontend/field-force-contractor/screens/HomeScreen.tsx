@@ -288,8 +288,4 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> becb9b8b116401500b04e827827b0635410e7d32
