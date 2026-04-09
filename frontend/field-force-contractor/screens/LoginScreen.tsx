@@ -3,6 +3,8 @@
 // It handles email + password login and validates the inputs before moving on.
 
 import { useState } from 'react';
+import { MainFrame } from '@/components/MainFrame';
+import { Menus } from "../constants/Menus"
 import {
   View,
   Text,
@@ -143,6 +145,7 @@ export default function LoginScreen() {
   const formLooksReady = isValidEmail(email) && password.length >= 6;
 
   return (
+  
     <SafeAreaView style={styles.container}>
       {/* Makes the status bar text white so it's visible on our dark background */}
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
@@ -293,6 +296,7 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+   
   );
 }
 

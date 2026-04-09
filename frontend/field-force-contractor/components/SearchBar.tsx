@@ -16,30 +16,28 @@ export const SearchBar:FC<props> = (props) => {
     <View style={Styles.SearchBar.Bar}>
         <TextInput style={Styles.SearchBar.SearchInput} placeholder={searchPlaceHolder}/>
         <Pressable style={({pressed}) => 
-        [Styles.SearchBar.SearchButton,
-          {backgroundColor: (pressed) ? Styles.SearchBar.SearchButtonPressed.backgroundColor : Styles.SearchBar.SearchButton.backgroundColor}
-         ]}>
-           {({pressed}) => 
-              {
-                return(<Text style={
-                  [Styles.SearchBar.SearchButtonText,
-                    {
-                      color: (pressed) ? Styles.SearchBar.SearchButtonPressed.color : Styles.SearchBar.SearchButtonText.color
-                    }
-                  ]
-                }>{buttonText}</Text>)                      
+            [Styles.SearchBar.SearchButton,
+              {backgroundColor: (pressed) ? Styles.SearchBar.SearchButtonPressed.backgroundColor : Styles.SearchBar.SearchButton.backgroundColor}
+            ]}>
+              {({pressed}) => 
+                  {
+                    return(<Text style={
+                      [Styles.SearchBar.SearchButtonText,
+                        {
+                          color: (pressed) ? Styles.SearchBar.SearchButtonPressed.color : Styles.SearchBar.SearchButtonText.color
+                        }
+                      ]
+                    }>{buttonText}</Text>)                      
+                  }
               }
-          }
-
-            </Pressable>
+         </Pressable>
           <Pressable style={({pressed}) =>[
 
             Styles.SearchBar.TextToSpeechButton,
             {
               backgroundColor: (pressed) ? Styles.SearchBar.TextToSpeechButtonPressed.backgroundColor : Styles.SearchBar.TextToSpeechButton.backgroundColor
-            }
+            }]}>
 
-    ]}>
             <View style={Styles.SearchBar.TextToSpeechInset}>
               <Image source={Assets.icons.TextToSpeech} style={Styles.SearchBar.TextToSpeechIcon}/>
             </View>

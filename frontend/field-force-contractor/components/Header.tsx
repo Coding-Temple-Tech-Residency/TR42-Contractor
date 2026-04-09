@@ -1,16 +1,18 @@
 import {Styles} from "../constants/Styles"
 import {Assets} from "../constants/Assets"
 import {FC} from "react"
-import {View,Image} from "react-native"
-
-export type HeaderVariant = 'default' | 'home'
+import {View,Image, Pressable} from "react-native"
+import { useNavigation } from "@react-navigation/native"
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from "@/App"
+export type HeaderVariant = 'default' | 'home' | "none"
 
 type Props ={
   
   header?: HeaderVariant
 }
 export const Header:FC<Props> = (props) =>{
-
+  const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
 
 
 // Header with just the logo and "Field Force" text
@@ -27,17 +29,28 @@ const HeaderHome: FC = () => (
   <View style={Styles.HeaderVariants.container}>
     <View style={Styles.HeaderVariants.row}>
       <Image source={Assets.logos.ffLogoName} style={Styles.HeaderVariants.logo} resizeMode="contain" />
-      <Image source={Assets.icons.profileIcon} style={Styles.HeaderVariants.profileIcon} resizeMode="contain" />
+      <Pressable onPress={() => {nav.navigate("Profile")}}>
+      <Image source={Assets.icons.ProfileIcon} style={Styles.Menu.headMenuStyle2Icon} resizeMode="contain" />
+      </Pressable>
+      
     </View>
   </View>
 )
 
-const headers: Record<HeaderVariant, FC> = {
+const headers: Record<Exclude<HeaderVariant,"none">, FC> = {
   default: HeaderDefault,
   home:    HeaderHome,
+   
+
+}
+const headerType = props.header ?? "default"
+if(headerType === "none"){
+return(null);
+
 }
 
-const Head = (props.header) ? headers[props.header] : null
+const Head =  headers[headerType]
+
 return(<>
 {Head && <Head/>}
 </>)
