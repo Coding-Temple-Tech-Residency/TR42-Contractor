@@ -3,7 +3,7 @@ import {Assets} from "../constants/Assets"
 import {FC} from "react"
 import {View,Image} from "react-native"
 
-export type HeaderVariant = 'default' | 'home'
+export type HeaderVariant = 'default' | 'home' | "none"
 
 type Props ={
   
@@ -32,12 +32,20 @@ const HeaderHome: FC = () => (
   </View>
 )
 
-const headers: Record<HeaderVariant, FC> = {
+const headers: Record<Exclude<HeaderVariant,"none">, FC> = {
   default: HeaderDefault,
   home:    HeaderHome,
+   
+
+}
+const headerType = props.header ?? "default"
+if(headerType === "none"){
+return(null);
+
 }
 
-const Head = (props.header) ? headers[props.header] : null
+const Head =  headers[headerType]
+
 return(<>
 {Head && <Head/>}
 </>)

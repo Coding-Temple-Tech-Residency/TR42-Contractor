@@ -3,17 +3,19 @@ import {View, Text,Pressable,Image} from "react-native"
 import {FC} from "react"
 import {useState,useEffect,useRef} from "react"
 import { MenuItem } from "./MenuItem"
+import {Menus} from "../constants/Menus"
+import {Assets} from "../constants/Assets"
 
-type MenuVariant = "Menu1" | "Menu2" | "Menu3"
+type MenuVariant = "Menu1" | "Menu2" | "none"
 export type MenuItems = {label:string,icon?:string,component:string}
-export type MenuOptions = [MenuVariant,items:MenuItems[]]
+export type MenuOptions = [MenuVariant,items?:MenuItems[]]
 type Props = {
 menuOptions?:MenuOptions
 }
 export const Menu:FC<Props> = (props) => {
     const [options,setIptions] = useState(props.menuOptions)
     const [menuStyle,setMenuStyle] = useState<any>(null);
-    const [viewItem, setView] = useState<FC>();
+    const [viewItem, setView] = useState<any>();
   
     useEffect(()=>{
      
@@ -27,6 +29,9 @@ export const Menu:FC<Props> = (props) => {
             setMenuStyle(Styles.Menu.container)
             setView(v2)
             break;
+        case "none":
+          setMenuStyle(Styles.Menu.container)
+          setView(null);
 
         default:
             setMenuStyle(Styles.Menu.container)
@@ -39,7 +44,7 @@ export const Menu:FC<Props> = (props) => {
       return(
      <View  style={Styles.Menu.container}>
        {
-       options?.[1].map((items,index) =>{
+       (options?.[1] || []).map((items,index) =>{
           return(<MenuItem key={index} menuItem={items}/>)
 
        })}
@@ -50,7 +55,7 @@ export const Menu:FC<Props> = (props) => {
     const v2 = () =>{
       return(
         <View style={Styles.Menu.container}>
-          <Text style={Styles.TestStyles.Style1}>Testing View 2</Text>
+          <Image source={Assets.icons.profileIcon} style={Styles.Menu.headMenuIcon}></Image>
         </View>
       )
     }

@@ -112,10 +112,12 @@ export const Styles = {
     itemTextPressed: { color:"#FAEECE" },
     menuItem: { justifyContent:"center", alignItems:"center" },
     menuIcon: { width:35, height:35 },
+    headMenuIcon:{width:45,height:45}
   }),
 
   TestStyles: StyleSheet.create({
     Style1: { width: "80%", height: "80%", marginTop:20, backgroundColor: "red", justifyContent:"center" },
     Style2: { fontFamily: DefaultFont, fontSize: 30, color: DefaultColor, textAlign: "center" },
+    
   }),
 };
