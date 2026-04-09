@@ -39,6 +39,7 @@ export const Menu:FC<Props> = (props) => {
         case "none":
       
           setView(null);
+          break;
 
         default:
            setView(v1);

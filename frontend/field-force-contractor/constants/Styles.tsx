@@ -119,7 +119,7 @@ export const Styles = {
   
   }),
   SplashScreen: StyleSheet.create({
-   Block: {width:"100%", flex:1, alignItems:"center", justifyContent:"center", marginTop:"10%"},
+   Block: {width:"100%", flex:1, alignItems:"center", justifyContent:"center", marginTop:"25%"},
    LogoImage:{width:350,height:250, resizeMode:"contain"},
    LogoText:{width:250,height:150,resizeMode:"contain", marginTop:-45}
 
