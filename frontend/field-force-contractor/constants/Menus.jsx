@@ -9,6 +9,12 @@ export const Menus = {
     {label:"Completed", component: "Blank"},
     {label:"In Progress", component: "Blank"},
 
+ ],
+ Footer:[
+
+    {label:"Home",icon:Assets.icons.HomeIcon,component:"Home"},
+    {label:"Task",icon:Assets.icons.TaskIcon,component:"Task-PlaceHolder"},
+    {label:"Contacts",icon:Assets.icons.ContactIcon,component:"Contact-PlaceHolder"}
  ]
 
 

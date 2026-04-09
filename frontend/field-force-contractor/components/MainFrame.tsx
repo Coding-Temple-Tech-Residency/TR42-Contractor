@@ -1,6 +1,6 @@
 import {Styles} from "../constants/Styles"
 import {Assets} from "../constants/Assets"
-import {FC,ReactNode} from "react"
+import {FC,ReactNode,useEffect} from "react"
 import {View,ImageBackground,Text,ScrollView,Image,} from "react-native"
 import {Header,HeaderVariant} from "../components/Header"
 import { Menu,MenuOptions}  from "./Menu"
@@ -14,7 +14,9 @@ footerMenu?: MenuOptions
 
 
 }
+
 export const MainFrame:FC<Props> = (props) =>{
+
 
 
   return(<>
@@ -33,7 +35,7 @@ export const MainFrame:FC<Props> = (props) =>{
         </ScrollView>
 
         <View style={Styles.MainFrame.Footer}>
-          <Menu menuOptions={(props.footerMenu) ? props.footerMenu : ["Menu1",Menus.Main]}/>
+          <Menu menuOptions={(props.footerMenu) ? props.footerMenu : ["Menu3",Menus.Footer]}/>
           <View style={Styles.MainFrame.SpaceHeader}/>
         </View>
 

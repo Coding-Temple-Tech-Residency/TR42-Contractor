@@ -15,7 +15,9 @@ export const Assets = {
   // profileIcon is used by HeaderHome (main-app header variant).
   icons: {
     TextToSpeech: require("../assets/images/SpeechToTextIconBlack.png"),
-    profileIcon: require("../assets/images/profile-icon.png"),
-    testIcon: require("../assets/images/android-icon-foreground.png"),
+    ProfileIcon: require("../assets/images/profileicon.png"),
+    HomeIcon: require("../assets/images/home.png"),
+    TaskIcon: require("../assets/images/Jobs.png"),
+    ContactIcon:require("../assets/images/contacts.png")
   },
 };

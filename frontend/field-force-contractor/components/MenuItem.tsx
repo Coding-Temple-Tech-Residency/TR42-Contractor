@@ -17,7 +17,7 @@ return(<>
             {
                 <View style={Styles.Menu.menuItem}>
                     
-                  {(props.menuItem.icon) ? <Image source={props.menuItem.icon || Assets.icons.testIcon} style={Styles.Menu.menuIcon}/> : null}
+                  {(props.menuItem.icon) ? <Image source={props.menuItem.icon || Assets.icons.HomeIcon} style={Styles.Menu.menuIcon}/> : null}
                     <Text style={
                         [
                             Styles.Menu.itemText,

@@ -6,7 +6,7 @@ import { MenuItem } from "./MenuItem"
 import {Menus} from "../constants/Menus"
 import {Assets} from "../constants/Assets"
 
-type MenuVariant = "Menu1" | "Menu2" | "none"
+type MenuVariant = "Menu1" | "Menu2" |"Menu3" | "none"
 export type MenuItems = {label:string,icon?:string,component:string}
 export type MenuOptions = [MenuVariant,items?:any[]] 
 
@@ -30,6 +30,9 @@ export const Menu:FC<Props> = (props) => {
          
             setView(v2)
             break;
+        case "Menu3":
+            setView(v3)
+             break;
         case "none":
       
           setView(null);
@@ -56,10 +59,21 @@ export const Menu:FC<Props> = (props) => {
     const v2 = () =>{
       return(
         <View style={Styles.Menu.MenuStyle2}>
-          <Image source={Assets.icons.profileIcon} style={Styles.Menu.headMenuStyle2Icon}></Image>
-          <Text style={Styles.Menu.headerMenuStyle2Text}>{props.menuOptions?.[1]}</Text>
+          <Image source={Assets.icons.ProfileIcon} style={Styles.Menu.headMenuStyle2Icon}></Image>
+          <Text style={Styles.Menu.headerMenuStyle2Text}>{(props.menuOptions?.[1]?.[0].label === undefined)? props.menuOptions?.[1]?.[0]: "Object Not Supported"}</Text>
         </View>
       )
+    }
+     const v3 = () =>{
+      return(
+        <View  style={Styles.Menu.MenuStyle3}>
+       {
+       (options?.[1] || []).map((items,index) =>{
+          return(<MenuItem key={index} menuItem={items}/>)
+
+       })}
+      </View>)
+      
     }
  
     return(
