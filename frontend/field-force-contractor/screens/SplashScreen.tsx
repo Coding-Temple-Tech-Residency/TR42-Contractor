@@ -22,7 +22,7 @@ const SplashTime = 5000
 
  return(<>
  
-  <MainFrame header="default" headerMenu={["none"]} footerMenu={["none"]}>
+  <MainFrame header="default" headerMenu={["none",[]]} footerMenu={["none",[]]}>
 
     <View style={Styles.SplashScreen.Block}>
 

@@ -25,7 +25,7 @@ export const MainFrame:FC<Props> = (props) =>{
        <View style={Styles.MainFrame.Header}>
         <View style={Styles.MainFrame.SpaceHeader}/>
         <Header  header={props.header}/>
-        <Menu menuOptions={(props.headerMenu) ? props.headerMenu : ["Menu1",Menus.Main]} />
+        <Menu menuOptions={(props.headerMenu) ? props.headerMenu : ["Menu1",Menus.Main] } />
         </View>
 
         <ScrollView contentContainerStyle={Styles.MainFrame.Body}>
