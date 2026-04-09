@@ -45,7 +45,7 @@ export default function App() {
    (externalFontsLoaded) && 
   <NavigationContainer>
 
-    <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="Home">
+    <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="Blank">
 
       <StackNavigator.Screen name="Blank" component={Blank}/>
       <StackNavigator.Screen name="Home" component={HomeScreen}/>
