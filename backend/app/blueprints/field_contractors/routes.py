@@ -10,7 +10,7 @@ from app.util.auth import encode_token, token_required, vendor_required
 from datetime import datetime, timezone
 
 
-#route for testing purposes, will be deleted after
+#Register contractor (for testing, delete later)
 @field_contractors_bp.route('/register', methods=['POST'])
 @vendor_required
 def register_contractor():
@@ -78,7 +78,7 @@ def get_contractor():
     return jsonify ({'error': 'Invalid user id'}), 400
 
 
-#Vendor viewing contractor profile
+#Vendor viewing contractor profile (for testing, delete later)
 @field_contractors_bp.route('/<int:contractor_id>', methods=['GET'])
 @vendor_required
 def get_contractor_as_vendor(contractor_id):
@@ -87,7 +87,7 @@ def get_contractor_as_vendor(contractor_id):
         return contractor_schema.jsonify(user), 200
     return jsonify ({'error': 'Invalid user id'}), 400
 
-#Vendor updating contractor profile (includes licensing info)
+#Vendor updating contractor profile (for testing, delete later)
 @field_contractors_bp.route('/<int:contractor_id>', methods=['PUT'])
 @vendor_required
 def update_contractor_as_vendor(contractor_id):
@@ -185,14 +185,15 @@ def update_contractor():
     }), 200
 
 
+#Update password route exists is in auth_user
 
-#Update password route
 #Update offline pin route
 
 
 
 
-
+#----------------------------------------------------------
+#TICKET ROUTES BY CONTRACTOR - view assigned tickets and unassigned tickets by vendor
 
 # View all Tickets assigned to contractor
 @field_contractors_bp.route('/assigned-tickets', methods=['GET'])
