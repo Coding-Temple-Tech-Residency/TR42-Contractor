@@ -190,6 +190,10 @@ def update_contractor():
 #Update offline pin route
 
 
+
+
+
+
 # View all Tickets assigned to contractor
 @field_contractors_bp.route('/assigned-tickets', methods=['GET'])
 @token_required
@@ -203,7 +207,7 @@ def get_assigned_tickets():
         return jsonify({'error': 'Failed to retrieve tickets'}), 500
 
 
-# View all Tickets assigned to contractor's vendor (get by vendor id)
+# View all Tickets assigned to contractor's vendor, but not assigned to contractor (get by vendor id)
 @field_contractors_bp.route('/unassigned-tickets-by-vendor', methods=['GET'])
 @token_required
 def get_vendor_unassigned_tickets():

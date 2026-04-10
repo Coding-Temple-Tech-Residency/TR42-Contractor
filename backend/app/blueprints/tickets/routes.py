@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from app.models import Tickets, db
-from .schemas import tickets_schema, ticket_update_schema
+from .schemas import tickets_schema, ticket_schema, ticket_update_schema
 from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import tickets_bp
@@ -63,5 +63,5 @@ def update_ticket(ticket_id):
 
     db.session.commit()
 
-    return ticket_update_schema.jsonify(ticket), 200
+    return ticket_schema.jsonify(ticket), 200
 
