@@ -16,7 +16,7 @@ export const Blank:FC = () =>{
     return(<>
     
        <MainFrame  header="default" headerMenu={["Menu2",Menus.Main]} >
-        <SearchBar buttonText="Search"/>
+        <SearchBar buttonText="Search" onClick={()=>{}}/>
            <View style={Styles.TestStyles.Style1}>
                 
                 <Text style={Styles.TestStyles.Style2}>children in styled container here</Text>

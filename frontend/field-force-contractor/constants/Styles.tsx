@@ -5,7 +5,7 @@ const DefaultColor = "white";
 const DefaultPressedColor = "#FAEECE";
 
 export const Styles = {
-  // ── MainFrame ─────────────────────────────────────────────
+  // ──────Jonathan───────MainFrame ─────────────────────────────────────────────
   // Window is used in MainFrame as the outer wrapper for the full screen layout.
   // Body is used in MainFrame as the ScrollView content container for the page body.
   // Header is used in MainFrame as the wrapper around whichever header component is rendered.
@@ -15,7 +15,7 @@ export const Styles = {
   // SpaceHeader is used in MainFrame as the black spacer bar above and below the main content.
   MainFrame: StyleSheet.create({
     Window: { width: "100%", height: "100%" },
-    Body: { alignItems: "center", width: "100%", overflow: "hidden", flexDirection: "column" },
+    Body: { flex:1, alignItems:"center", width: "100%", overflow: "hidden", justifyContent:"flex-start", flexDirection: "column" },
     Header: { width: "100%" },
     Footer: { justifyContent: "center", alignItems: "center", width: "100%" },
     BackgroundImageSize: { width: "100%", height: "100%" },
@@ -23,7 +23,7 @@ export const Styles = {
     SpaceHeader: { backgroundColor: "black", width: "100%", height: 45 },
   }),
 
-  // ── HeaderVariants ────────────────────────────────────────
+  // ──────Charlie─────── HeaderVariants ────────────────────────────────────────
   // container is used in Header as the outer wrapper for both header variants.
   // centered is used in Header for the centered logo-only header layout.
   // row is used in Header for the logo + profile icon header layout.
@@ -37,7 +37,7 @@ export const Styles = {
     profileIcon: { width: 36, height: 36 },
   }),
 
-  // ── TabBar ────────────────────────────────────────────────
+  // ──────Troy─────── TabBar ────────────────────────────────────────────────
   // container, tab, tabActive, tabText, and tabTextActive are intended for a shared tab bar component.
   // This style group is not directly referenced through Styles.TabBar in the current files.
   TabBar: StyleSheet.create({
@@ -48,7 +48,7 @@ export const Styles = {
     tabTextActive: { color: "#ff8c00" },
   }),
 
-  // ── SearchBar ─────────────────────────────────────────────
+  // ──────Jonathan─────── SearchBar ─────────────────────────────────────────────
   // Bar is used in SearchBar as the outer row container.
   // SearchInput is used in SearchBar for the text input field.
   // SearchButton is used in SearchBar for the search action button.
@@ -69,7 +69,7 @@ export const Styles = {
     TextToSpeechIcon: { width: "100%", height: "100%" },
   }),
 
-  // ── Menu ──────────────────────────────────────────────────
+  // ──────Jonathan───────Menu ──────────────────────────────────────────────────
   // MenuStyle1, MenuStyle2, and MenuStyle3 are used in Menu for the three menu/header layout variants.
   // itemText and itemTextPressed are used in MenuItem for the default and pressed text color states.
   // menuItem is used in MenuItem as the wrapper around each individual menu option.
@@ -86,7 +86,7 @@ export const Styles = {
     headerMenuStyle2Text: { fontFamily: DefaultFont, fontSize: 21, color: DefaultColor, flex: 1, textAlign: "center", paddingRight: "8%", },
   }),
 
-  // ── SplashScreen ──────────────────────────────────────────
+  // ──────Jonathan───────SplashScreen ──────────────────────────────────────────
   // Block is used in SplashScreen as the centered wrapper for the logo stack.
   // LogoImage is used in SplashScreen for the standalone logo mark image.
   // LogoText is used in SplashScreen for the brand text image.
@@ -96,7 +96,7 @@ export const Styles = {
     LogoText: { width: 250, height: 150, resizeMode: "contain", marginTop: -45 },
   }),
 
-  // ── Contacts ──────────────────────────────────────────────
+  // ──────Jonathan─────── Contacts ──────────────────────────────────────────────
   // container is used in ContactCard as the outer card wrapper.
   // InfoContainer is used in ContactCard as the centered text column for the contact details.
   // IconContainer is used in ContactCard as the left-side wrapper for the profile icon.
@@ -120,11 +120,22 @@ export const Styles = {
     forwardArrowPressed: { width: 65, height: 65, transform: [{ scaleX: -1 }] },
   }),
 
-  // ── TestStyles ────────────────────────────────────────────
+  // ──────Jonathan───────TestStyles ────────────────────────────────────────────
   // Style1 is used in Blank as the demo container wrapper.
   // Style2 is used in Blank as the demo text style.
   TestStyles: StyleSheet.create({
     Style1: { width: "80%", flex: 1, marginTop: 20, backgroundColor: "red", justifyContent: "center" },
     Style2: { fontFamily: DefaultFont, fontSize: 30, color: DefaultColor, textAlign: "center" },
   }),
+
+ //──────Jonathan───────Chat ────────────────────────────────────────────
+  Chat: StyleSheet.create({
+
+   sendBar:{marginTop:"auto",width:"100%"},
+   MessageSent:{width:"100%", height:85,borderRadius:11,backgroundColor:"#007CFF"},
+   MessageRecieved:{width:"100%",height:85,borderRadius:11, backgroundColor:"#30E852"},
+   MessageText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:16}
+
+
+  })
 };

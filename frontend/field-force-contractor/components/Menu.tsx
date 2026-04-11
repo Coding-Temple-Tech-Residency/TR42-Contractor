@@ -3,7 +3,6 @@ import {View, Text,Pressable,Image} from "react-native"
 import {FC} from "react"
 import {useState,useEffect,useRef} from "react"
 import { MenuItem } from "./MenuItem"
-import {Menus} from "../constants/Menus"
 import {Assets} from "../constants/Assets"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,7 +44,6 @@ export const Menu:FC<Props> = (props) => {
            setView(v1);
         
         }
-
 
     },[options])
     const v1 = () => {
