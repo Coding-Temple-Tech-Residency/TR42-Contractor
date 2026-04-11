@@ -12,12 +12,17 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
+import { Header } from '../components/Header';
 import { api, type LoginResponse, type ApiError } from '../utils/api';
 import { useAuth } from '../contexts/AuthContext';
+import { Styles } from '../constants/Styles';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSetNavigationUI, UI } from '../contexts/NavigationUIContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 export default function LoginScreen() {
+  useSetNavigationUI(UI.none);
   const navigation = useNavigation<Nav>();
   const auth       = useAuth();
 
@@ -81,8 +86,14 @@ export default function LoginScreen() {
 
   const formReady = username.trim().length > 0 && password.length >= 6;
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <MainFrame header="default" headerMenu={['none']} footerMenu={['none']}>
+    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+      <View style={[Styles.MainFrame.Header, { paddingTop: insets.top }]}>
+        <Header header="default" />
+      </View>
+      <MainFrame>
 
       {/* Online indicator */}
       <TouchableOpacity
@@ -198,7 +209,8 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
       </View>
-    </MainFrame>
+      </MainFrame>
+    </View>
   );
 }
 

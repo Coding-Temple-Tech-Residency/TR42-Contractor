@@ -20,6 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { FieldForceHeader, SubHeader } from '../components/FieldForceHeader';
+import { useSetNavigationUI, UI } from '../contexts/NavigationUIContext';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 import {
   detectPreferredBiometric,
@@ -31,6 +32,7 @@ import {
 type Nav = NativeStackNavigationProp<RootStackParamList, 'BiometricCheck'>;
 
 export default function BiometricScreen() {
+  useSetNavigationUI(UI.none);
   const navigation = useNavigation<Nav>();
 
   const [scanState,       setScanState]       = useState<'idle' | 'scanning' | 'failed'>('idle');

@@ -42,8 +42,10 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { MainFrame } from '../../components/MainFrame';
 import { colors, spacing, fontSize, fonts } from '../../constants/theme';
+import { useSetNavigationUI, UI } from '../../contexts/NavigationUIContext';
 
 export default function DashboardPlaceholder() {
+  useSetNavigationUI(UI.main);
   return (
     <MainFrame header="home">
       <View style={styles.body}>

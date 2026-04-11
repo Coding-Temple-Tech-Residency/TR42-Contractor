@@ -13,7 +13,7 @@ export const Menus = {
  Footer:[
 
     {label:"Home",      icon:Assets.icons.HomeIcon,    component:"Home"},
-    {label:"Dashboard", icon:Assets.icons.TaskIcon,    component:"Dashboard"},
+    {label:"Dashboard", icon:Assets.icons.DashboardIcon, component:"Dashboard"},
     {label:"WorkOrders",icon:Assets.icons.TaskIcon,    component:"WorkOrders"},
     {label:"Contacts",  icon:Assets.icons.ContactIcon, component:"Contacts"}
  ]

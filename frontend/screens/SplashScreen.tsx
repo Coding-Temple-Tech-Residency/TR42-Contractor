@@ -8,8 +8,10 @@ import { Image } from "expo-image"
 import { Styles } from "@/constants/Styles";
 import { Assets } from "@/constants/Assets";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSetNavigationUI, UI } from "@/contexts/NavigationUIContext";
 
 export const SplashScreen: FC = () => {
+  useSetNavigationUI(UI.none);
   const nav            = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isAuthenticated, isLoading } = useAuth();
 

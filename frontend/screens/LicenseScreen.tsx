@@ -15,6 +15,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { MainFrame } from '../components/MainFrame';
+import { useSetNavigationUI, UI } from '../contexts/NavigationUIContext';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 import { Assets } from '../constants/Assets';
 
@@ -107,8 +108,7 @@ const rowStyles = StyleSheet.create({
 // Main LicenseScreen component
 // ---------------------------------------------------------------
 export default function LicenseScreen() {
-  // Tracks which row is currently open. null means all are closed.
-  // We store the row's key (a string) so we know which one to expand.
+  useSetNavigationUI(UI.back('License Details'));
   const [openRow, setOpenRow] = useState<string | null>(null);
 
   // If the tapped row is already open, close it. Otherwise open it.

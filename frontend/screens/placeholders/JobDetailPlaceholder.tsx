@@ -36,8 +36,10 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import { MainFrame } from '../../components/MainFrame';
 import { colors, spacing, fontSize, fonts } from '../../constants/theme';
+import { useSetNavigationUI, UI } from '../../contexts/NavigationUIContext';
 
 export default function JobDetailPlaceholder() {
+  useSetNavigationUI(UI.back('Job Detail'));
   const route = useRoute<any>();
   const { jobId, workOrderId } = route.params ?? {};
 

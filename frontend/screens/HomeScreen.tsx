@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { MainFrame } from '../components/MainFrame';
+import { useSetNavigationUI, UI } from '../contexts/NavigationUIContext';
 
 type Status = 'driving' | 'work' | 'offline';
 
@@ -24,6 +25,7 @@ const recentActivities = [
 ];
 
 export default function HomeScreen() {
+    useSetNavigationUI(UI.main);
     const [currentStatus, setCurrentStatus] = useState<Status>('work');
     const [isStatusOpen, setIsStatusOpen] = useState(false);
 

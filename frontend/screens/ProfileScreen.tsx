@@ -22,6 +22,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
+import { useSetNavigationUI, UI } from '../contexts/NavigationUIContext';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
@@ -144,6 +145,7 @@ const menuStyles = StyleSheet.create({
 // Main ProfileScreen component
 // ---------------------------------------------------------------
 export default function ProfileScreen() {
+  useSetNavigationUI(UI.back('Profile'));
   const navigation = useNavigation<Nav>();
   const { logout } = useAuth();
 

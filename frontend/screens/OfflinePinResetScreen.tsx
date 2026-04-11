@@ -20,6 +20,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSetNavigationUI, UI } from '../contexts/NavigationUIContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -30,6 +31,7 @@ import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 type Nav = NativeStackNavigationProp<RootStackParamList, 'OfflinePinReset'>;
 
 export default function OfflinePinResetScreen() {
+  useSetNavigationUI(UI.none);
   const navigation = useNavigation<Nav>();
 
   const [email,     setEmail]     = useState('');

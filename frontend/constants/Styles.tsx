@@ -12,7 +12,7 @@ export const Styles = {
     Footer:              { justifyContent: "center", alignItems: "center", width: "100%" },
     BackgroundImageSize: { width: "100%", height: "100%" },
     DefaultText:         { fontFamily: DefaultFont, fontSize: 20, color: DefaultColor },
-    SpaceHeader:         { backgroundColor: "black", width: "100%", height: 45 },
+    SpaceHeader:         { backgroundColor: "transparent", width: "100%", height: 45 },
   }),
 
   HeaderVariants: StyleSheet.create({
