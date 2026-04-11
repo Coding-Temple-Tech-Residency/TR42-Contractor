@@ -23,6 +23,7 @@ export const Assets = {
     DashboardIcon:  require("../assets/images/ForceFiledicon.png"),
     ContactIcon:    require("../assets/images/contacts.png"),
     BackArrow:require("../assets/images/BackArrow.png"),
+    PhoneIcon:require("../assets/images/phone.png")
   
   },
 };

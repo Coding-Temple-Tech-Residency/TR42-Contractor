@@ -1,6 +1,6 @@
 from flask import request, jsonify
 from app.models import Auth_users, Contractors, db
-from .schemas import auth_user_schema, login_schema, offline_pin_schema
+from .schemas import auth_user_schema, login_schema, auth_user_update_password_schema, offline_pin_schema
 from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import auth_users_bp
@@ -52,6 +52,39 @@ def create_user():
     db.session.commit()
 
     return auth_user_schema.jsonify(new_user), 201
+
+
+#Update password route (this one is if they already know existing password)
+@auth_users_bp.route('/update-password', methods=['PUT'])
+@token_required
+def update_password():
+    try:
+        data = auth_user_update_password_schema.load(request.json)
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+
+    try: 
+        #user_id from token
+        user_id = request.user_id
+        auth_user = db.session.get(Auth_users, user_id)
+
+        if auth_user and check_password_hash(auth_user.password, current_password):
+            auth_user.password = generate_password_hash(new_password)
+
+            db.session.commit()    
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Updating failed'}), 500
+
+
+    return jsonify({ 'message': 'Password updated successfully'}), 200
+
+
+#Forgot password route (send email with reset link - will be handled on mobile app side for now, will need to integrate email service later)
 
 
 # Set offline PIN for contractor (stored for offline login use on-device)

@@ -4,6 +4,7 @@ from .models import db
 from .extensions import ma
 from .blueprints.auth_users import auth_users_bp
 from .blueprints.field_contractors import field_contractors_bp
+from .blueprints.tickets import tickets_bp
 from .blueprints.work_orders import work_orders_bp
 
 
@@ -19,6 +20,8 @@ def create_app(config_name):
 
     app.register_blueprint(auth_users_bp, url_prefix='/auth')
     app.register_blueprint(field_contractors_bp, url_prefix='/contractors')
+    app.register_blueprint(tickets_bp, url_prefix='/tickets')
+
     app.register_blueprint(work_orders_bp, url_prefix='/api/work-orders')
 
    
