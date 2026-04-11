@@ -24,8 +24,11 @@ def login():
             'token': token,
             'user': auth_user_schema.dump(user)
         }), 200
-    
-    return jsonify({'error': 'invalid username or password'}), 401
+
+    return jsonify({
+        'error': 'Invalid username or password.',
+        'code':  'INVALID_CREDENTIALS',
+    }), 401
 
 
 # Register/Create Users - for testing
