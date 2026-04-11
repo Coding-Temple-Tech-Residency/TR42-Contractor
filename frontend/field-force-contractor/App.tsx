@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { LoadFonts } from "./utils/LoadFonts";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { AuthProvider } from './contexts/AuthContext';
 import {Blank} from "./screens/Blank";
 import HomeScreen from "./screens/HomeScreen"
 import {screenConfig} from "./constants/ScreenConfig";
@@ -46,15 +47,16 @@ export default function App() {
   }, []);
  
   return (
-   (externalFontsLoaded) && 
+   (externalFontsLoaded) &&
+  <AuthProvider>
   <NavigationContainer>
 
     <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="SplashScreen">
-      
+
       <StackNavigator.Screen name="SplashScreen"  component={SplashScreen}/>
       <StackNavigator.Screen name="Blank" component={Blank}/>
       <StackNavigator.Screen name="Home" component={HomeScreen}/>
-      
+
       <StackNavigator.Screen name="Login"           component={LoginScreen}           />
       <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
       <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
@@ -67,5 +69,6 @@ export default function App() {
     </StackNavigator.Navigator>
 
   </NavigationContainer>
+  </AuthProvider>
   );
 }

@@ -7,14 +7,18 @@
 //   2. Contact info (email, phone, address)
 //   3. Menu rows (License, Settings, Logout)
 
+import { useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   StatusBar,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -23,6 +27,8 @@ import { RootStackParamList } from '../App';
 import { FieldForceHeader, SubHeader } from '../components/FieldForceHeader';
 import { BottomNavigation } from '../components/BottomNavigation';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
+import { useAuth } from '../contexts/AuthContext';
+import { api, ApiError } from '../utils/api';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -132,12 +138,46 @@ const menuStyles = StyleSheet.create({
 // ---------------------------------------------------------------
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    // TODO: Clear auth tokens and any stored user data before navigating away.
-    // For example: await SecureStore.deleteItemAsync('authToken');
+  // ── Offline PIN state ──────────────────────────────────────
+  const [pin,            setPin]            = useState('');
+  const [confirmPin,     setConfirmPin]     = useState('');
+  const [pinError,       setPinError]       = useState('');
+  const [pinSuccess,     setPinSuccess]     = useState('');
+  const [isSavingPin,    setIsSavingPin]    = useState(false);
+
+  const handleSavePin = async () => {
+    setPinError('');
+    setPinSuccess('');
+
+    if (pin.length < 4) {
+      setPinError('PIN must be at least 4 digits.');
+      return;
+    }
+    if (pin !== confirmPin) {
+      setPinError('PINs do not match.');
+      return;
+    }
+
+    setIsSavingPin(true);
+    try {
+      await api.authPost('/auth/offline-pin', { pin });
+      setPinSuccess('Offline PIN saved successfully!');
+      setPin('');
+      setConfirmPin('');
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setPinError(apiErr.error || 'Failed to save PIN. Please try again.');
+    } finally {
+      setIsSavingPin(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();           // clears JWT from SecureStore + AuthContext
     navigation.replace('Login');
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -171,6 +211,61 @@ export default function ProfileScreen() {
           <InfoRow icon="camera-outline"   label="Email"   value={CONTRACTOR.email}   />
           <InfoRow icon="call-outline"     label="Phone"   value={CONTRACTOR.phone}   />
           <InfoRow icon="location-outline" label="Address" value={CONTRACTOR.address} />
+        </View>
+
+        {/* ── Offline PIN setup section ────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Offline PIN</Text>
+          <Text style={styles.sectionHint}>
+            Set a 4+ digit PIN so you can log in when you have no internet.
+          </Text>
+
+          <TextInput
+            style={styles.pinInput}
+            value={pin}
+            onChangeText={(v) => { setPin(v); setPinError(''); setPinSuccess(''); }}
+            placeholder="Enter PIN"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="number-pad"
+            secureTextEntry
+            maxLength={8}
+          />
+          <TextInput
+            style={styles.pinInput}
+            value={confirmPin}
+            onChangeText={(v) => { setConfirmPin(v); setPinError(''); setPinSuccess(''); }}
+            placeholder="Confirm PIN"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="number-pad"
+            secureTextEntry
+            maxLength={8}
+          />
+
+          {pinError !== '' && (
+            <View style={styles.pinMsgRow}>
+              <Ionicons name="alert-circle-outline" size={14} color={colors.error} />
+              <Text style={[styles.pinMsgText, { color: colors.error }]}>{pinError}</Text>
+            </View>
+          )}
+          {pinSuccess !== '' && (
+            <View style={styles.pinMsgRow}>
+              <Ionicons name="checkmark-circle-outline" size={14} color={colors.success} />
+              <Text style={[styles.pinMsgText, { color: colors.success }]}>{pinSuccess}</Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[styles.pinSaveBtn, isSavingPin && styles.pinSaveBtnDisabled]}
+            onPress={handleSavePin}
+            disabled={isSavingPin}
+            activeOpacity={0.85}
+          >
+            {isSavingPin ? (
+              <ActivityIndicator color={colors.textWhite} />
+            ) : (
+              <Text style={styles.pinSaveBtnText}>Save PIN</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
         {/* ── Menu section ─────────────────────────────────── */}
@@ -231,4 +326,52 @@ const styles = StyleSheet.create({
 
   // Each section (contact, menu) has some horizontal padding and spacing between rows
   section: { gap: spacing.sm, paddingHorizontal: spacing.md },
+
+  // ── Offline PIN styles ──────────────────────────────────────
+  sectionTitle: {
+    fontFamily: fonts.bold,
+    fontSize:   fontSize.base,
+    color:      colors.textWhite,
+  },
+  sectionHint: {
+    fontFamily: fonts.regular,
+    fontSize:   fontSize.xs,
+    color:      colors.textMuted,
+    marginBottom: 4,
+  },
+  pinInput: {
+    backgroundColor:   colors.card,
+    borderRadius:      radius.md,
+    borderWidth:       1,
+    borderColor:       colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical:   12,
+    fontFamily:        fonts.regular,
+    color:             colors.textWhite,
+    fontSize:          fontSize.base,
+    letterSpacing:     6,
+    textAlign:         'center',
+  },
+  pinMsgRow: {
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           5,
+  },
+  pinMsgText: {
+    fontFamily: fonts.regular,
+    fontSize:   fontSize.xs,
+    flex:       1,
+  },
+  pinSaveBtn: {
+    backgroundColor: colors.primary,
+    borderRadius:    radius.md,
+    paddingVertical: 13,
+    alignItems:      'center',
+  },
+  pinSaveBtnDisabled: { backgroundColor: colors.cardAlt },
+  pinSaveBtnText: {
+    fontFamily: fonts.bold,
+    color:      colors.textWhite,
+    fontSize:   fontSize.sm,
+  },
 });
