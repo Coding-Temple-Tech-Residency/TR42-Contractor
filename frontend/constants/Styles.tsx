@@ -6,7 +6,7 @@ const DefaultColor = "white";
 export const Styles = {
 
   MainFrame: StyleSheet.create({
-    Window:              { width: "100%", height: "100%" },
+    Window:              { flex: 1, width: "100%" },
     Body:                { alignItems: "center", width: "100%", overflow: "hidden" },
     Header:              { width: "100%" },
     Footer:              { justifyContent: "center", alignItems: "center", width: "100%" },

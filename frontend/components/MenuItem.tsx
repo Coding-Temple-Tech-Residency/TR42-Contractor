@@ -1,5 +1,6 @@
-import {Text,View,Pressable,Image} from "react-native"
-import {FC,useState} from "react"
+import {Text,View,Pressable} from "react-native"
+import {FC} from "react"
+import { Image } from "expo-image"
 import {Styles} from "../constants/Styles"
 import { MenuItems } from "./Menu"
 import {Assets} from "../constants/Assets"
@@ -20,7 +21,7 @@ return(<>
             {
                 <View style={Styles.Menu.menuItem}>
                     
-                  {(props.menuItem.icon) ? <Image source={props.menuItem.icon || Assets.icons.HomeIcon} style={Styles.Menu.menuIcon}/> : null}
+                  {(props.menuItem.icon) ? <Image source={props.menuItem.icon || Assets.icons.HomeIcon} style={Styles.Menu.menuIcon} contentFit="contain" transition={120} cachePolicy="memory-disk" /> : null}
                     <Text style={
                         [
                             Styles.Menu.itemText,

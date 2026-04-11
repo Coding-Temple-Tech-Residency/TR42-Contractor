@@ -1,17 +1,16 @@
-import {View,TextInput,Pressable,Text,Image} from 'react-native';
+import {View,TextInput,Pressable,Text} from 'react-native';
+import { Image } from 'expo-image';
 import {Styles} from '../constants/Styles';
-import {Children, FC, ReactNode} from "react";
+import {FC} from "react";
 import { Assets } from "../constants/Assets";
-import {useState} from "react";
-import { Background } from '@react-navigation/elements';
-type props = {
+type Props = {
 
     placeHolder?:string,
     buttonText?: string
 }
-export const SearchBar:FC<props> = (props) => {
- const [searchPlaceHolder, setSearchPlaceHolder] = useState(props.placeHolder || "Search...");
- const [buttonText, setButtonText] = useState(props.buttonText || "Submit");
+export const SearchBar:FC<Props> = (props) => {
+ const searchPlaceHolder = props.placeHolder || "Search...";
+ const buttonText = props.buttonText || "Submit";
     return(<>
     <View style={Styles.SearchBar.Bar}>
         <TextInput style={Styles.SearchBar.SearchInput} placeholder={searchPlaceHolder}/>
@@ -39,7 +38,7 @@ export const SearchBar:FC<props> = (props) => {
             }]}>
 
             <View style={Styles.SearchBar.TextToSpeechInset}>
-              <Image source={Assets.icons.TextToSpeech} style={Styles.SearchBar.TextToSpeechIcon}/>
+              <Image source={Assets.icons.TextToSpeech} style={Styles.SearchBar.TextToSpeechIcon} contentFit="contain" transition={120} cachePolicy="memory-disk" />
             </View>
             
           </Pressable>
