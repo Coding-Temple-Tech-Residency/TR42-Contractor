@@ -5,7 +5,7 @@ export const screenConfig = {
     headerShown:  false,
     animation:    'none' as const,
     gestureEnabled: false,
-    contentStyle: { backgroundColor: 'transparent' },
+    contentStyle: { backgroundColor: '#06111f' },
   },
 
   // Fade — auth transitions
@@ -13,7 +13,7 @@ export const screenConfig = {
     animation:         'fade' as const,
     animationDuration: 300,
     gestureEnabled:    false,
-    contentStyle:      { backgroundColor: 'transparent' },
+    contentStyle:      { backgroundColor: '#06111f' },
   },
 
   // Profile / License — fade in like the rest of the app
@@ -21,6 +21,6 @@ export const screenConfig = {
     animation:         'fade' as const,
     animationDuration: 250,
     gestureEnabled:    true,
-    contentStyle:      { backgroundColor: 'transparent' },
+    contentStyle:      { backgroundColor: '#06111f' },
   },
 };

@@ -28,6 +28,8 @@ import OfflinePinResetScreen from "./screens/OfflinePinResetScreen";
 // ── Profile screens (Troy) ───────────────────────────────────
 import ProfileScreen from "./screens/ProfileScreen";
 import LicenseScreen from "./screens/LicenseScreen";
+import ContactDetailScreen from "./screens/ContactDetailScreen";
+import MessageScreen       from "./screens/MessageScreen";
 
 // ── App screens ──────────────────────────────────────────────
 import HomeScreen            from "./screens/HomeScreen";
@@ -54,6 +56,10 @@ export type RootStackParamList = {
   // Profile
   Profile:        undefined;
   LicenseDetails: undefined;
+
+  // Contacts
+  ContactDetail: { id: string; name: string; phone: string; type: string };
+  Message:       { name: string; phone: string };
 
   // Misc
   Blank: undefined;
@@ -143,8 +149,10 @@ export default function App() {
                   <StackNavigator.Screen name="Contacts"   component={Contacts}              />
 
                   {/* ── Profile ── */}
-                  <StackNavigator.Screen name="Profile"        component={ProfileScreen} options={screenConfig.slideUp} />
-                  <StackNavigator.Screen name="LicenseDetails" component={LicenseScreen} options={screenConfig.slideUp} />
+                  <StackNavigator.Screen name="Profile"        component={ProfileScreen}       options={screenConfig.slideUp} />
+                  <StackNavigator.Screen name="LicenseDetails" component={LicenseScreen}       options={screenConfig.slideUp} />
+                  <StackNavigator.Screen name="ContactDetail"  component={ContactDetailScreen} />
+                  <StackNavigator.Screen name="Message"        component={MessageScreen} />
 
                   {/* ── Misc ── */}
                   <StackNavigator.Screen name="Blank" component={Blank} />

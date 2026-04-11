@@ -1,9 +1,5 @@
-// NavigationUIContext.tsx
-// Controls what the persistent header and footer show.
-// Each screen calls useSetNavigationUI() on mount to configure the chrome.
-// Auth screens don't call it — the default is 'none' so nothing shows.
-
-import { createContext, useContext, useState, useEffect, FC, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, FC, ReactNode } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { HeaderVariant } from '../components/Header';
 import { MenuOptions } from '../components/Menu';
 import { Menus } from '../constants/Menus';
@@ -20,7 +16,6 @@ const defaultConfig: NavigationUIConfig = {
   footerMenu: ['none'],
 };
 
-// Standard configs for reuse
 export const UI = {
   none: defaultConfig,
 
@@ -58,13 +53,14 @@ export const NavigationUIProvider: FC<{ children: ReactNode }> = ({ children }) 
 
 export const useNavigationUI = () => useContext(NavigationUIContext);
 
-// Convenience hook — call this at the top of any screen component.
-// It sets the header/footer config when the screen mounts and focused,
-// and resets to none when it unmounts.
+// useFocusEffect fires every time the screen comes into focus (including back navigation)
+// useCallback with no deps ensures the callback reference is stable
 export const useSetNavigationUI = (config: NavigationUIConfig) => {
   const { setConfig } = useNavigationUI();
-  useEffect(() => {
-    setConfig(config);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setConfig(config);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [JSON.stringify(config)])
+  );
 };
