@@ -8,6 +8,7 @@ import HomeScreen from "./screens/HomeScreen"
 import {screenConfig} from "./constants/ScreenConfig";
 import { Contacts } from "./screens/Contacts";
 import { SplashScreen } from "./screens/SplashScreen";
+import TicketsScreen from "./screens/TicketsScreen";
  
 // ── TROY — Auth screens ──────────────────────────────────────
 import LoginScreen           from "./screens/LoginScreen";
@@ -31,6 +32,7 @@ export type RootStackParamList = {
   LicenseDetails:  undefined;
   Contacts:        undefined;
   SplashScreen:    undefined;
+  Tickets:         undefined;
 };
 
 const StackNavigator = createNativeStackNavigator();
@@ -65,6 +67,7 @@ export default function App() {
       <StackNavigator.Screen name="Profile"        component={ProfileScreen} />
       <StackNavigator.Screen name="LicenseDetails" component={LicenseScreen} />
       <StackNavigator.Screen name="Contacts"       component={Contacts}   />
+      <StackNavigator.Screen name="Tickets"        component={TicketsScreen} />
 
     </StackNavigator.Navigator>
 
