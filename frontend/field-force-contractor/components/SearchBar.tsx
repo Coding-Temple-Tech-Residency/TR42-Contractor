@@ -1,7 +1,7 @@
 import {View,TextInput,Pressable,Text,Image} from 'react-native';
-import {Styles} from '../constants/Styles';
+import {Styles} from '@/constants/Styles';
 import {Children, FC, ReactNode} from "react";
-import { Assets } from "../constants/Assets";
+import { Assets } from "@/constants/Assets";
 import {useState} from "react";
 import { Background } from '@react-navigation/elements';
 import {TextToSpeech} from "@/utils/SpeechRecognition"

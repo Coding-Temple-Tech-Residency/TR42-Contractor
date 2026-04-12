@@ -3,7 +3,7 @@ import { Assets } from "@/constants/Assets";
 import {View,Text,Image,Pressable,Linking} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import{RootStackParamList} from "../App"
+import{RootStackParamList} from "@/App"
 
 import {FC} from "react"
 

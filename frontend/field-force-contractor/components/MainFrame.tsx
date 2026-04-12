@@ -1,23 +1,19 @@
-import {Styles} from "../constants/Styles"
-import {Assets} from "../constants/Assets"
+import {Styles} from "@/constants/Styles"
+import {Assets} from "@/constants/Assets"
 import {FC,ReactNode,useEffect} from "react"
 import {View,ImageBackground,Text,ScrollView,Image,} from "react-native"
-import {Header,HeaderVariant} from "../components/Header"
-import { Menu,MenuOptions}  from "./Menu"
-import {Menus} from "../constants/Menus"
+import {Header,HeaderVariant} from "@/components/Header"
+import { Menu,MenuOptions}  from "@/components/Menu"
+import {Menus} from "@/constants/Menus"
 
 type Props = {
 children?:ReactNode
 header?: HeaderVariant
 headerMenu?: MenuOptions
 footerMenu?: MenuOptions
-
-
 }
 
 export const MainFrame:FC<Props> = (props) =>{
-
-
 
   return(<>
     <ImageBackground source={Assets.backgrounds.MainFrame.MainbackgroundImage} style={Styles.MainFrame.BackgroundImageSize}>
