@@ -31,7 +31,7 @@ export const Chat:FC = (props) =>{
     return(<>
     <MainFrame headerMenu={["Menu2",[name]]}>
     <View style={Styles.Chat.sendBar}>
-        <SearchBar placeHolder="Message..." buttonText="Send" onClick={(msg:string)=>{SendMessage(msg,"01")}}/>
+        <SearchBar placeHolder="Message..." buttonText="Send" onClick={(msg:string)=>{(msg) && SendMessage(msg,"01")}}/>
     </View>
     {
        messages.map(item =>{

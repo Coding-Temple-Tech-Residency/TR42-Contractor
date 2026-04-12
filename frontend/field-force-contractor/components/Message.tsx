@@ -17,8 +17,10 @@ type Props = {
 export const Message:FC<Props> =(props) =>{
 
     return(<>
-    <View style={Styles.Chat.MessageRecieved}>
-        <Text style={Styles.Chat.MessageText}>{props.message}</Text>
+    <View style={Styles.Chat.messageBoxRecived}>
+        <View style={Styles.Chat.MessageRecieved}>
+            <Text style={Styles.Chat.MessageText}>{props.message}</Text>
+        </View>
     </View>
     
     

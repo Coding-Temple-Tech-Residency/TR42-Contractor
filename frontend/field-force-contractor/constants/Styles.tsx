@@ -132,9 +132,11 @@ export const Styles = {
   Chat: StyleSheet.create({
 
    sendBar:{marginTop:"auto",width:"100%"},
-   MessageSent:{width:"100%", height:85,borderRadius:11,backgroundColor:"#007CFF"},
-   MessageRecieved:{width:"100%",height:85,borderRadius:11, backgroundColor:"#30E852"},
-   MessageText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:16}
+   messageBoxRecived:{flexDirection:"row", justifyContent:"flex-end",width:"100%"},
+   messageBoxSent:{flexDirection:"row", justifyContent:"flex-start",width:"100%"},
+   MessageSent:{justifyContent:"center", minHeight:65,maxWidth:"65%",borderRadius:11,backgroundColor:"#007CFF",marginTop:5,marginRight:10,marginLeft:10},
+   MessageRecieved:{justifyContent:"center",minHeight:65,maxWidth:"65%",borderRadius:11, backgroundColor:"#30E852",marginTop:5,marginRight:10,marginLeft:10},
+   MessageText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:16,marginLeft:15,marginRight:15}
 
 
   })
