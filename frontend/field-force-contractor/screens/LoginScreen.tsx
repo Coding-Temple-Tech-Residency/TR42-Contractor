@@ -16,6 +16,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -23,17 +24,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { FieldForceHeader } from '../components/FieldForceHeader';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
+import { api, LoginResponse, ApiError } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 
 // This tells TypeScript what screen we're on so navigation.navigate()
 // knows which screens are valid to go to from here
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
-
-// ---------------------------------------------------------------
-// DEV ONLY — these are test credentials so we can log in quickly
-// during development. Delete these before going to production!
-// ---------------------------------------------------------------
-const DEV_EMAIL    = 'test@test.com';
-const DEV_PASSWORD = '123456';
 
 // A simple function to check if an email looks valid.
 // It uses a "regex" (regular expression) to check the format.
@@ -45,12 +41,13 @@ const isValidEmail = (email: string) => {
 
 export default function LoginScreen() {
   const navigation = useNavigation<Nav>();
+  const { login }  = useAuth();
 
   // useState stores values that can change. When they change, the screen re-renders.
-  // We pre-fill with dev credentials so testers don't have to type every time.
-  const [email,        setEmail]        = useState(DEV_EMAIL);
-  const [password,     setPassword]     = useState(DEV_PASSWORD);
+  const [email,        setEmail]        = useState('');
+  const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false); // toggles the eye icon
+  const [isSubmitting, setIsSubmitting] = useState(false);  // shows spinner on button
 
   // These hold error messages. Empty string '' means no error to show.
   const [emailError,    setEmailError]    = useState('');
@@ -94,7 +91,7 @@ export default function LoginScreen() {
   }
 
   // This runs when the user taps the Login button
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // First check if both fields are valid before doing anything
     let everythingIsValid = true;
 
@@ -123,22 +120,33 @@ export default function LoginScreen() {
       return;
     }
 
-    // ---------------------------------------------------------------
-    // DEV credential check — replace this with a real API call later.
-    // In production, you'd send the email and password to your backend
-    // and it would tell you if they're correct.
-    // ---------------------------------------------------------------
-    const emailMatches    = email.trim().toLowerCase() === DEV_EMAIL;
-    const passwordMatches = password === DEV_PASSWORD;
-
-    if (!emailMatches || !passwordMatches) {
-      setLoginError('The email or password you entered is incorrect. Please try again.');
-      return;
-    }
-
-    // If we get here, credentials are correct — go to biometric check
+    // ── Call the real backend /auth/login endpoint ─────────────
+    setIsSubmitting(true);
     setLoginError('');
-    navigation.navigate('BiometricCheck');
+
+    try {
+      const res = await api.post<LoginResponse>('/auth/login', {
+        username: email.trim(),   // backend expects "username" field
+        password,
+      });
+
+      // Store JWT + user info in AuthContext (persists to SecureStore)
+      await login(res.token, res.user);
+
+      // Credentials are correct — go to biometric check
+      navigation.navigate('BiometricCheck');
+    } catch (err) {
+      const apiErr = err as ApiError;
+      if (apiErr.status === 401) {
+        setLoginError('The email or password you entered is incorrect. Please try again.');
+      } else if (apiErr.status === 0) {
+        setLoginError('Unable to reach the server. Check your internet connection.');
+      } else {
+        setLoginError(apiErr.error || 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   // The Login button should look "active" only when both fields look valid
@@ -267,13 +275,18 @@ export default function LoginScreen() {
               )}
             </View>
 
-            {/* Login button — appears grayed out when the form isn't ready */}
+            {/* Login button — appears grayed out when the form isn't ready or submitting */}
             <TouchableOpacity
-              style={[styles.loginBtn, !formLooksReady && styles.btnDisabled]}
+              style={[styles.loginBtn, (!formLooksReady || isSubmitting) && styles.btnDisabled]}
               onPress={handleLogin}
               activeOpacity={0.85}
+              disabled={isSubmitting}
             >
-              <Text style={styles.loginBtnText}>Login</Text>
+              {isSubmitting ? (
+                <ActivityIndicator color={colors.textWhite} />
+              ) : (
+                <Text style={styles.loginBtnText}>Login</Text>
+              )}
             </TouchableOpacity>
 
             {/* Visual separator between Login and Forgot Password */}

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { LoadFonts } from "./utils/LoadFonts";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
+import { AuthProvider } from './contexts/AuthContext';
 
 
 // ── Jonathan ──────────────────────────────────────
@@ -55,7 +55,8 @@ export default function App() {
   }, []);
  
   return (
-   (externalFontsLoaded) && 
+   (externalFontsLoaded) &&
+  <AuthProvider>
   <NavigationContainer>
 
     <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="SplashScreen">
@@ -82,5 +83,6 @@ export default function App() {
     </StackNavigator.Navigator>
 
   </NavigationContainer>
+  </AuthProvider>
   );
 }

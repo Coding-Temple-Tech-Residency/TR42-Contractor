@@ -23,6 +23,7 @@ import { RootStackParamList } from '../App';
 import { FieldForceHeader, SubHeader } from '../components/FieldForceHeader';
 import { BottomNavigation } from '../components/BottomNavigation';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
+import { useAuth } from '../contexts/AuthContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -132,12 +133,12 @@ const menuStyles = StyleSheet.create({
 // ---------------------------------------------------------------
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    // TODO: Clear auth tokens and any stored user data before navigating away.
-    // For example: await SecureStore.deleteItemAsync('authToken');
+  const handleLogout = async () => {
+    await logout();           // clears JWT from SecureStore + AuthContext
     navigation.replace('Login');
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
