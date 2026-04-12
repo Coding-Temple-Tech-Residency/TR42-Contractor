@@ -3,9 +3,17 @@ import jose
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import request, jsonify
+import os
 
 
-SECRET_KEY = "temp key"  # In production, change into secure key/storage
+# Loaded from the SECRET_KEY environment variable (set in backend/.env).
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. "
+        "Copy backend/.env.example to backend/.env and set a strong random value."
+    )
+assert isinstance(SECRET_KEY, str)
 
 def encode_token(user_id, role):
     payload = {

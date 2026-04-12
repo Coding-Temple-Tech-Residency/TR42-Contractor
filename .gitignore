@@ -1,0 +1,16 @@
+# ── Backend (Python / Flask) ───────────────────────────────────
+backend/.env
+backend/instance/
+__pycache__/
+*.pyc
+*.pyo
+.expo/
+
+# ── Frontend (Node / Expo) ────────────────────────────────────
+node_modules/
+
+# ── IDE / OS ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

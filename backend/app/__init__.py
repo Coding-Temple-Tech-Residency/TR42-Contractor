@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from .models import db
 from .extensions import ma
 from .blueprints.auth_users import auth_users_bp
@@ -11,7 +12,9 @@ def create_app(config_name):
 
     app = Flask(__name__)
     app.config.from_object(f'config.{config_name}')
-    
+
+    CORS(app)
+
     db.init_app(app)
     ma.init_app(app)
 
