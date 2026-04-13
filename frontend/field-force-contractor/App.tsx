@@ -22,17 +22,30 @@ import ProfileScreen from "./screens/ProfileScreen";
 import LicenseScreen from "./screens/LicenseScreen";
  
 export type RootStackParamList = {
-  // Troy
+  // ── Jonathan — App screens ───────────────────────────────────
+  SplashScreen:  undefined;
+  Home:          undefined;
+  Blank:         undefined;
+  Contacts:      undefined;
+  Tickets:       undefined;
+
+  // ── Jonathan — Work Orders (placeholder until real screen built) ──
+  WorkOrders:    undefined;
+  JobDetail:     { jobId: string; workOrderId: string };
+
+  // ── Troy — Auth screens ──────────────────────────────────────
   Login:           undefined;
   OfflineLogin:    undefined;
   BiometricCheck:  undefined;
   PasswordReset:   undefined;
   OfflinePinReset: undefined;
+
+  // ── Troy — Profile screens ───────────────────────────────────
   Profile:         undefined;
   LicenseDetails:  undefined;
-  Contacts:        undefined;
-  SplashScreen:    undefined;
-  Tickets:         undefined;
+
+  // ── Charlie — Dashboard (placeholder until real screen is built) ──
+  Dashboard:       undefined;
 };
 
 const StackNavigator = createNativeStackNavigator();
@@ -58,6 +71,7 @@ export default function App() {
       <StackNavigator.Screen name="SplashScreen"  component={SplashScreen}/>
       <StackNavigator.Screen name="Blank" component={Blank}/>
       <StackNavigator.Screen name="Home" component={HomeScreen}/>
+      <StackNavigator.Screen name="Dashboard" component={HomeScreen}/>
 
       <StackNavigator.Screen name="Login"           component={LoginScreen}           />
       <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
