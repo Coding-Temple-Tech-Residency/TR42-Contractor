@@ -31,17 +31,17 @@ export const Chat:FC = (props) =>{
     }
     return(<>
     <MainFrame headerMenu={["Menu2",[name]]}>
-    <View style={Styles.Chat.sendBar}>
-        <SearchBar placeHolder="Message..." buttonText="Send" onClick={(msg:string)=>{(msg) && SendMessage(msg,"01")}}/>
-    </View>
-    {
-       messages.map(item =>{
+        {
+        messages.map(item =>{
 
-         return(
-            <Message key={item.messageId} messageId={item.messageId} message={item.message} contactId={item.contactId}></Message>
-         )
-       })
-    }
+            return(
+                <Message key={item.messageId} messageId={item.messageId} message={item.message} contactId={item.contactId} messageType={item.messageType}></Message>
+            )
+        })
+        }
+        <View style={Styles.Chat.sendBar}>
+            <SearchBar placeHolder="Message..." buttonText="Send" onClick={(msg:string)=>{(msg) && SendMessage(msg,"01")}}/>
+        </View>
     </MainFrame>
 
     </>)

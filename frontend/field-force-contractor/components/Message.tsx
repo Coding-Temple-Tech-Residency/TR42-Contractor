@@ -1,7 +1,6 @@
 import{Assets} from "@/constants/Assets"
 import{Styles} from "@/constants/Styles"
 import{FC} from "react"
-import { Timespan } from "react-native/Libraries/Utilities/IPerformanceLogger"
 import {Text,View} from "react-native"
 
 
@@ -11,18 +10,40 @@ type Props = {
     messageId?:number
     profileIcon?:string
     contactId?:string
-    timeStamp?:Timespan
+    timeStamp?:string
     messageType?:MessageType
 }
 export const Message:FC<Props> =(props) =>{
 
+    const Sent:FC = () => {
+
+        return(
+        
+            <View style={Styles.Chat.messageBoxSent}>
+                <View style={Styles.Chat.messageSent}>
+                    <Text style={Styles.Chat.messageText}>{props.message}</Text>
+                </View>
+            </View>
+
+        )
+        
+    }
+    const Recieved:FC = () =>{
+
+           return(
+            <View style={Styles.Chat.messageBoxReceived}>
+                <View style={Styles.Chat.messageReceived}>
+                    <Text style={Styles.Chat.messageText}>{props.message}</Text>
+                </View>
+            </View>
+           )
+
+    }
     return(<>
-    <View style={(props.messageType === "received") ? Styles.Chat.messageBoxRecived : Styles.Chat.messageBoxSent}>
-        <View style={(props.messageType === "received") ? Styles.Chat.MessageRecieved : Styles.Chat.MessageSent}>
-            <Text style={Styles.Chat.MessageText}>{props.message}</Text>
-        </View>
-    </View>
-    
+  
+     {
+        (props.messageType === "sent") ? <Sent/> : <Recieved/>
+     }
     
     </>)
 
