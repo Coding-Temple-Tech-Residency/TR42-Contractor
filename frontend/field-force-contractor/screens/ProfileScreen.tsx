@@ -15,6 +15,7 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
+  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -24,12 +25,13 @@ import { FieldForceHeader, SubHeader } from '../components/FieldForceHeader';
 import { BottomNavigation } from '../components/BottomNavigation';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 import { useAuth } from '../contexts/AuthContext';
+import { Assets } from '../constants/Assets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
 // ---------------------------------------------------------------
-// Placeholder contractor data — replace this with real user data
-// from your auth context or API response once the backend is ready
+// Placeholder contractor data — replace with real data from auth
+// context or API once the backend is ready
 // ---------------------------------------------------------------
 const CONTRACTOR = {
   name:         'John Doe',
@@ -41,27 +43,23 @@ const CONTRACTOR = {
 };
 
 // ---------------------------------------------------------------
-// InfoRow — a reusable row component for showing contact details.
-// We pull it out as its own component so we don't repeat the same
-// layout code three times for email, phone, and address.
+// InfoRow — reusable contact-detail row
 // ---------------------------------------------------------------
-const InfoRow = (props: { icon: any; label: string; value: string }) => {
-  return (
-    <View style={infoStyles.row}>
-      <Ionicons name={props.icon} size={18} color={colors.textMuted} />
-      <View style={infoStyles.textWrap}>
-        <Text style={infoStyles.label}>{props.label}</Text>
-        <Text style={infoStyles.value}>{props.value}</Text>
-      </View>
+const InfoRow = (props: { icon: any; label: string; value: string }) => (
+  <View style={infoStyles.row}>
+    <Ionicons name={props.icon} size={18} color={colors.textMuted} />
+    <View style={infoStyles.textWrap}>
+      <Text style={infoStyles.label}>{props.label}</Text>
+      <Text style={infoStyles.value}>{props.value}</Text>
     </View>
-  );
-}
+  </View>
+);
 
 const infoStyles = StyleSheet.create({
   row: {
     flexDirection:     'row',
     alignItems:        'center',
-    backgroundColor:   colors.card,
+    backgroundColor:   'rgba(26, 43, 66, 0.85)', // cards use a translucent navy so the bg image shows through
     borderRadius:      radius.md,
     borderWidth:       1,
     borderColor:       colors.border,
@@ -70,18 +68,13 @@ const infoStyles = StyleSheet.create({
     gap:               spacing.md,
   },
   textWrap: { flex: 1 },
-  // Small muted text above the value (e.g. "Email")
-  label: { fontFamily: fonts.regular, fontSize: fontSize.xs, color: colors.textMuted, marginBottom: 2 },
-  // The actual value text (e.g. "myemail@email.com")
-  value: { fontFamily: fonts.regular, fontSize: fontSize.sm, color: colors.textWhite },
+  label:    { fontFamily: fonts.regular, fontSize: fontSize.xs, color: colors.textMuted, marginBottom: 2 },
+  value:    { fontFamily: fonts.regular, fontSize: fontSize.sm, color: colors.textWhite },
 });
 
 // ---------------------------------------------------------------
-// MenuRow — a tappable row with an icon, label, and optional
-// chevron arrow. Used for License, Settings, and Logout.
-// The "danger" prop makes the text red (used for Logout).
+// MenuRow — tappable row with icon, label, and optional chevron
 // ---------------------------------------------------------------
-// Props type for the tappable menu row component
 type MenuRowProps = {
   icon:     any;
   label:    string;
@@ -89,34 +82,30 @@ type MenuRowProps = {
   danger?:  boolean;
 };
 
-const MenuRow = (props: MenuRowProps) => {
-  return (
-    <TouchableOpacity style={menuStyles.row} onPress={props.onPress} activeOpacity={0.75}>
-      <View style={menuStyles.left}>
-        {/* Icon color is red for danger rows, gray for normal rows */}
-        <Ionicons
-          name={props.icon}
-          size={18}
-          color={props.danger ? colors.error : colors.textMuted}
-        />
-        <Text style={[menuStyles.label, props.danger && menuStyles.labelDanger]}>
-          {props.label}
-        </Text>
-      </View>
-      {/* Only show the arrow if it's not a danger/logout row */}
-      {props.danger !== true && (
-        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-      )}
-    </TouchableOpacity>
-  );
-}
+const MenuRow = (props: MenuRowProps) => (
+  <TouchableOpacity style={menuStyles.row} onPress={props.onPress} activeOpacity={0.75}>
+    <View style={menuStyles.left}>
+      <Ionicons
+        name={props.icon}
+        size={18}
+        color={props.danger ? colors.error : colors.textMuted}
+      />
+      <Text style={[menuStyles.label, props.danger && menuStyles.labelDanger]}>
+        {props.label}
+      </Text>
+    </View>
+    {props.danger !== true && (
+      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+    )}
+  </TouchableOpacity>
+);
 
 const menuStyles = StyleSheet.create({
   row: {
     flexDirection:     'row',
     alignItems:        'center',
     justifyContent:    'space-between',
-    backgroundColor:   colors.card,
+    backgroundColor:   'rgba(26, 43, 66, 0.85)',
     borderRadius:      radius.md,
     borderWidth:       1,
     borderColor:       colors.border,
@@ -125,7 +114,7 @@ const menuStyles = StyleSheet.create({
   },
   left:        { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   label:       { fontFamily: fonts.regular, fontSize: fontSize.base, color: colors.textWhite },
-  labelDanger: { color: colors.error }, // overrides the white text color for logout
+  labelDanger: { color: colors.error },
 });
 
 // ---------------------------------------------------------------
@@ -136,83 +125,85 @@ export default function ProfileScreen() {
   const { logout } = useAuth();
 
   const handleLogout = async () => {
-    await logout();           // clears JWT from SecureStore + AuthContext
+    await logout();
     navigation.replace('Login');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+    // ImageBackground wraps the entire screen so SplashScreenBackGround.png
+    // shows behind the header, content, and bottom nav — matching all other screens.
+    <ImageBackground
+      source={Assets.backgrounds.MainFrame.MainbackgroundImage}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      {/* SafeAreaView is transparent so the background image shows through */}
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* Header — avatar is shown here since the user is logged in */}
-      <FieldForceHeader />
-      <SubHeader title="Profile" />
+        <FieldForceHeader />
+        <SubHeader title="Profile" />
 
-      {/* ScrollView lets the content scroll if it's taller than the screen */}
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-
-        {/* ── Avatar + name section ─────────────────────────── */}
-        <View style={styles.avatarBlock}>
-          <View style={styles.avatarCircle}>
-            {/* TODO: Replace with the contractor's actual photo using an <Image> component */}
-            <Ionicons name="person" size={52} color="#8a9bb8" />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Avatar + name ───────────────────────────────────── */}
+          <View style={styles.avatarBlock}>
+            <View style={styles.avatarCircle}>
+              <Ionicons name="person" size={52} color="#8a9bb8" />
+            </View>
+            <Text style={styles.name}>{CONTRACTOR.name}</Text>
+            <Text style={styles.metaText}>Contractor ID: {CONTRACTOR.contractorId}</Text>
+            <Text style={styles.metaText}>Vendor: {CONTRACTOR.vendor}</Text>
           </View>
-          <Text style={styles.name}>{CONTRACTOR.name}</Text>
-          <Text style={styles.metaText}>Contractor ID: {CONTRACTOR.contractorId}</Text>
-          <Text style={styles.metaText}>Vendor: {CONTRACTOR.vendor}</Text>
-        </View>
 
-        {/* ── Contact info section ──────────────────────────── */}
-        <View style={styles.section}>
-          {/* Using "camera-outline" for email to match the approved design icon */}
-          <InfoRow icon="camera-outline"   label="Email"   value={CONTRACTOR.email}   />
-          <InfoRow icon="call-outline"     label="Phone"   value={CONTRACTOR.phone}   />
-          <InfoRow icon="location-outline" label="Address" value={CONTRACTOR.address} />
-        </View>
+          {/* ── Contact info ─────────────────────────────────────── */}
+          <View style={styles.section}>
+            <InfoRow icon="camera-outline"   label="Email"   value={CONTRACTOR.email}   />
+            <InfoRow icon="call-outline"     label="Phone"   value={CONTRACTOR.phone}   />
+            <InfoRow icon="location-outline" label="Address" value={CONTRACTOR.address} />
+          </View>
 
-        {/* ── Menu section ─────────────────────────────────── */}
-        <View style={styles.section}>
-          <MenuRow
-            icon="ribbon-outline"
-            label="License"
-            onPress={() => navigation.navigate('LicenseDetails')}
-          />
-          <MenuRow
-            icon="settings-outline"
-            label="Settings"
-            onPress={() => {
-              // TODO: Create a Settings screen and navigate to it here
-            }}
-          />
-          {/* Logout row — red text, no arrow, navigates back to Login */}
-          <MenuRow
-            icon="log-out-outline"
-            label="Logout"
-            onPress={handleLogout}
-            danger={true}
-          />
-        </View>
+          {/* ── Menu rows ────────────────────────────────────────── */}
+          <View style={styles.section}>
+            <MenuRow
+              icon="ribbon-outline"
+              label="License"
+              onPress={() => navigation.navigate('LicenseDetails')}
+            />
+            <MenuRow
+              icon="settings-outline"
+              label="Settings"
+              onPress={() => { /* TODO: navigate to Settings */ }}
+            />
+            <MenuRow
+              icon="log-out-outline"
+              label="Logout"
+              onPress={handleLogout}
+              danger
+            />
+          </View>
 
-      </ScrollView>
+        </ScrollView>
 
-      <BottomNavigation />
-    </SafeAreaView>
+        <BottomNavigation />
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container:     { flex: 1, backgroundColor: colors.background },
-  scroll:        { flex: 1 },
-  scrollContent: { gap: spacing.md, paddingBottom: spacing.xl },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  // Transparent so the ImageBackground shows through the SafeAreaView
+  container:       { flex: 1, backgroundColor: 'transparent' },
+  scroll:          { flex: 1 },
+  scrollContent:   { gap: spacing.md, paddingBottom: spacing.xl },
 
-  // The dark blue block at the top with the avatar and name
   avatarBlock: {
     alignItems:        'center',
-    backgroundColor:   '#0f1d33',
+    backgroundColor:   'rgba(15, 29, 51, 0.75)', // semi-transparent so bg image shows
     paddingVertical:   spacing.xl,
     paddingHorizontal: spacing.md,
     gap:               spacing.xs,
@@ -222,7 +213,7 @@ const styles = StyleSheet.create({
     width:           90,
     height:          90,
     borderRadius:    45,
-    backgroundColor: '#1e2d45',
+    backgroundColor: 'rgba(30, 45, 69, 0.9)',
     alignItems:      'center',
     justifyContent:  'center',
     marginBottom:    spacing.sm,
@@ -230,6 +221,5 @@ const styles = StyleSheet.create({
   name:     { fontFamily: fonts.bold,    fontSize: fontSize.xl, color: colors.textWhite },
   metaText: { fontFamily: fonts.regular, fontSize: fontSize.sm, color: colors.textMuted },
 
-  // Each section (contact, menu) has some horizontal padding and spacing between rows
   section: { gap: spacing.sm, paddingHorizontal: spacing.md },
 });
