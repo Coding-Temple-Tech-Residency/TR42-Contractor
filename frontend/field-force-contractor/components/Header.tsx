@@ -1,5 +1,5 @@
-import {Styles} from "../constants/Styles"
-import {Assets} from "../constants/Assets"
+import {Styles} from "@/constants/Styles"
+import {Assets} from "@/constants/Assets"
 import {FC} from "react"
 import {View,Image, Pressable} from "react-native"
 import { useNavigation } from "@react-navigation/native"
@@ -13,7 +13,6 @@ type Props ={
 }
 export const Header:FC<Props> = (props) =>{
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-
 
 // Header with just the logo and "Field Force" text
 const HeaderDefault: FC = () => (

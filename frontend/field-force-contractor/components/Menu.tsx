@@ -1,9 +1,9 @@
-import {Styles} from "../constants/Styles"
+import {Styles} from "@/constants/Styles"
 import {View, Text,Pressable,Image} from "react-native"
 import {FC} from "react"
 import {useState,useEffect,useRef} from "react"
-import { MenuItem } from "./MenuItem"
-import {Assets} from "../constants/Assets"
+import { MenuItem } from "@/components/MenuItem"
+import {Assets} from "@/constants/Assets"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"

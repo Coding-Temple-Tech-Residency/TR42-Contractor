@@ -1,6 +1,6 @@
 import {FC,ReactNode} from "react"
 import { MainFrame } from "@/components/MainFrame"
-import { SearchBar } from "../components/SearchBar"
+import { SearchBar } from "@/components/SearchBar"
 import { ContactCard } from "@/components/ContactCard"
 
 export const Contacts:FC = (props) => {

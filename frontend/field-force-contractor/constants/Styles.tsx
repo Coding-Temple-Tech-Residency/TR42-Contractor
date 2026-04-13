@@ -108,7 +108,7 @@ export const Styles = {
   // ProfileIcon is used in ContactCard for the profile/avatar image sizing.
   // forwardArrow and forwardArrowPressed are used in ContactCard for the default and pressed arrow image states.
   Contacts: StyleSheet.create({
-    container: { width: "100%", height: 84, backgroundColor: "#80AEEA", borderRadius: 11, flexDirection: "row", marginTop: 5, justifyContent: "space-between", alignItems: "center", }, InfoContainer: { height: "100%", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "column", },
+    container: { width: "100%", height: 84, backgroundColor: "#80aeea50", borderRadius: 11, flexDirection: "row", marginTop: 5, justifyContent: "space-between", alignItems: "center", }, InfoContainer: { height: "100%", flex: 1, justifyContent: "center", alignItems: "center", flexDirection: "column", },
     IconContainer: { height: "100%", width: 75, justifyContent: "center", alignItems: "center" },
     buttonContainer: { height: "100%", width: 75, justifyContent: "center", alignItems: "center" },
     contactText: { fontFamily: DefaultFont, color: DefaultColor, fontSize: 16, alignItems: "center" },
