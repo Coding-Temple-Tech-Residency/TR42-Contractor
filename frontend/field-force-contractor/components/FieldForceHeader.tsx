@@ -20,11 +20,18 @@
  *   On detail screens also add <SubHeader title="…" /> below it.
  *   The avatar already wires to Troy's Profile — nothing extra needed.
  * ─────────────────────────────────────────────────────────────
+ *
+ * FIX — Status bar overlap:
+ *   useSafeAreaInsets() returns the exact pixel height of the notch /
+ *   status bar on the current device at runtime. We apply it as
+ *   paddingTop on the header so the Field Force brand bar always sits
+ *   below the clock and battery icons on every phone.
  */
 
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, fontSize, fonts } from '../constants/theme';
 
 // ── FieldForceHeader ─────────────────────────────────────────
@@ -36,8 +43,13 @@ type FieldForceHeaderProps = {
 export function FieldForceHeader({ showAvatar = true }: FieldForceHeaderProps) {
   const navigation = useNavigation<any>();
 
+  // insets.top is the exact height of the status bar / notch on this device.
+  // Adding it as paddingTop pushes the header content below the clock/battery
+  // so nothing overlaps — works correctly on all iPhone and Android models.
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.brand}>
         <View style={styles.shieldWrap}>
           <Ionicons name="shield-checkmark" size={20} color={colors.textWhite} />
@@ -95,7 +107,8 @@ const styles = StyleSheet.create({
     justifyContent:    'space-between',
     backgroundColor:   colors.background,
     paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.sm,
+    // paddingTop is applied dynamically above using insets.top
+    paddingBottom:     spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },

@@ -39,33 +39,41 @@
  *   • "Work Orders" tab navigates to:  'WorkOrders'  (Jonathan's screen)
  */
 
-import { View, Text, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, ImageBackground } from 'react-native';
 import { FieldForceHeader, SubHeader } from '../../components/FieldForceHeader';
 import { BottomNavigation } from '../../components/BottomNavigation';
 import { colors, spacing, fontSize, fonts } from '../../constants/theme';
+import { Assets } from '../../constants/Assets';
 
 export default function DashboardPlaceholder() {
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-      <FieldForceHeader />
-      <SubHeader title="Home" />
+    <ImageBackground
+      source={Assets.backgrounds.MainFrame.MainbackgroundImage}
+      style={styles.backgroundImage}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <FieldForceHeader />
+        <SubHeader title="Home" />
 
-      <View style={styles.body}>
-        <Text style={styles.heading}>⚠️  Dashboard Placeholder</Text>
-        <Text style={styles.sub}>
-          Charlie — replace this file with your real Dashboard screen.{'\n'}
-          See the comments at the top of this file for full instructions.
-        </Text>
-      </View>
+        <View style={styles.body}>
+          <Text style={styles.heading}>⚠️  Dashboard Placeholder</Text>
+          <Text style={styles.sub}>
+            Charlie — replace this file with your real Dashboard screen.{'\n'}
+            See the comments at the top of this file for full instructions.
+          </Text>
+        </View>
 
-      <BottomNavigation />
-    </SafeAreaView>
+        <BottomNavigation />
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  backgroundImage: { flex: 1, width: '100%', height: '100%' },
+  safe:            { flex: 1, backgroundColor: 'transparent' },
   body: {
     flex:           1,
     alignItems:     'center',
@@ -73,6 +81,6 @@ const styles = StyleSheet.create({
     padding:        spacing.lg,
     gap:            spacing.md,
   },
-  heading: { fontFamily: fonts.bold,    fontSize: fontSize.lg, color: colors.primary,   textAlign: 'center' },
+  heading: { fontFamily: fonts.bold,    fontSize: fontSize.lg, color: colors.accent,    textAlign: 'center' },
   sub:     { fontFamily: fonts.regular, fontSize: fontSize.sm, color: colors.textMuted, textAlign: 'center', lineHeight: 22 },
 });
