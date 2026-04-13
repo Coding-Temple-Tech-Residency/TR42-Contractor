@@ -26,12 +26,14 @@ export type RootStackParamList = {
   SplashScreen:  undefined;
   Home:          undefined;
   Blank:         undefined;
+  // ── Charlie — App screens ───────────────────────────────────
   Contacts:      undefined;
   Tickets:       undefined;
 
   // ── Jonathan — Work Orders (placeholder until real screen built) ──
-  WorkOrders:    undefined;
   JobDetail:     { jobId: string; workOrderId: string };
+  // ── Charlie — Work Orders (placeholder until real screen built) ──  
+  WorkOrders:    undefined;
 
   // ── Troy — Auth screens ──────────────────────────────────────
   Login:           undefined;
