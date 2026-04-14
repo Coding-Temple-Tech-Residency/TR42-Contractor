@@ -91,7 +91,7 @@ export default function OfflineLoginScreen() {
     }
     // ─────────────────────────────────────────────────────────────────────
 
-    navigation.replace('Dashboard');
+    navigation.replace('Inspection');
   };
 
   return (

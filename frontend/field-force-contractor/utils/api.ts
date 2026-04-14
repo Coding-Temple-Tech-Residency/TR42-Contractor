@@ -7,18 +7,84 @@ import { Platform } from 'react-native';
 import { getToken } from './secureStorage';
 
 // ── Config ─────────────────────────────────────────────────────
+//
+// 📱 TESTING ON A PHYSICAL DEVICE (iPhone / Android)
+// ---------------------------------------------------
+// A real phone cannot reach `localhost` — that resolves to the phone
+// itself, not your laptop. You must point it at your machine's
+// Wi-Fi LAN IP and make sure the backend port is reachable on the
+// network. Replace LAN_IP below with YOUR machine's IP.
+//
+// ── ONE-TIME MACHINE SETUP ────────────────────────────────────
+//
+// A. Backend (Flask + SQLite)
+//    From repo root:
+//      cd backend
+//      python -m venv .venv
+//      Windows :  .venv\Scripts\activate
+//      macOS/Linux : source .venv/bin/activate
+//      pip install -r requirements.txt
+//      # If requirements.txt is missing any, also run:
+//      #   pip install flask flask-cors flask-sqlalchemy python-dotenv \
+//      #               marshmallow marshmallow-sqlalchemy python-jose bcrypt
+//      python seed.py                 # create + seed users
+//      python seed_inspections.py     # seed the inspection template
+//
+// B. Frontend (Expo / React Native)
+//    From repo root:
+//      cd frontend/field-force-contractor
+//      npm install
+//      npx expo install expo-secure-store expo-local-authentication
+//    Install the Expo Go app on your phone (App Store / Play Store).
+//
+// C. Your machine and your phone MUST be on the SAME Wi-Fi network.
+//    Work/guest/locked-down networks often block device-to-device
+//    traffic — if nothing works, try a personal hotspot.
+//
+// ── PER-SESSION / PER-NETWORK SETUP ───────────────────────────
+//
+// 1. Find your LAN IP (laptop + phone must be on the SAME Wi-Fi):
+//      Windows :  ipconfig            → "IPv4 Address" under Wi-Fi
+//      macOS   :  ipconfig getifaddr en0
+//      Linux   :  hostname -I
+//    Typical values look like 10.0.0.xxx or 192.168.x.xxx.
+//
+// 2. Update LAN_IP below with what you found.
+//
+// 3. Open ports 5000 (Flask) and 8081 (Expo Metro) in your firewall:
+//      Windows (PowerShell, admin):
+//        netsh advfirewall firewall add rule name="Flask Dev" ^
+//          dir=in action=allow protocol=TCP localport=5000
+//        netsh advfirewall firewall add rule name="Expo Metro" ^
+//          dir=in action=allow protocol=TCP localport=8081
+//      macOS   :  System Settings → Network → Firewall → allow python / node
+//      Linux   :  sudo ufw allow 5000 && sudo ufw allow 8081
+//
+// 4. Start the backend bound to all interfaces, not just localhost:
+//      cd backend
+//      flask run --host=0.0.0.0 --port=5000
+//
+// 5. Start Expo in a second terminal:
+//      cd frontend/field-force-contractor
+//      npx expo start              # scan the QR code with Expo Go
+//      # If the phone can't find the dev server, try:
+//      #   npx expo start --tunnel
+//
+// 6. From the phone's browser visit http://<LAN_IP>:5000/  — if you get
+//    a JSON / 404 response, networking is good. If it times out, the
+//    firewall is still blocking OR you're on a different Wi-Fi.
+//
+// Your LAN IP will change whenever you connect to a new network, so
+// expect to update this line when switching between home/office/etc.
+// ---------------------------------------------------
 const LAN_IP = '10.0.0.152';            // ← your machine's Wi-Fi LAN IP
 const PORT   = 5000;
 
-function resolveBaseUrl(): string {
-  if (__DEV__) {
-    if (Platform.OS === 'android') return `http://10.0.2.2:${PORT}`;
-    if (Platform.OS === 'ios')     return `http://localhost:${PORT}`;
-  }
-  return `http://${LAN_IP}:${PORT}`;
-}
-
-export const API_BASE_URL = resolveBaseUrl();
+// Web uses localhost. Everything else (phone, emulator) uses the
+// LAN IP — the firewall rule on port 5000 covers all of them.
+export const API_BASE_URL = Platform.OS === 'web'
+  ? `http://localhost:${PORT}`
+  : `http://${LAN_IP}:${PORT}`;
 
 // ── Types ──────────────────────────────────────────────────────
 

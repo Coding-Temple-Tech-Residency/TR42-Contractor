@@ -10,6 +10,7 @@ import { Contacts } from "./screens/Contacts";
 import { SplashScreen } from "./screens/SplashScreen";
 import TicketsScreen from "./screens/TicketsScreen";
 import TicketDetailScreen from "./screens/TicketDetailScreen";
+import InspectionScreen from "./screens/InspectionScreen";
  
 // ── TROY — Auth screens ──────────────────────────────────────
 import LoginScreen           from "./screens/LoginScreen";
@@ -47,6 +48,9 @@ export type RootStackParamList = {
   // ── Troy — Profile screens ───────────────────────────────────
   Profile:         undefined;
   LicenseDetails:  undefined;
+
+  // ── Aldo — Inspection screen ──────────────────────────────────
+  Inspection:      undefined;
 
   // ── Charlie — Dashboard (placeholder until real screen is built) ──
   Dashboard:       undefined;
@@ -87,6 +91,8 @@ export default function App() {
       <StackNavigator.Screen name="Contacts"       component={Contacts}   />
       <StackNavigator.Screen name="Tickets"        component={TicketsScreen} />
       <StackNavigator.Screen name="TicketDetail"   component={TicketDetailScreen} />
+      <StackNavigator.Screen name="Inspection"     component={InspectionScreen} />
+
 
     </StackNavigator.Navigator>
 
