@@ -22,7 +22,7 @@
 //    const result = await LocalAuthentication.authenticateAsync({
 //      promptMessage: 'Verify your identity',
 //    });
-//    if (result.success) { navigation.replace('Inspection'); }
+//    if (result.success) { navigation.replace('Dashboard'); }
 //    else { setScanState('failed'); }
 //
 // ──────────────────────────────────────────────────────────────────────────────
@@ -90,14 +90,14 @@ export default function BiometricScreen() {
       if (DEV_MODE) {
         // DEV MODE: always succeed so the full flow can be tested.
         // Use "Force Fail (Dev)" button to test the failure/PIN path.
-        navigation.replace('Inspection');
+        navigation.replace('Dashboard');
         return;
       }
 
       // PRODUCTION: replace with real LocalAuthentication — see dev note above
       const scanWorked = Math.random() > 0.3;
       if (scanWorked) {
-        navigation.replace('Inspection');
+        navigation.replace('Dashboard');
       } else {
         setScanState('failed');
       }

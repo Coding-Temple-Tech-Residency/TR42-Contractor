@@ -66,33 +66,16 @@ export default function InspectionScreen() {
   const [isSubmitting,  setIsSubmitting]   = useState(false);
   const [submitError,   setSubmitError]    = useState('');
 
-  // On mount:
-  //   1. Check if today's inspection is already done (submitted, no-issues,
-  //      or skipped). If so → forward straight to Home. This is what makes
-  //      the screen a "gate" — it only blocks the first login of the day.
-  //   2. Otherwise load the checklist template for display.
+  // On mount: load the checklist template.
+  //
+  // NOTE (demo mode): The same-day "already inspected → skip to Home" gate
+  // was removed per team discussion. The real trigger for the inspection
+  // flow is still pending (Jonathan / Edward — expected to fire when a
+  // contractor accepts a ticket, not at login). Until that wiring lands,
+  // the screen is reached via the dev button on HomeScreen and should
+  // ALWAYS render the checklist so stakeholders see the full flow.
   useEffect(() => {
     const run = async () => {
-      // Step 1 — inspection gate
-      try {
-        const latest = await api.authGet<{ submitted_at?: string; created_at?: string }>(
-          '/inspections/latest',
-        );
-        const when = latest.submitted_at ?? latest.created_at;
-        if (when) {
-          const sameDay =
-            new Date(when).toDateString() === new Date().toDateString();
-          if (sameDay) {
-            navigation.replace('Home');
-            return;
-          }
-        }
-      } catch (err) {
-        // 404 = no inspections yet. Any other failure: let the user try the
-        // checklist flow — the submit call will surface any real API issue.
-      }
-
-      // Step 2 — load the checklist template
       try {
         const data = await api.authGet<ChecklistTemplate>('/inspections/checklist');
         setTemplate(data);
