@@ -1,7 +1,7 @@
 import{Assets} from "@/constants/Assets"
 import{Styles} from "@/constants/Styles"
 import{FC} from "react"
-import {Text,View} from "react-native"
+import {Text,View,Image} from "react-native"
 
 
 export type MessageType = "sent" | "received"
@@ -11,7 +11,7 @@ type Props = {
     profileIcon?:string
     contactId?:string
     timeStamp?:string
-    messageType?:MessageType
+    messageType?:string
 }
 export const Message:FC<Props> =(props) =>{
 
@@ -20,9 +20,11 @@ export const Message:FC<Props> =(props) =>{
         return(
         
             <View style={Styles.Chat.messageBoxSent}>
+                    <Text style={Styles.Chat.messageText}>10:30 PM</Text>
                 <View style={Styles.Chat.messageSent}>
                     <Text style={Styles.Chat.messageText}>{props.message}</Text>
                 </View>
+                  <Image source={Assets.icons.ProfileIcon} style={Styles.Chat.chatIcon} />
             </View>
 
         )
@@ -31,10 +33,12 @@ export const Message:FC<Props> =(props) =>{
     const Recieved:FC = () =>{
 
            return(
-            <View style={Styles.Chat.messageBoxReceived}>
+            <View style={Styles.Chat.messageBoxReceived}>   
+                <Image source={Assets.icons.ProfileIcon} style={Styles.Chat.chatIcon} />  
                 <View style={Styles.Chat.messageReceived}>
                     <Text style={Styles.Chat.messageText}>{props.message}</Text>
                 </View>
+                <Text style={Styles.Chat.messageText}>11:30 PM</Text>
             </View>
            )
 

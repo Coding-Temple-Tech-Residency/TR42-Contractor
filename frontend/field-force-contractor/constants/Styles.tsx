@@ -132,12 +132,12 @@ export const Styles = {
   Chat: StyleSheet.create({
 
    sendBar:{marginTop:"auto",width:"100%"},
-   messageBoxReceived:{flexDirection:"row", justifyContent:"flex-start",width:"100%"},
-   messageBoxSent:{flexDirection:"row", justifyContent:"flex-end",width:"100%"},
+   messageBoxReceived:{flexDirection:"row", justifyContent:"flex-start",width:"100%", alignItems:"center"},
+   messageBoxSent:{flexDirection:"row", justifyContent:"flex-end",width:"100%",alignItems:"center"},
    messageSent:{justifyContent:"center", minHeight:65,maxWidth:"65%",borderRadius:11,backgroundColor:"#007CFF",marginTop:5,marginRight:10,marginLeft:10},
    messageReceived:{justifyContent:"center",minHeight:65,maxWidth:"65%",borderRadius:11, backgroundColor:"#30E852",marginTop:5,marginRight:10,marginLeft:10},
-   messageText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:16,marginLeft:15,marginRight:15}
-
+   messageText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:16,marginLeft:15,marginRight:15},
+   chatIcon:{width:35,height:35,marginRight:5,marginLeft:5}
 
   })
 };
