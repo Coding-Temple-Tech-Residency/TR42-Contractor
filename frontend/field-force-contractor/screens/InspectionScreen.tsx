@@ -66,13 +66,36 @@ export default function InspectionScreen() {
   const [isSubmitting,  setIsSubmitting]   = useState(false);
   const [submitError,   setSubmitError]    = useState('');
 
-  // Fetch the active checklist template on mount
+  // On mount:
+  //   1. Check if today's inspection is already done (submitted, no-issues,
+  //      or skipped). If so → forward straight to Home. This is what makes
+  //      the screen a "gate" — it only blocks the first login of the day.
+  //   2. Otherwise load the checklist template for display.
   useEffect(() => {
-    const fetchChecklist = async () => {
+    const run = async () => {
+      // Step 1 — inspection gate
+      try {
+        const latest = await api.authGet<{ submitted_at?: string; created_at?: string }>(
+          '/inspections/latest',
+        );
+        const when = latest.submitted_at ?? latest.created_at;
+        if (when) {
+          const sameDay =
+            new Date(when).toDateString() === new Date().toDateString();
+          if (sameDay) {
+            navigation.replace('Home');
+            return;
+          }
+        }
+      } catch (err) {
+        // 404 = no inspections yet. Any other failure: let the user try the
+        // checklist flow — the submit call will surface any real API issue.
+      }
+
+      // Step 2 — load the checklist template
       try {
         const data = await api.authGet<ChecklistTemplate>('/inspections/checklist');
         setTemplate(data);
-        // Auto-expand the first section
         if (data.sections.length > 0) {
           setExpandedId(data.sections[0].id);
         }
@@ -83,8 +106,8 @@ export default function InspectionScreen() {
         setLoading(false);
       }
     };
-    fetchChecklist();
-  }, []);
+    run();
+  }, [navigation]);
 
   // Toggle a checkbox on/off
   const toggleItem = (itemId: number) => {
@@ -104,6 +127,28 @@ export default function InspectionScreen() {
     setExpandedId(prev => (prev === sectionId ? null : sectionId));
   };
 
+  // User tapped the X — record the skip server-side (flag only, no results)
+  // then continue into the app. Per Jonathan: leadership still needs to see
+  // who bypassed inspection, so we log it instead of dropping the call.
+  const handleSkip = async () => {
+    if (!template) return;
+    setIsSubmitting(true);
+    setSubmitError('');
+
+    try {
+      await api.authPost('/inspections/submit', {
+        template_id: template.id,
+        skipped: true,
+      });
+      navigation.replace('Home');
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setSubmitError(apiErr.error || 'Failed to skip inspection.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Submit with "No Issues Found" — auto-pass everything
   const handleNoIssues = async () => {
     if (!template) return;
@@ -115,7 +160,7 @@ export default function InspectionScreen() {
         template_id: template.id,
         no_issues_found: true,
       });
-      navigation.replace('Dashboard');
+      navigation.replace('Home');
     } catch (err) {
       const apiErr = err as ApiError;
       setSubmitError(apiErr.error || 'Failed to submit inspection.');
@@ -143,7 +188,7 @@ export default function InspectionScreen() {
         no_issues_found: false,
         results,
       });
-      navigation.replace('Dashboard');
+      navigation.replace('Home');
     } catch (err) {
       const apiErr = err as ApiError;
       setSubmitError(apiErr.error || 'Failed to submit inspection.');
@@ -155,7 +200,7 @@ export default function InspectionScreen() {
   // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <MainFrame>
+      <MainFrame header="default" headerMenu={["none"]} footerMenu={["none"]}>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={BLUE} />
           <Text style={styles.loadingText}>Loading checklist...</Text>
@@ -164,10 +209,11 @@ export default function InspectionScreen() {
     );
   }
 
+
   // ── Error state ───────────────────────────────────────────────────────────
   if (error || !template) {
     return (
-      <MainFrame>
+      <MainFrame header="default" headerMenu={["none"]} footerMenu={["none"]}>
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={48} color={RED} />
           <Text style={styles.errorText}>{error || 'No inspection template found.'}</Text>
@@ -185,12 +231,32 @@ export default function InspectionScreen() {
         <Text style={styles.headerTitle}>Inspection Required</Text>
       </View>
 
-      {/* ── Truck image + title card ───────────────────────────────── */}
+      {/* ── Truck image + title card + skip (X) button ──────────────
+          Asset: TankerTruckBackgroundbanner.png — provided by Jonathan
+          (stored locally as assets/images/truck.png). Stakeholders haven't
+          asked for per-vehicle photos yet, so it stays static for now.
+          The X button flags the inspection as skipped server-side and
+          routes the user into the app.                                 */}
       <View style={styles.truckCard}>
         <View style={styles.truckImageWrap}>
-          <Ionicons name="bus-outline" size={64} color="#8a9bb8" />
+          <Image
+            source={require('../assets/images/truck.png')}
+            style={styles.truckImage}
+            resizeMode="cover"
+          />
+          <TouchableOpacity
+            style={styles.skipBtn}
+            onPress={handleSkip}
+            disabled={isSubmitting}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+          >
+            <Ionicons name="close" size={20} color="white" />
+          </TouchableOpacity>
         </View>
-        <Text style={styles.truckTitle}>{template.name}</Text>
+        <View style={styles.truckTitleStrip}>
+          <Text style={styles.truckTitle}>{template.name}</Text>
+        </View>
       </View>
 
       {/* ── Checklist sections (accordion) ─────────────────────────── */}
@@ -321,22 +387,38 @@ const styles = StyleSheet.create({
   // ── Truck card ──────────────────────────────────────────────────────────
   truckCard: {
     width: '90%',
-    backgroundColor: CARD_BG,
-    borderWidth: 1,
-    borderColor: BORDER,
-    borderRadius: 12,
-    alignItems: 'center',
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 12,
   },
   truckImageWrap: {
     width: '100%',
-    height: 80,
+    height: 110,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 8,
-    marginBottom: 10,
+  },
+  truckImage: {
+    width: '100%',
+    height: '100%',
+  },
+  // X button — top-right corner of the truck banner. Skips the inspection.
+  skipBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  truckTitleStrip: {
+    width: '100%',
+    backgroundColor: BLUE,
+    paddingVertical: 10,
+    alignItems: 'center',
   },
   truckTitle: {
     fontSize: 16,
@@ -431,7 +513,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   noIssuesBtn: {
-    backgroundColor: RED,
+    backgroundColor: GREEN,
   },
   submitBtn: {
     backgroundColor: BLUE,

@@ -71,7 +71,7 @@ const fieldConfig = FIELD_CONFIG[LOGIN_FIELD];
 //
 //  Set to false when the backend is ready and you want real API calls.
 // ─────────────────────────────────────────────────────────────────────────────
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 // A simple function to check if an email looks valid.
 // It uses a "regex" (regular expression) to check the format.
