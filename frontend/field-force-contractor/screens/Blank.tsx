@@ -4,7 +4,6 @@ import { Styles } from "@/constants/Styles";
 import {SearchBar} from "@/components/SearchBar";
 import {Menus} from "@/constants/Menus"
 import {FC,useEffect} from "react";
-import LoginScreen from "@/screens/LoginScreen";
 export const Blank:FC = () =>{
 
 
@@ -16,8 +15,8 @@ export const Blank:FC = () =>{
 
     return(<>
     
-       <MainFrame >
-        <LoginScreen/>
+       <MainFrame strip="all">
+      
        </MainFrame>
     
     

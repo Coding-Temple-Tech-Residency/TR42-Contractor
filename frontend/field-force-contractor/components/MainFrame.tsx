@@ -1,6 +1,6 @@
 import {Styles} from "@/constants/Styles"
 import {Assets} from "@/constants/Assets"
-import {FC,ReactNode,useEffect} from "react"
+import {FC,ReactNode,useEffect,useState} from "react"
 import {View,ImageBackground,Text,ScrollView,Image,} from "react-native"
 import {Header,HeaderVariant} from "@/components/Header"
 import { Menu,MenuOptions}  from "@/components/Menu"
@@ -11,17 +11,30 @@ children?:ReactNode
 header?: HeaderVariant
 headerMenu?: MenuOptions
 footerMenu?: MenuOptions
+strip?: "menus" | "all" | "header"
 }
 
 export const MainFrame:FC<Props> = (props) =>{
+
+ const renderHeaderMenu: MenuOptions =
+  props.strip === "menus" || props.strip === "all"
+    ? ["none",[]]
+    : props.headerMenu ?? ["Menu2", ["Home"]];
+
+ const renderFooterMenu: MenuOptions =
+  props.strip === "menus" || props.strip === "all"
+    ? ["none",[]]
+    : props.footerMenu ?? ["Menu3", Menus.Footer];
+
+  const renderHeader = (props.strip != "all" && props.strip != "header") ? props.header : "none"
 
   return(<>
     <ImageBackground source={Assets.backgrounds.MainFrame.MainbackgroundImage} style={Styles.MainFrame.BackgroundImageSize}>
       <View style={Styles.MainFrame.Window}>
        <View style={Styles.MainFrame.Header}>
         <View style={Styles.MainFrame.SpaceHeader}/>
-        <Header  header={props.header}/>
-        <Menu menuOptions={(props.headerMenu) ? props.headerMenu : ["Menu2",["Home"]] } />
+        <Header  header={renderHeader}/>
+        <Menu menuOptions={renderHeaderMenu} />
         </View>
 
         <ScrollView contentContainerStyle={Styles.MainFrame.Body}>
@@ -31,7 +44,7 @@ export const MainFrame:FC<Props> = (props) =>{
         </ScrollView>
 
         <View style={Styles.MainFrame.Footer}>
-          <Menu menuOptions={(props.footerMenu) ? props.footerMenu : ["Menu3",Menus.Footer]}/>
+          <Menu menuOptions={renderFooterMenu}/>
           <View style={Styles.MainFrame.SpaceHeader}/>
         </View>
 

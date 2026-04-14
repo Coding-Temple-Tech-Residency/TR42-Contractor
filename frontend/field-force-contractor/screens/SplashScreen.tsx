@@ -14,7 +14,7 @@ const SplashTime = 5000
 
   const timer = setTimeout(() =>{
 
-   nav.navigate("Login" as any)
+   nav.navigate("Blank" as any)
 
   },SplashTime)
 
