@@ -9,9 +9,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import {Blank} from "./screens/Blank"; //Test playground page will be removed for development purpose only!
 import HomeScreen from "./screens/HomeScreen"
 import {screenConfig} from "./constants/ScreenConfig";
-import { Contacts } from "./screens/Contacts";
+import { Contacts } from "./screens/ContactScreen";
 import { SplashScreen } from "./screens/SplashScreen";
-import {Chat} from "./screens/Chat";
+import {Chat} from "./screens/ChatScreen";
 import TicketsScreen from "./screens/TicketsScreen";
 import TicketDetailScreen from "./screens/TicketDetailScreen";
 import InspectionScreen from "./screens/InspectionScreen";
