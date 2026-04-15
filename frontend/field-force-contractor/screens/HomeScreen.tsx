@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 type Status = 'driving' | 'work' | 'offline';
 
@@ -24,6 +29,7 @@ const recentActivities = [
 ];
 
 export default function HomeScreen() {
+    const navigation = useNavigation<Nav>();
     const [currentStatus, setCurrentStatus] = useState<Status>('work');
     const [isStatusOpen, setIsStatusOpen] = useState(false);
 
@@ -122,6 +128,19 @@ export default function HomeScreen() {
             <View style={styles.warning}>
                 <Text style={styles.warningText}>Over 11 hours drive time, time for a break</Text>
             </View>
+
+            {/* ── DEV-ONLY: Truck Inspection entry point ─────────────────────
+                Temporary trigger until the real business rule is wired up
+                (inspection should fire when a ticket is accepted — pending
+                Edward / DOT research). Remove once that flow is in place. */}
+            <TouchableOpacity
+                style={styles.devBtn}
+                onPress={() => navigation.navigate('Inspection')}
+                activeOpacity={0.85}
+            >
+                <Ionicons name="construct-outline" size={16} color="#f59e0b" />
+                <Text style={styles.devBtnText}>Open Truck Inspection (Dev)</Text>
+            </TouchableOpacity>
 
         </MainFrame>
     );
@@ -286,6 +305,28 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: 'poppins-bold',
         textAlign: 'center',
+    },
+
+    // Dev-only entry point to Truck Inspection — remove when the real
+    // trigger (ticket accepted) is wired up.
+    devBtn: {
+        width: '90%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245,158,11,0.08)',
+        marginBottom: 24,
+    },
+    devBtnText: {
+        color: '#f59e0b',
+        fontSize: 13,
+        fontFamily: 'poppins-bold',
     },
 
 });
