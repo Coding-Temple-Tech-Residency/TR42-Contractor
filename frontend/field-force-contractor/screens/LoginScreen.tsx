@@ -305,23 +305,29 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Email / Username input — label and behavior controlled by LOGIN_FIELD at the top */}
+            {/* Email / Username input — behavior controlled by LOGIN_FIELD at the top */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{fieldConfig.label}</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  identifierError !== '' ? styles.inputError : null, // red border if error
-                ]}
-                value={identifier}
-                onChangeText={handleIdentifierChange}
-                onBlur={validateIdentifier} // validate when they leave the field
-                placeholder={fieldConfig.placeholder}
-                placeholderTextColor={colors.textMuted}
-                keyboardType={fieldConfig.keyboardType}
-                autoCapitalize={fieldConfig.autoCapitalize}
-                autoCorrect={false}
-              />
+              <View>
+                <TextInput
+                  style={[
+                    styles.input,
+                    identifier !== '' && styles.inputFilled,
+                    identifierError !== '' ? styles.inputError : null, // red border if error
+                  ]}
+                  value={identifier}
+                  onChangeText={handleIdentifierChange}
+                  onBlur={validateIdentifier} // validate when they leave the field
+                  placeholder=""
+                  keyboardType={fieldConfig.keyboardType}
+                  autoCapitalize={fieldConfig.autoCapitalize}
+                  autoCorrect={false}
+                />
+                {identifier === '' && (
+                  <Text style={styles.neonPlaceholder} pointerEvents="none">
+                    {fieldConfig.placeholder}
+                  </Text>
+                )}
+              </View>
               {/* Only shows the error text if there is one */}
               {identifierError !== '' && (
                 <View style={styles.fieldErrorRow}>
@@ -333,24 +339,28 @@ export default function LoginScreen() {
 
             {/* Password input */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
               {/* We wrap the input in a View so we can position the eye icon on top of it */}
               <View>
                 <TextInput
                   style={[
                     styles.input,
                     styles.inputPadRight, // extra right padding so text doesn't overlap the eye icon
+                    password !== '' && styles.inputFilled,
                     passwordError !== '' ? styles.inputError : null,
                   ]}
                   value={password}
                   onChangeText={handlePasswordChange}
                   onBlur={validatePassword}
-                  placeholder="Min. 6 characters"
-                  placeholderTextColor={colors.textMuted}
+                  placeholder=""
                   secureTextEntry={!showPassword} // hides/shows the password text
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
+                {password === '' && (
+                  <Text style={styles.neonPlaceholder} pointerEvents="none">
+                    Password
+                  </Text>
+                )}
                 {/* Eye icon button — toggles between showing and hiding the password */}
                 <TouchableOpacity
                   style={styles.eyeBtn}
@@ -477,6 +487,18 @@ const styles = StyleSheet.create({
     fontFamily:        fonts.regular,
     color:             colors.textWhite,
     fontSize:          fontSize.base,
+  },
+  inputFilled:   { backgroundColor: 'rgba(10,14,26,0.8)' }, // darkens when user starts typing
+  neonPlaceholder: {
+    position:          'absolute',
+    left:              16,
+    top:               14,
+    fontFamily:        fonts.regular,
+    fontSize:          fontSize.base,
+    color:             '#ff8c00',
+    textShadowColor:   'rgba(255,140,0,0.9)',
+    textShadowOffset:  { width: 0, height: 0 },
+    textShadowRadius:  10,
   },
   inputError:    { borderColor: colors.error }, // overrides the default border with red
   inputPadRight: { paddingRight: 48 },           // keeps text from going under the eye button
