@@ -7,7 +7,7 @@ import os
 
 
 # Loaded from the SECRET_KEY environment variable (set in backend/.env).
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = "os.environ.get('SECRET_KEY')"
 if not SECRET_KEY:
     raise RuntimeError(
         "SECRET_KEY environment variable is not set. "

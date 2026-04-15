@@ -58,7 +58,14 @@ def update_ticket(ticket_id):
                     return jsonify({'error': 'end_time required when completing'}), 400
                 if "end_location" not in ticket_update_data:
                     return jsonify({'error': 'end_location required when completing'}), 400
-                   
+                
+                #ANOMALY CHECKS:
+                
+                if ticket_update_data["end_time"] < ticket.start_time:
+                    ticket.anomaly_flag = True
+                    ticket.anomaly_reason = "Logged end time is before logged start time."
+
+                
         setattr(ticket, key, value)
 
     db.session.commit()
