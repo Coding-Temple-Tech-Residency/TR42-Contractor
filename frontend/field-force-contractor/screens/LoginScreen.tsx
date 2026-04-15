@@ -64,8 +64,8 @@ const FIELD_CONFIG = {
   // 'either' — single field mode. Default keyboard since we can't assume
   // they'll type an email; email-address keyboard would hide the period key.
   either: {
-    label:          'Username or Email',
-    placeholder:    'Username or email',
+    label:          'Username',
+    placeholder:    'Username',
     keyboardType:   'default' as const,
     autoCapitalize: 'none' as const,
   },
