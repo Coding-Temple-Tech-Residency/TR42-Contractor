@@ -83,7 +83,7 @@ export default function InspectionScreen() {
           const sameDay =
             new Date(when).toDateString() === new Date().toDateString();
           if (sameDay) {
-            navigation.replace('Home');
+            navigation.replace('Dashboard');
             return;
           }
         }
@@ -140,7 +140,7 @@ export default function InspectionScreen() {
         template_id: template.id,
         skipped: true,
       });
-      navigation.replace('Home');
+      navigation.replace('Dashboard');
     } catch (err) {
       const apiErr = err as ApiError;
       setSubmitError(apiErr.error || 'Failed to skip inspection.');
@@ -160,7 +160,7 @@ export default function InspectionScreen() {
         template_id: template.id,
         no_issues_found: true,
       });
-      navigation.replace('Home');
+      navigation.replace('Dashboard');
     } catch (err) {
       const apiErr = err as ApiError;
       setSubmitError(apiErr.error || 'Failed to submit inspection.');
@@ -188,7 +188,7 @@ export default function InspectionScreen() {
         no_issues_found: false,
         results,
       });
-      navigation.replace('Home');
+      navigation.replace('Dashboard');
     } catch (err) {
       const apiErr = err as ApiError;
       setSubmitError(apiErr.error || 'Failed to submit inspection.');
