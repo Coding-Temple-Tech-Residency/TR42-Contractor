@@ -138,7 +138,7 @@ export const Styles = {
    messageSent:{justifyContent:"center", minHeight:65,maxWidth:"65%",borderRadius:11,backgroundColor:"#007CFF",marginTop:5,marginRight:10,marginLeft:10},
    messageReceived:{justifyContent:"center",minHeight:65,maxWidth:"65%",borderRadius:11, backgroundColor:"#30E852",marginTop:5,marginRight:10,marginLeft:10},
    messageText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:16,marginLeft:15,marginRight:15},
-   timeText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:14},
+   timeText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:12},
    chatIcon:{width:35,height:35,marginRight:5,marginLeft:5}
 
   })

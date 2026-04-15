@@ -6,34 +6,37 @@ import { useRoute } from '@react-navigation/native'
 import { SearchBar } from "@/components/SearchBar"
 import { Message,MessageType } from "@/components/Message"
 import {InitMessage} from "@/utils/InitMessage"
-
-
+import { TimeFormater } from "@/utils/timeFormater"
 type Props = {
 
     children:ReactNode
 }
 type TypeMessage = {
 
+    id:number
     message:string
     contact?:string
     messageType:MessageType //Indicates if the mssage was sent or recieved so the app knows how to show it
+    timeStamp:string
+  
    
 }
+
 export const Chat:FC = (props) =>{
 
     const route = useRoute<any>()
-    const deviceDate = new Date()
     const {name} = route.params
-
-    const demoMessages = [ // Demo data real data will be replaced by backend
-    {message:"Hello",contact:"John Doe",messageType:"sent"}, 
-    {message:"Hi",contact:"Jane Doe",messageType:"received"},
-    {message:"How are you doing?",contact:"John Doe",messageType:"sent"}, 
+   
+   
+    const demoMessages:TypeMessage[] = [ // Demo data real data will be replaced by backend
+    {id:InitMessage.getMessageId(),message:"Hello",contact:"John Doe",messageType:"sent",timeStamp:TimeFormater.getTimeStamp()}, 
+    {id:InitMessage.getMessageId(),message:"Hi",contact:"Jane Doe",messageType:"received",timeStamp:TimeFormater.getTimeStamp()},
+    {id:InitMessage.getMessageId(),message:"How are you doing?",contact:"John Doe",messageType:"sent",timeStamp:TimeFormater.getTimeStamp()}, 
     ]
     const [messages,setMessage] = useState(demoMessages);
     
     const [send,setSend] = useState<MessageType>("received");
-
+    
    
     const SendMessage = (mesg:string,contact:string) =>{
         if(send === "sent"){
@@ -45,7 +48,13 @@ export const Chat:FC = (props) =>{
             setSend("sent");
         }
     
-        setMessage(prev => [...prev,{message:mesg,contact:contact,messageType:send}]);
+        setMessage(prev => [...prev,{
+            id:InitMessage.getMessageId(),
+            message:mesg,
+            contact:contact,
+            messageType:send,
+            timeStamp: TimeFormater.getTimeStamp()
+        }]);
 
     }
     const Search:FC =() => {
@@ -58,8 +67,7 @@ export const Chat:FC = (props) =>{
           <View style={Styles.Chat.container}>
             {
                 messages.map((item) => {
-                const id = InitMessage.getMessageId();
-                return(<Message key={id} messageId={id} message={item.message} contactId={item.contact} messageType={item.messageType}></Message>)
+                return(<Message key={item.id} messageId={item.id} message={item.message} contactId={item.contact} messageType={item.messageType} timeStamp={item.timeStamp}></Message>)
                 })
             }
           </View>

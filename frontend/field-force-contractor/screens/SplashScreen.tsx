@@ -28,8 +28,7 @@ const SplashTime = 2500
 
         <Image source={Assets.logos.FieldForceLogo} style={Styles.SplashScreen.LogoImage}/>
         <Image source={Assets.logos.FieldForceLogoText} style={Styles.SplashScreen.LogoText}/>
-         
-       
+          
     </View>
 
   </MainFrame>

@@ -10,17 +10,17 @@ type Props = {
     messageId?:number
     profileIcon?:string
     contactId?:string
-    timeStamp?:string
     messageType?:string
+    timeStamp?:string
 }
 export const Message:FC<Props> =(props) =>{
-
+   
     const Sent:FC = () => {
 
         return(
         
             <View style={Styles.Chat.messageBoxSent}>
-                    <Text style={Styles.Chat.timeText}>10:30 PM</Text>
+                    <Text style={Styles.Chat.timeText}>{props.timeStamp}</Text>
                 <View style={Styles.Chat.messageSent}>
                     <Text style={Styles.Chat.messageText}>{props.message}</Text>
                 </View>
@@ -38,7 +38,7 @@ export const Message:FC<Props> =(props) =>{
                 <View style={Styles.Chat.messageReceived}>
                     <Text style={Styles.Chat.messageText}>{props.message}</Text>
                 </View>
-                <Text style={Styles.Chat.timeText}>11:30 PM</Text>
+                <Text style={Styles.Chat.timeText}>{props.timeStamp}</Text>
             </View>
            )
 
