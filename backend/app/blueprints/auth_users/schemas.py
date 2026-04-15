@@ -9,7 +9,14 @@ class AuthUserSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
 
 class LoginSchema(Schema):
-    username = fields.Str(required=True)
+    # `identifier` is the preferred field — the frontend sends whatever the
+    # contractor typed (username OR email) and the route handler decides
+    # which column to look up. `username` and `email` are kept for backward
+    # compatibility with older clients / test scripts; at least one of the
+    # three must be present, validated in the route.
+    identifier = fields.Str(required=False)
+    username = fields.Str(required=False)
+    email = fields.Str(required=False)
     password = fields.Str(required=True)
 
 class AuthUserUpdateSchema(Schema):

@@ -35,12 +35,16 @@ import { useAuth }            from '../contexts/AuthContext';
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⚙️  STAKEHOLDER CONFIG — change this one line after Tuesday's meeting
+// ⚙️  STAKEHOLDER CONFIG — change this one line if the policy shifts
 //
-//   'email'    = contractor logs in with their email address
-//   'username' = contractor logs in with a username
+//   'email'    = contractor logs in with their email address only
+//   'username' = contractor logs in with a username only
+//   'either'   = single field accepts email OR username (current default)
+//
+// The backend /auth/login endpoint detects '@' and looks up the correct
+// column, so all three options send the same `identifier` key over the wire.
 // ─────────────────────────────────────────────────────────────────────────────
-const LOGIN_FIELD: 'email' | 'username' = 'username';
+const LOGIN_FIELD: 'email' | 'username' | 'either' = 'either';
 
 // Labels, placeholder text, and keyboard type are all derived from the flag above
 // so only the one line above ever needs to change — nothing else in this file
@@ -54,6 +58,14 @@ const FIELD_CONFIG = {
   username: {
     label:          'Username',
     placeholder:    'Enter your username',
+    keyboardType:   'default' as const,
+    autoCapitalize: 'none' as const,
+  },
+  // 'either' — single field mode. Default keyboard since we can't assume
+  // they'll type an email; email-address keyboard would hide the period key.
+  either: {
+    label:          'Username or Email',
+    placeholder:    'Username or email',
     keyboardType:   'default' as const,
     autoCapitalize: 'none' as const,
   },
@@ -191,8 +203,10 @@ export default function LoginScreen() {
       }
 
       // ── PRODUCTION: call the real backend /auth/login endpoint ────────
+      // Always send `identifier` — the backend detects whether it's an email
+      // or username based on the '@' character and picks the right column.
       const res = await api.post<LoginResponse>('/auth/login', {
-        [LOGIN_FIELD]: identifier.trim(),
+        identifier: identifier.trim(),
         password,
       });
 
