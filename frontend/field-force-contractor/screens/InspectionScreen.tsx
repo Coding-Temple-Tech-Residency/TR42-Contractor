@@ -80,8 +80,10 @@ export default function InspectionScreen() {
         );
         const when = latest.submitted_at ?? latest.created_at;
         if (when) {
+          // Backend returns ISO without 'Z' — append it so JS parses as UTC
+          const utcWhen = when.endsWith('Z') ? when : when + 'Z';
           const sameDay =
-            new Date(when).toLocaleDateString() === new Date().toLocaleDateString();
+            new Date(utcWhen).toLocaleDateString() === new Date().toLocaleDateString();
           if (sameDay) {
             navigation.replace('Dashboard');
             return;
