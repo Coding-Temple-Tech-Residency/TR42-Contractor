@@ -81,7 +81,7 @@ export default function InspectionScreen() {
         const when = latest.submitted_at ?? latest.created_at;
         if (when) {
           const sameDay =
-            new Date(when).toDateString() === new Date().toDateString();
+            new Date(when).toLocaleDateString() === new Date().toLocaleDateString();
           if (sameDay) {
             navigation.replace('Dashboard');
             return;
