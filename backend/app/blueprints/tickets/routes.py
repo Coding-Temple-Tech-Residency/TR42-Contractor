@@ -58,7 +58,22 @@ def update_ticket(ticket_id):
                     return jsonify({'error': 'end_time required when completing'}), 400
                 if "end_location" not in ticket_update_data:
                     return jsonify({'error': 'end_location required when completing'}), 400
-                   
+                
+                #ANOMALY CHECKS:
+                
+                if ticket_update_data["end_time"] < ticket.start_time:
+                    ticket.anomaly_flag = True
+                    ticket.anomaly_reason = "Logged end time is before logged start time."
+
+                if ticket_update_data["end_location"] == ticket.start_location and ticket.designated_route is not None:
+                    ticket.anomaly_flag = True
+                    ticket.anomaly_reason = "There is a designated route. Logged end location should show as different from start location."
+                
+                #Check for time anomaly (look into how to check against estimated_duration. How long before anomaly time throws up a flag?)
+                #Consider an hour difference to be significant in the meantime
+
+            
+
         setattr(ticket, key, value)
 
     db.session.commit()
