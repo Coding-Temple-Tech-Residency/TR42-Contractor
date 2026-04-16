@@ -142,6 +142,15 @@ export default function HomeScreen() {
                 <Text style={styles.devBtnText}>Open Truck Inspection (Dev)</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity
+                style={styles.devBtn}
+                onPress={() => navigation.navigate('DriveTimeTracker')}
+                activeOpacity={0.85}
+            >
+                <Ionicons name="speedometer-outline" size={16} color="#f59e0b" />
+                <Text style={styles.devBtnText}>Drive Time Tracker (Dev)</Text>
+            </TouchableOpacity>
+
         </MainFrame>
     );
 }

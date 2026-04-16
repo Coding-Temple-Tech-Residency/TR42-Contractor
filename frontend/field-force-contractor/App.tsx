@@ -15,6 +15,7 @@ import {Chat} from "./screens/ChatScreen";
 import TicketsScreen from "./screens/TicketsScreen";
 import TicketDetailScreen from "./screens/TicketDetailScreen";
 import InspectionScreen from "./screens/InspectionScreen";
+import DriveTimeTrackerScreen from "./screens/DriveTimeTrackerScreen";
  
 // ── TROY — Auth screens ──────────────────────────────────────
 import LoginScreen           from "./screens/LoginScreen";
@@ -56,6 +57,9 @@ export type RootStackParamList = {
 
   // ── Aldo — Inspection screen ──────────────────────────────────
   Inspection:      undefined;
+
+  // ── Aldo — Drive Time Tracker ────────────────────────────────
+  DriveTimeTracker: undefined;
 
   // ── Charlie — Dashboard (placeholder until real screen is built) ──
   Dashboard:       undefined;
@@ -102,7 +106,8 @@ export default function App() {
       <StackNavigator.Screen name="LicenseDetails" component={LicenseScreen} />
       <StackNavigator.Screen name="Tickets"        component={TicketsScreen} />
       <StackNavigator.Screen name="TicketDetail"   component={TicketDetailScreen} />
-      <StackNavigator.Screen name="Inspection"     component={InspectionScreen} />
+      <StackNavigator.Screen name="Inspection"       component={InspectionScreen} />
+      <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen} />
 
 
     </StackNavigator.Navigator>
