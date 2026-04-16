@@ -87,7 +87,9 @@ function formatHMS(totalSeconds: number): string {
 }
 
 function formatTime12(iso: string): string {
-  const d = new Date(iso);
+  // Append Z if missing so JS parses as UTC → converts to local time correctly
+  const utc = iso.endsWith('Z') ? iso : iso + 'Z';
+  const d = new Date(utc);
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
@@ -153,10 +155,10 @@ export default function DriveTimeTrackerScreen() {
     };
   }, [session?.current_status, session?.is_active]);
 
-  // Change duty status
+  // Change duty status — also creates a session if none exists for today
   const changeStatus = async (newStatus: DutyStatus) => {
     if (changing) return;
-    if (session?.current_status === newStatus) return;
+    if (session?.is_active && session?.current_status === newStatus) return;
 
     setChanging(true);
     setError('');
@@ -238,7 +240,7 @@ export default function DriveTimeTrackerScreen() {
                 isSelected && { backgroundColor: cfg.color },
               ]}
               onPress={() => changeStatus(status)}
-              disabled={changing || !isActive}
+              disabled={changing}
               activeOpacity={0.7}
             >
               <Text style={[
@@ -318,10 +320,11 @@ export default function DriveTimeTrackerScreen() {
           </View>
         ) : (
           logs.map(log => {
+            const toUTC = (s: string) => new Date(s.endsWith('Z') ? s : s + 'Z');
             const durSecs = log.duration_seconds
               ?? (log.end_time
-                ? Math.floor((new Date(log.end_time).getTime() - new Date(log.start_time).getTime()) / 1000)
-                : Math.floor((Date.now() - new Date(log.start_time).getTime()) / 1000));
+                ? Math.floor((toUTC(log.end_time).getTime() - toUTC(log.start_time).getTime()) / 1000)
+                : Math.floor((Date.now() - toUTC(log.start_time).getTime()) / 1000));
 
             return (
               <View key={log.id} style={styles.logRow}>
@@ -351,21 +354,50 @@ export default function DriveTimeTrackerScreen() {
         </View>
       )}
 
-      {/* ── Stop Driving button ────────────────────────────────── */}
-      <TouchableOpacity
-        style={[styles.stopBtn, !isActive && styles.stopBtnDisabled]}
-        onPress={stopSession}
-        disabled={changing || !isActive}
-        activeOpacity={0.85}
-      >
-        {changing ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <Text style={styles.stopBtnText}>
-            {isActive ? 'Stop Driving' : 'Session Ended'}
-          </Text>
-        )}
-      </TouchableOpacity>
+      {/* ── Bottom CTA ────────────────────────────────────────── */}
+      {!session ? (
+        // No session yet — prompt to start by tapping a status button
+        <TouchableOpacity
+          style={[styles.stopBtn, { backgroundColor: GREEN }]}
+          onPress={() => changeStatus('on_duty')}
+          disabled={changing}
+          activeOpacity={0.85}
+        >
+          {changing ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.stopBtnText}>Start Shift</Text>
+          )}
+        </TouchableOpacity>
+      ) : !isActive ? (
+        // Session ended — allow starting a new one
+        <TouchableOpacity
+          style={[styles.stopBtn, { backgroundColor: BLUE }]}
+          onPress={() => changeStatus('on_duty')}
+          disabled={changing}
+          activeOpacity={0.85}
+        >
+          {changing ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.stopBtnText}>Start New Shift</Text>
+          )}
+        </TouchableOpacity>
+      ) : (
+        // Active session — stop it
+        <TouchableOpacity
+          style={styles.stopBtn}
+          onPress={stopSession}
+          disabled={changing}
+          activeOpacity={0.85}
+        >
+          {changing ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.stopBtnText}>Stop Driving</Text>
+          )}
+        </TouchableOpacity>
+      )}
 
     </MainFrame>
   );
