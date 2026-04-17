@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
+import { useAuth } from '../contexts/AuthContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -30,6 +31,7 @@ const recentActivities = [
 
 export default function HomeScreen() {
     const navigation = useNavigation<Nav>();
+    const { logout } = useAuth();
     const [currentStatus, setCurrentStatus] = useState<Status>('work');
     const [isStatusOpen, setIsStatusOpen] = useState(false);
 
@@ -135,6 +137,15 @@ export default function HomeScreen() {
                 Edward / DOT research). Remove once that flow is in place. */}
             <TouchableOpacity
                 style={styles.devBtn}
+                onPress={() => navigation.navigate('Login')}
+                activeOpacity={0.85}
+            >
+                <Ionicons name="log-in-outline" size={16} color="#f59e0b" />
+                <Text style={styles.devBtnText}>Login Screen (Dev)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.devBtn}
                 onPress={() => navigation.navigate('Inspection')}
                 activeOpacity={0.85}
             >
@@ -149,6 +160,17 @@ export default function HomeScreen() {
             >
                 <Ionicons name="speedometer-outline" size={16} color="#f59e0b" />
                 <Text style={styles.devBtnText}>Drive Time Tracker (Dev)</Text>
+            </TouchableOpacity>
+
+            {/* DEV — Log out and return to Login. Also run seed_dev.py on the
+                backend to reset demo data before showing the login flow. */}
+            <TouchableOpacity
+                style={[styles.devBtn, styles.devLogoutBtn]}
+                onPress={logout}
+                activeOpacity={0.85}
+            >
+                <Ionicons name="log-out-outline" size={16} color="#ef4444" />
+                <Text style={[styles.devBtnText, { color: '#ef4444' }]}>Logout (Dev)</Text>
             </TouchableOpacity>
 
         </MainFrame>
@@ -336,6 +358,10 @@ const styles = StyleSheet.create({
         color: '#f59e0b',
         fontSize: 13,
         fontFamily: 'poppins-bold',
+    },
+    devLogoutBtn: {
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239,68,68,0.08)',
     },
 
 });
