@@ -7,6 +7,15 @@ from . import tickets_bp
 from app.util.auth import encode_token, token_required, vendor_required
 from datetime import datetime, timezone
 
+
+def ensure_utc(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        # Assume naive datetimes are in UTC (or adjust as needed)
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
 #created by vendor - must get info from work order and assign to contractor
 #contractor can update status, add notes.
 #any anomaly flags or updates will be sent to vendor and client to view
@@ -35,8 +44,6 @@ def update_ticket(ticket_id):
 
         #IF UPDATING STATUS: Check for time start/end and location start/end
         if key == "status":
-            if value not in ["to_do", "in_progress", "completed"]:
-                return jsonify({'error': 'Invalid status value'}), 400
             
             if value == "in_progress":
                 if ticket.start_time:
@@ -61,7 +68,9 @@ def update_ticket(ticket_id):
                 
                 #ANOMALY CHECKS:
                 
-                if ticket_update_data["end_time"] < ticket.start_time:
+                end_time_utc = ensure_utc(ticket_update_data["end_time"])
+                start_time_utc = ensure_utc(ticket.start_time)
+                if end_time_utc < start_time_utc:
                     ticket.anomaly_flag = True
                     ticket.anomaly_reason = "Logged end time is before logged start time."
 
