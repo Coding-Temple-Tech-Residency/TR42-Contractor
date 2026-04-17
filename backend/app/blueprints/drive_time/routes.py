@@ -7,8 +7,6 @@ from app.util.auth import token_required
 from datetime import datetime, timezone, date, timedelta
 
 
-VALID_STATUSES = {'driving', 'on_duty', 'off_duty', 'sleeper_berth'}
-
 
 def _ensure_utc(dt):
     """SQLite returns naive datetimes — attach UTC tzinfo if missing."""
@@ -105,13 +103,12 @@ def change_status():
         return jsonify(e.messages), 400
 
     new_status = data['status']
-    if new_status not in VALID_STATUSES:
-        return jsonify({
-            'error': f'Invalid status. Must be one of: {", ".join(sorted(VALID_STATUSES))}',
-        }), 400
-
     contractor_id = request.user_id
-    now = datetime.now(timezone.utc)
+
+    # Use client-supplied timestamp when available (offline sync support),
+    # otherwise fall back to the current server time.
+    now = data['timestamp'] or datetime.now(timezone.utc)
+
     session = _get_or_create_session(contractor_id)
 
     if session.current_status == new_status and session.is_active:
