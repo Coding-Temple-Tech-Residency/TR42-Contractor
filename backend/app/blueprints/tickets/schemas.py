@@ -13,8 +13,8 @@ class TicketSchema(ma.SQLAlchemyAutoSchema):
 class TicketUpdateSchema(Schema):
     contractor_notes = fields.Str(required=False)
     status = fields.Str(required=False, validate=validate.OneOf(["to_do", "in_progress", "completed"]),)
-    start_time = fields.DateTime(required=False)
-    end_time = fields.DateTime(required=False)
+    start_time = fields.AwareDateTime(required=False)
+    end_time = fields.AwareDateTime(required=False)
     start_location = fields.Str(required=False)
     end_location = fields.Str(required=False)
     
