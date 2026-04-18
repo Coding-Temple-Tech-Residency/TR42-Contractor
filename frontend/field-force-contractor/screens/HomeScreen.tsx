@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
@@ -35,6 +35,15 @@ export default function HomeScreen() {
     const [isStatusOpen, setIsStatusOpen] = useState(false);
     const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { logout } = useAuth();
+    const route = useRoute();
+
+    // If we land on the legacy "Home" route (e.g. SplashScreen timer),
+    // silently redirect to "Dashboard" so the back stack stays clean.
+    useEffect(() => {
+        if (route.name === 'Home') {
+            nav.replace('Dashboard');
+        }
+    }, []);
 
     const currentStatusData = statusOptions.find(s => s.value === currentStatus)!;
 
@@ -141,7 +150,7 @@ export default function HomeScreen() {
                             <Ionicons name="log-in-outline" size={18} color="#f59e0b" />
                             <Text style={styles.devButtonText}>Login</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('Inspection')}>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('Inspection', { bypassGate: true })}>
                             <Ionicons name="construct-outline" size={18} color="#f59e0b" />
                             <Text style={styles.devButtonText}>Inspection</Text>
                         </TouchableOpacity>

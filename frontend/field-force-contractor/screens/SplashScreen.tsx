@@ -1,4 +1,4 @@
-import {FC,useEffect} from "react"
+import {FC, useEffect, useState} from "react"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"
@@ -6,19 +6,23 @@ import { MainFrame } from "@/components/MainFrame";
 import {View,Image} from "react-native"
 import { Styles } from "@/constants/Styles";
 import { Assets } from "@/constants/Assets";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const SplashScreen:FC = () =>{
 const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-const SplashTime = 2500
+const { isAuthenticated, isLoading } = useAuth()
+const [splashDone, setSplashDone] = useState(false)
+
  useEffect(() =>{
-
-  const timer = setTimeout(() =>{
-
-   nav.navigate("Home")
-
-  },SplashTime)
-
+  const timer = setTimeout(() => setSplashDone(true), 2500)
+  return () => clearTimeout(timer)
  },[])
+
+ useEffect(() =>{
+  if (splashDone && !isLoading) {
+   nav.navigate(isAuthenticated ? "Dashboard" : "Login")
+  }
+ },[splashDone, isLoading, isAuthenticated])
 
  return(<>
  
