@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
+import { useAuth } from '../contexts/AuthContext';
 
 // ─── DEV MODE — set to false before shipping ──────────────────────────────────
 const DEV_MODE = true;
@@ -33,6 +34,7 @@ export default function HomeScreen() {
     const [currentStatus, setCurrentStatus] = useState<Status>('work');
     const [isStatusOpen, setIsStatusOpen] = useState(false);
     const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { logout } = useAuth();
 
     const currentStatusData = statusOptions.find(s => s.value === currentStatus)!;
 
@@ -133,9 +135,28 @@ export default function HomeScreen() {
             {/* ── DEV: Quick navigation ── */}
             {DEV_MODE && (
                 <View style={styles.devPanel}>
-                    <Text style={styles.devLabel}>DEV</Text>
-                    <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('InspectionAssist')}>
-                        <Text style={styles.devButtonText}>→ Field Force AI</Text>
+                    <Text style={styles.devLabel}>⚙ DEV TOOLS</Text>
+                    <View style={styles.devGrid}>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('Login')}>
+                            <Ionicons name="log-in-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>Login</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('Inspection')}>
+                            <Ionicons name="construct-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>Inspection</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('DriveTimeTracker')}>
+                            <Ionicons name="speedometer-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>Drive Time</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('InspectionAssist')}>
+                            <Ionicons name="sparkles-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>AI Assist</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity style={styles.devLogoutButton} onPress={logout}>
+                        <Ionicons name="log-out-outline" size={16} color="#ef4444" />
+                        <Text style={styles.devLogoutText}>Logout</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -292,31 +313,58 @@ const styles = StyleSheet.create({
     // Dev panel
     devPanel: {
         width: '90%',
-        backgroundColor: 'rgba(245,158,11,0.15)',
+        backgroundColor: 'rgba(245,158,11,0.08)',
         borderWidth: 1,
-        borderColor: '#f59e0b',
-        borderRadius: 12,
-        padding: 12,
+        borderColor: 'rgba(245,158,11,0.4)',
+        borderRadius: 16,
+        padding: 16,
         marginBottom: 24,
-        flexDirection: 'row',
-        alignItems: 'center',
         gap: 12,
     },
     devLabel: {
         fontSize: 11,
         fontFamily: 'poppins-bold',
         color: '#f59e0b',
-        letterSpacing: 1,
+        letterSpacing: 2,
+        textAlign: 'center',
+    },
+    devGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
     },
     devButton: {
-        backgroundColor: 'rgba(245,158,11,0.2)',
+        flex: 1,
+        minWidth: '45%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(245,158,11,0.15)',
+        borderWidth: 1,
+        borderColor: 'rgba(245,158,11,0.3)',
         borderRadius: 8,
-        paddingHorizontal: 12,
         paddingVertical: 6,
+        gap: 6,
     },
     devButtonText: {
         color: '#f59e0b',
-        fontSize: 13,
+        fontSize: 12,
+        fontFamily: 'poppins-bold',
+    },
+    devLogoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(239,68,68,0.12)',
+        borderWidth: 1,
+        borderColor: 'rgba(239,68,68,0.3)',
+        borderRadius: 8,
+        paddingVertical: 6,
+        gap: 6,
+    },
+    devLogoutText: {
+        color: '#ef4444',
+        fontSize: 12,
         fontFamily: 'poppins-bold',
     },
 
