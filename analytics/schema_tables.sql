@@ -512,7 +512,8 @@ CREATE TABLE messages (
 
 CREATE TABLE chat (
     chatid TEXT PRIMARY KEY,
-    messages TEXT,
+participant1 TEXT NOT NULL REFERENCES users(id),
+        participant2 TEXT NOT NULL REFERENCES users(id),
     createdat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updatedat TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     createdby TEXT REFERENCES users(id),
