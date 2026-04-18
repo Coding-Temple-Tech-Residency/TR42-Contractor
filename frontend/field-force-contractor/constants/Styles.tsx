@@ -14,11 +14,11 @@ export const Styles = {
   // DefaultText is a shared fallback text style inside MainFrame-related layouts and is not directly referenced in the current files.
   // SpaceHeader is used in MainFrame as the black spacer bar above and below the main content.
   MainFrame: StyleSheet.create({
-    Window: { width: "100%", height: "100%" },
+    Window: { width: "100%", flex: 1 },
     Body: { alignItems:"center", width: "100%", overflow: "hidden", justifyContent:"flex-start", flexDirection: "column" },
     Header: { width: "100%" },
     Footer: { justifyContent: "center", alignItems: "center", width: "100%" },
-    BackgroundImageSize: { width: "100%", height: "100%" },
+    BackgroundImageSize: { width: "100%", flex: 1 },
     DefaultText: { fontFamily: DefaultFont, fontSize: 20, color: DefaultColor },
     SpaceHeader: { backgroundColor: "black", width: "100%", height: 45 },
   }),
@@ -131,15 +131,15 @@ export const Styles = {
  //──────Jonathan───────Chat ────────────────────────────────────────────
   Chat: StyleSheet.create({
 
-   container:{width:"100%",height:"100%", padding:10},
-   sendBar:{marginTop:"auto",width:"100%"},
-   messageBoxReceived:{flexDirection:"row", justifyContent:"flex-start",width:"100%", alignItems:"center"},
-   messageBoxSent:{flexDirection:"row", justifyContent:"flex-end",width:"100%",alignItems:"center"},
-   messageSent:{justifyContent:"center", minHeight:65,maxWidth:"65%",borderRadius:11,backgroundColor:"#007CFF",marginTop:5,marginRight:10,marginLeft:10},
-   messageReceived:{justifyContent:"center",minHeight:65,maxWidth:"65%",borderRadius:11, backgroundColor:"#30E852",marginTop:5,marginRight:10,marginLeft:10},
-   messageText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:16,marginLeft:15,marginRight:15},
-   timeText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:12},
-   chatIcon:{width:35,height:35,marginRight:5,marginLeft:5}
+   container:{ width:"100%", padding: 10, paddingBottom: 6 },
+   sendBar:{ marginTop:"auto", width:"100%" },
+   messageBoxReceived:{ flexDirection:"row", justifyContent:"flex-start", width:"100%", alignItems:"flex-end", marginVertical: 2 },
+   messageBoxSent:{ flexDirection:"row", justifyContent:"flex-end", width:"100%", alignItems:"flex-end", marginVertical: 2 },
+   messageSent:{ maxWidth:"72%", borderRadius:20, borderBottomRightRadius:5, backgroundColor:"#0A84FF", paddingVertical:10, paddingHorizontal:14, marginRight:8, marginLeft:6 },
+   messageReceived:{ maxWidth:"72%", borderRadius:20, borderBottomLeftRadius:5, backgroundColor:"#2C2C2E", paddingVertical:10, paddingHorizontal:14, marginRight:6, marginLeft:8 },
+   messageText:{ fontFamily:"poppins-regular", color:"white", fontSize:15, lineHeight:22 },
+   timeText:{ fontFamily:"poppins-regular", color:"rgba(255,255,255,0.4)", fontSize:11 },
+   chatIcon:{ width:28, height:28, marginRight:4, marginLeft:4, marginBottom:2 }
 
   })
 };
