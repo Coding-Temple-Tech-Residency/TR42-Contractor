@@ -11,6 +11,7 @@ export const Menus = {
     { label: "Login", component: "Login" },
     { label: "Profile", component: "Profile" },
     { label: "In Progress", component: "Blank" },
+    { label: "Field Force AI", component: "InspectionAssist" },
   ],
 
   // ── Footer ────────────────────────────────────────────────
