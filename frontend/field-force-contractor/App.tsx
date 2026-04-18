@@ -1,19 +1,12 @@
 import { useEffect, useState } from "react";
-import { TextInput } from "react-native";
+import { View, ActivityIndicator } from "react-native";
 import { LoadFonts } from "./utils/LoadFonts";
-
-// Dark translucent keyboard on iOS for every TextInput in the app
-(TextInput as any).defaultProps = {
-  ...((TextInput as any).defaultProps ?? {}),
-  keyboardAppearance: 'dark',
-};
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-
 // ── Jonathan ──────────────────────────────────────
-import {Blank} from "./screens/Blank"; //Test playground page will be removed for development purpose only!
+import {Blank} from "./screens/Blank";
 import HomeScreen from "./screens/HomeScreen"
 import {screenConfig} from "./constants/ScreenConfig";
 import { Contacts } from "./screens/ContactScreen";
@@ -21,7 +14,7 @@ import { SplashScreen } from "./screens/SplashScreen";
 import {Chat} from "./screens/ChatScreen";
 import TicketsScreen from "./screens/TicketsScreen";
 import TicketDetailScreen from "./screens/TicketDetailScreen";
-import InspectionScreen from "./screens/InspectionScreen"
+import InspectionScreen from "./screens/InspectionScreen";
 import { InspectionAssistScreen } from "./screens/InspectionAssistScreen";
 import DriveTimeTrackerScreen from "./screens/DriveTimeTrackerScreen";
 
@@ -37,17 +30,15 @@ import ProfileScreen from "./screens/ProfileScreen";
 import LicenseScreen from "./screens/LicenseScreen";
 
 export type RootStackParamList = {
-  // ── Always visible ───────────────────────────────────────────
-  SplashScreen:  undefined;
-
   // ── Jonathan — App screens ───────────────────────────────────
+  SplashScreen:  undefined;
   Home:          undefined;
   Blank:         undefined;
   // ── Charlie — App screens ───────────────────────────────────
   Contacts:      undefined;
-  Chat:          { name: string };
+  Chat:          undefined;
   Tickets:       undefined;
-  TicketDetail: { taskId: number };
+  TicketDetail:  { taskId: number };
 
   // ── Jonathan — Work Orders (placeholder until real screen built) ──
   JobDetail:     { jobId: string; workOrderId: string };
@@ -65,10 +56,12 @@ export type RootStackParamList = {
   Profile:         undefined;
   LicenseDetails:  undefined;
 
-  // ── Aldo — Inspection screen + AI assist + Drive Time ────────
-  Inspection:        { bypassGate?: boolean } | undefined;
-  InspectionAssist:  undefined;
-  DriveTimeTracker:  undefined;
+  // ── Aldo — Inspection screen + AI assist ─────────────────────
+  Inspection:       { bypassGate?: boolean } | undefined;
+  InspectionAssist: undefined;
+
+  // ── Aldo — Drive Time Tracker ────────────────────────────────
+  DriveTimeTracker: undefined;
 
   // ── Charlie — Dashboard (placeholder until real screen is built) ──
   Dashboard:       undefined;
@@ -76,73 +69,79 @@ export type RootStackParamList = {
 
 const StackNavigator = createNativeStackNavigator();
 
-// ── RootNavigator — must be inside AuthProvider to use useAuth() ──
+// ── Auth-aware navigator ───────────────────────────────────────────────────
+// Renders the Auth stack (Login flow) when there is no valid token.
+// Renders the App stack (Inspection gate → Dashboard) when authenticated.
+// React Navigation automatically transitions between stacks when isAuthenticated changes.
 function RootNavigator() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Still reading token from SecureStore — show a branded loading screen
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0a0a0a', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
 
   return (
-    <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="SplashScreen">
-
-      {/* ── Always visible (before auth check) ── */}
-      <StackNavigator.Screen name="SplashScreen" component={SplashScreen} />
-
-      {!isAuthenticated ? (
+    <StackNavigator.Navigator screenOptions={screenConfig.window}>
+      {isAuthenticated ? (
+        // ── Protected App screens ─────────────────────────────────────────
+        // First screen is Inspection — the daily gate. After passing (or skipping)
+        // it navigates to Dashboard. All other app screens follow.
         <>
-          {/* ── Auth screens — only shown when NOT logged in ── */}
+          <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
+          <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
+          <StackNavigator.Screen name="Home"             component={HomeScreen}              />
+          <StackNavigator.Screen name="Blank"            component={Blank}                  />
+          <StackNavigator.Screen name="Contacts"         component={Contacts}               />
+          <StackNavigator.Screen name="Chat"             component={Chat}                   />
+          <StackNavigator.Screen name="Tickets"          component={TicketsScreen}          />
+          <StackNavigator.Screen name="TicketDetail"     component={TicketDetailScreen}     />
+          <StackNavigator.Screen name="Profile"          component={ProfileScreen}          />
+          <StackNavigator.Screen name="LicenseDetails"   component={LicenseScreen}          />
+          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen} />
+          <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen} />
+          {/* SplashScreen kept for Jonathan's direct nav references */}
+          <StackNavigator.Screen name="SplashScreen"     component={SplashScreen}           />
+        </>
+      ) : (
+        // ── Public Auth screens ───────────────────────────────────────────
+        // Login is the entry point. After a successful login() call the auth
+        // state flips and React Navigation auto-routes to Inspection above.
+        <>
           <StackNavigator.Screen name="Login"           component={LoginScreen}           />
           <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
           <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
           <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
           <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
         </>
-      ) : (
-        <>
-          {/* ── App screens — only shown when logged in (token present) ── */}
-
-          {/* Charlie */}
-          <StackNavigator.Screen name="Dashboard"       component={HomeScreen}            />
-          <StackNavigator.Screen name="Home"            component={HomeScreen}            />
-
-          {/* Jonathan */}
-          <StackNavigator.Screen name="Blank"           component={Blank}                 />
-          <StackNavigator.Screen name="Contacts"        component={Contacts}              />
-          <StackNavigator.Screen name="Chat"            component={Chat}                  />
-
-          {/* Troy */}
-          <StackNavigator.Screen name="Profile"         component={ProfileScreen}         />
-          <StackNavigator.Screen name="LicenseDetails"  component={LicenseScreen}         />
-          <StackNavigator.Screen name="Tickets"         component={TicketsScreen}         />
-          <StackNavigator.Screen name="TicketDetail"    component={TicketDetailScreen}    />
-
-          {/* Aldo */}
-          <StackNavigator.Screen name="Inspection"       component={InspectionScreen}      />
-          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen}/>
-          <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}/>
-        </>
       )}
-
     </StackNavigator.Navigator>
   );
 }
 
+// ── App root ───────────────────────────────────────────────────────────────
 export default function App() {
-  // ── Jonathan — Import External Fonts ───────────────────────────────────
-  // Loads custom fonts when the app starts, then updates state so the app only renders after the fonts are ready.
   const [externalFontsLoaded, setExternalFontsLoaded] = useState(false);
+
   useEffect(() => {
     const load = async () => {
-      let isLoaded = await LoadFonts();
+      const isLoaded = await LoadFonts();
       setExternalFontsLoaded(isLoaded);
     };
     load();
   }, []);
 
+  if (!externalFontsLoaded) return null;
+
   return (
-   (externalFontsLoaded) &&
-  <AuthProvider>
-    <NavigationContainer>
-      <RootNavigator />
-    </NavigationContainer>
-  </AuthProvider>
+    <AuthProvider>
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+    </AuthProvider>
   );
 }

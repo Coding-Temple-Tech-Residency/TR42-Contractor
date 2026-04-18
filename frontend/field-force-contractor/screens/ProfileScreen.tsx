@@ -12,20 +12,14 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
-import { FieldForceHeader, SubHeader } from '../components/FieldForceHeader';
-import { BottomNavigation } from '../components/BottomNavigation';
+import { MainFrame } from '../components/MainFrame';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 import { useAuth } from '../contexts/AuthContext';
-import { Assets } from '../constants/Assets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -130,25 +124,8 @@ export default function ProfileScreen() {
   };
 
   return (
-    // ImageBackground wraps the entire screen so SplashScreenBackGround.png
-    // shows behind the header, content, and bottom nav — matching all other screens.
-    <ImageBackground
-      source={Assets.backgrounds.MainFrame.MainbackgroundImage}
-      style={styles.backgroundImage}
-      resizeMode="cover"
-    >
-      {/* SafeAreaView is transparent so the background image shows through */}
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-
-        <FieldForceHeader />
-        <SubHeader title="Profile" />
-
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+    <MainFrame header="home">
+      <View style={styles.scrollContent}>
           {/* ── Avatar + name ───────────────────────────────────── */}
           <View style={styles.avatarBlock}>
             <View style={styles.avatarCircle}>
@@ -186,19 +163,12 @@ export default function ProfileScreen() {
             />
           </View>
 
-        </ScrollView>
-
-        <BottomNavigation />
-      </SafeAreaView>
-    </ImageBackground>
+      </View>
+    </MainFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
-  // Transparent so the ImageBackground shows through the SafeAreaView
-  container:       { flex: 1, backgroundColor: 'transparent' },
-  scroll:          { flex: 1 },
   scrollContent:   { gap: spacing.md, paddingBottom: spacing.xl },
 
   avatarBlock: {

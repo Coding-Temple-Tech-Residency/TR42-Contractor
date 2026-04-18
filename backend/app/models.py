@@ -79,7 +79,7 @@ class Tickets(Base):
 
     assigned_contractor: Mapped[int] = mapped_column(ForeignKey('contractors.id'))
     contractor_assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    task_created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     start_location: Mapped[str] = mapped_column(String(500), nullable=True)
@@ -90,7 +90,7 @@ class Tickets(Base):
     unit: Mapped[str] = mapped_column(String(360))
     special_requirements: Mapped[str] = mapped_column(String(500))
     
-    contractor_notes: Mapped[str] = mapped_column(String(500), nullable=True)
+    contractor_notes: Mapped[str] = mapped_column(String(500))
     anomaly_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     anomaly_reason: Mapped[str] = mapped_column(String(500), nullable=True)
 
