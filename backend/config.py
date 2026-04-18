@@ -12,8 +12,5 @@ class TestingConfig:
     CACHE_TYPE = "SimpleCache"
 
 class ProductionConfig:
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', '').replace('postgres://', 'postgresql://', 1)
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    DEBUG = False
+    SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI') 
     CACHE_TYPE = "SimpleCache"
-    CACHE_DEFAULT_TIMEOUT = 300

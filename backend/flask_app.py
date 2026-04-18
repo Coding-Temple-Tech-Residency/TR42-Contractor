@@ -1,17 +1,13 @@
-import os
 from dotenv import load_dotenv
-from pathlib import Path
-load_dotenv(Path(__file__).parent / '.env')  # always finds backend/.env regardless of cwd
+load_dotenv()  # loads backend/.env into os.environ before anything else imports
 
 from app import create_app
 from app.models import db
 
-# Render sets the RENDER env var automatically — use ProductionConfig there.
-# Everything else (local dev) stays on DevelopmentConfig.
-config = 'ProductionConfig' if os.environ.get('RENDER') else 'DevelopmentConfig'
-app = create_app(config)
+app = create_app('DevelopmentConfig')
 
 with app.app_context():
+    # db.drop_all()
     db.create_all()
 
 if __name__ == '__main__':

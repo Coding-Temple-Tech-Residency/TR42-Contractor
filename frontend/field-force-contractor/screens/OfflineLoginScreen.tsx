@@ -28,20 +28,16 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
-import { FieldForceHeader, SubHeader } from '../components/FieldForceHeader';
+import { MainFrame } from '../components/MainFrame';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
-import { Assets } from '../constants/Assets';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'OfflineLogin'>;
 
@@ -95,19 +91,7 @@ export default function OfflineLoginScreen() {
   };
 
   return (
-    <ImageBackground
-      source={Assets.backgrounds.MainFrame.MainbackgroundImage}
-      style={styles.backgroundImage}
-      resizeMode="cover"
-    >
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-
-        {/* Header — no avatar, user isn't fully authenticated yet */}
-        <FieldForceHeader showAvatar={false} />
-        <SubHeader title="Enter PIN" />
-
-        {/* KeyboardAvoidingView pushes the form up when the keyboard opens */}
+    <MainFrame header="default" headerMenu={['none']} footerMenu={['none']}>
         <KeyboardAvoidingView
           style={styles.kav}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -221,9 +205,7 @@ export default function OfflineLoginScreen() {
 
           </ScrollView>
         </KeyboardAvoidingView>
-
-      </SafeAreaView>
-    </ImageBackground>
+    </MainFrame>
   );
 }
 
@@ -231,8 +213,6 @@ export default function OfflineLoginScreen() {
 // Styles
 // ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  backgroundImage: { flex: 1, width: '100%', height: '100%' },
-  container:       { flex: 1, backgroundColor: 'transparent' },
   kav:             { flex: 1, width: '100%' },
   scroll: {
     flexGrow:          1,

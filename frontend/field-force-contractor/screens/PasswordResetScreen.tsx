@@ -14,8 +14,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -26,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
-import { FieldForceHeader, SubHeader } from '../components/FieldForceHeader';
+import { MainFrame } from '../components/MainFrame';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'PasswordReset'>;
@@ -110,12 +108,7 @@ export default function PasswordResetScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-
-      {/* No avatar — this is an auth screen */}
-      <FieldForceHeader showAvatar={false} />
-      <SubHeader title="Reset Password" onBack={handleBackPress} />
+    <MainFrame header="default" headerMenu={['none']} footerMenu={['none']}>
 
       {/* ── STEP 1: The password reset form ─────────────────── */}
       {currentStep === 'form' && (
@@ -318,12 +311,11 @@ export default function PasswordResetScreen() {
 
         </View>
       )}
-    </SafeAreaView>
+    </MainFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: colors.background },
   flex:       { flex: 1 },
   scroll: {
     flexGrow:          1,
