@@ -46,7 +46,7 @@ const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
         
     </View>
     <View style={Styles.Contacts.buttonContainer}>
-         <Pressable onPress={() =>{nav.navigate("Chat" as any,{name:props.name})}}>
+         <Pressable onPress={() =>{nav.navigate("Chat",{name:props.name || ""})}}>
             {
                 ({pressed}) => {
                 return(<>

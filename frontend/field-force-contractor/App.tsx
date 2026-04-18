@@ -9,7 +9,7 @@ import { LoadFonts } from "./utils/LoadFonts";
 };
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 
 // ── Jonathan ──────────────────────────────────────
@@ -24,32 +24,34 @@ import TicketDetailScreen from "./screens/TicketDetailScreen";
 import InspectionScreen from "./screens/InspectionScreen"
 import { InspectionAssistScreen } from "./screens/InspectionAssistScreen";
 import DriveTimeTrackerScreen from "./screens/DriveTimeTrackerScreen";
- 
+
 // ── TROY — Auth screens ──────────────────────────────────────
 import LoginScreen           from "./screens/LoginScreen";
 import OfflineLoginScreen    from "./screens/OfflineLoginScreen";
 import BiometricScreen       from "./screens/BiometricScreen";
 import PasswordResetScreen   from "./screens/PasswordResetScreen";
 import OfflinePinResetScreen from "./screens/OfflinePinResetScreen";
- 
+
 // ── TROY — Profile screens ───────────────────────────────────
 import ProfileScreen from "./screens/ProfileScreen";
 import LicenseScreen from "./screens/LicenseScreen";
- 
+
 export type RootStackParamList = {
-  // ── Jonathan — App screens ───────────────────────────────────
+  // ── Always visible ───────────────────────────────────────────
   SplashScreen:  undefined;
+
+  // ── Jonathan — App screens ───────────────────────────────────
   Home:          undefined;
   Blank:         undefined;
   // ── Charlie — App screens ───────────────────────────────────
   Contacts:      undefined;
-  Chat:          undefined;
+  Chat:          { name: string };
   Tickets:       undefined;
   TicketDetail: { taskId: number };
 
   // ── Jonathan — Work Orders (placeholder until real screen built) ──
   JobDetail:     { jobId: string; workOrderId: string };
-  // ── Charlie — Work Orders (placeholder until real screen built) ──  
+  // ── Charlie — Work Orders (placeholder until real screen built) ──
   WorkOrders:    undefined;
 
   // ── Troy — Auth screens ──────────────────────────────────────
@@ -64,7 +66,7 @@ export type RootStackParamList = {
   LicenseDetails:  undefined;
 
   // ── Aldo — Inspection screen + AI assist + Drive Time ────────
-  Inspection:        undefined;
+  Inspection:        { bypassGate?: boolean } | undefined;
   InspectionAssist:  undefined;
   DriveTimeTracker:  undefined;
 
@@ -73,7 +75,56 @@ export type RootStackParamList = {
 };
 
 const StackNavigator = createNativeStackNavigator();
-        
+
+// ── RootNavigator — must be inside AuthProvider to use useAuth() ──
+function RootNavigator() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="SplashScreen">
+
+      {/* ── Always visible (before auth check) ── */}
+      <StackNavigator.Screen name="SplashScreen" component={SplashScreen} />
+
+      {!isAuthenticated ? (
+        <>
+          {/* ── Auth screens — only shown when NOT logged in ── */}
+          <StackNavigator.Screen name="Login"           component={LoginScreen}           />
+          <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
+          <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
+          <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
+          <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
+        </>
+      ) : (
+        <>
+          {/* ── App screens — only shown when logged in (token present) ── */}
+
+          {/* Charlie */}
+          <StackNavigator.Screen name="Dashboard"       component={HomeScreen}            />
+          <StackNavigator.Screen name="Home"            component={HomeScreen}            />
+
+          {/* Jonathan */}
+          <StackNavigator.Screen name="Blank"           component={Blank}                 />
+          <StackNavigator.Screen name="Contacts"        component={Contacts}              />
+          <StackNavigator.Screen name="Chat"            component={Chat}                  />
+
+          {/* Troy */}
+          <StackNavigator.Screen name="Profile"         component={ProfileScreen}         />
+          <StackNavigator.Screen name="LicenseDetails"  component={LicenseScreen}         />
+          <StackNavigator.Screen name="Tickets"         component={TicketsScreen}         />
+          <StackNavigator.Screen name="TicketDetail"    component={TicketDetailScreen}    />
+
+          {/* Aldo */}
+          <StackNavigator.Screen name="Inspection"       component={InspectionScreen}      />
+          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen}/>
+          <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}/>
+        </>
+      )}
+
+    </StackNavigator.Navigator>
+  );
+}
+
 export default function App() {
   // ── Jonathan — Import External Fonts ───────────────────────────────────
   // Loads custom fonts when the app starts, then updates state so the app only renders after the fonts are ready.
@@ -85,42 +136,13 @@ export default function App() {
     };
     load();
   }, []);
- 
+
   return (
    (externalFontsLoaded) &&
   <AuthProvider>
-  <NavigationContainer>
-
-    <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="SplashScreen">
-      {/* Jonathan */}
-      <StackNavigator.Screen name="SplashScreen"  component={SplashScreen}/>
-      <StackNavigator.Screen name="Blank" component={Blank}/>
-      <StackNavigator.Screen name="Contacts" component={Contacts}/>
-      <StackNavigator.Screen name="Chat" component={Chat} />
-      
-
-      {/* Charlie */}
-      <StackNavigator.Screen name="Home" component={HomeScreen}/>
-      <StackNavigator.Screen name="Dashboard" component={HomeScreen}/>
-
-      {/* Troy */}
-      <StackNavigator.Screen name="Login"           component={LoginScreen}           />
-      <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
-      <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
-      <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
-      <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
-      <StackNavigator.Screen name="Profile"        component={ProfileScreen} />
-      <StackNavigator.Screen name="LicenseDetails" component={LicenseScreen} />
-      <StackNavigator.Screen name="Tickets"        component={TicketsScreen} />
-      <StackNavigator.Screen name="TicketDetail"   component={TicketDetailScreen} />
-      <StackNavigator.Screen name="Inspection"        component={InspectionScreen}       />
-      <StackNavigator.Screen name="InspectionAssist"  component={InspectionAssistScreen}  />
-      <StackNavigator.Screen name="DriveTimeTracker"  component={DriveTimeTrackerScreen}  />
-
-
-    </StackNavigator.Navigator>
-
-  </NavigationContainer>
+    <NavigationContainer>
+      <RootNavigator />
+    </NavigationContainer>
   </AuthProvider>
   );
 }

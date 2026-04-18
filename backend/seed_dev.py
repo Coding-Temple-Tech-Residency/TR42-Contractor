@@ -111,7 +111,7 @@ def wipe(session):
     session.query(Vendors).delete()
     session.query(Auth_users).delete()
     session.commit()
-    print('  ✓ All rows cleared')
+    print('  [OK] All rows cleared')
 
 
 # ── Users ─────────────────────────────────────────────────────────────────────
@@ -171,8 +171,8 @@ def seed_users(session):
     session.add(contractor)
     session.commit()
 
-    print(f'  ✓ vendor  → username: vendor   id: {vendor_auth.id}')
-    print(f'  ✓ contractor → username: aldo  id: {contractor_auth.id}')
+    print(f'  [OK] vendor  -- username: vendor   id: {vendor_auth.id}')
+    print(f'  [OK] contractor -- username: aldo  id: {contractor_auth.id}')
     return vendor_auth, vendor, contractor_auth, contractor
 
 
@@ -204,7 +204,7 @@ def seed_inspection_template(session):
 
     session.commit()
     total_items = sum(len(items) for _, _, items in INSPECTION_SECTIONS)
-    print(f'  ✓ template "{template.name}" — {len(INSPECTION_SECTIONS)} sections, {total_items} items')
+    print(f'  [OK] template "{template.name}" — {len(INSPECTION_SECTIONS)} sections, {total_items} items')
     return template
 
 
@@ -248,7 +248,7 @@ def seed_drive_time(session, contractor_id):
 
     session.commit()
     # driving total: 2.5 + 1.75 = 4.25 hrs of closed segments + 30 min active
-    print(f'  ✓ session id {session_obj.id} — status: driving, ~4h 45m drive time today')
+    print(f'  [OK] session id {session_obj.id} — status: driving, ~4h 45m drive time today')
     return session_obj
 
 
@@ -295,7 +295,7 @@ def seed_tickets(session, vendor_id, contractor_id):
         ))
 
     session.commit()
-    print(f'  ✓ work order id {wo.id} — {len(tickets_data)} tickets assigned to contractor')
+    print(f'  [OK] work order id {wo.id} — {len(tickets_data)} tickets assigned to contractor')
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -306,12 +306,12 @@ def seed():
         vendor_auth, vendor, contractor_auth, contractor = seed_users(db.session)
         seed_inspection_template(db.session)
         seed_drive_time(db.session, contractor.id)
-        seed_tickets(db.session, vendor.id, contractor.id)
+        # seed_tickets(db.session, vendor.id, contractor.id)  # TODO: Fix Tickets schema mismatch on ai-assistant branch
 
         print()
         print('=' * 50)
         print('Dev seed complete!')
-        print('  Login  →  username: aldo   password: 123456')
+        print('  Login -- username: aldo   password: 123456')
         print('=' * 50)
 
 
