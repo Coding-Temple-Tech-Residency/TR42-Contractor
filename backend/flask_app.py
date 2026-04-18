@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
-load_dotenv()  # loads backend/.env into os.environ before anything else imports
+from pathlib import Path
+load_dotenv(Path(__file__).parent / '.env')  # always finds backend/.env regardless of cwd
 
 from app import create_app
 from app.models import db
