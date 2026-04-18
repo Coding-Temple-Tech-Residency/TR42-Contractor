@@ -84,8 +84,8 @@ import { getToken } from './secureStorage';
 //   2. Flip USE_DEPLOYED to true
 //   3. Everyone on the team hits the same live API
 //
-const USE_DEPLOYED     = false;                            // ← flip to true after deploying
-const DEPLOYED_API_URL = 'https://your-app.onrender.com'; // ← paste your Render URL here
+const USE_DEPLOYED     = true;
+const DEPLOYED_API_URL = 'https://tr42-contractor.onrender.com';
 
 const LAN_IP = '10.0.0.152';            // ← your machine's Wi-Fi LAN IP (local dev only)
 const PORT   = 5000;
