@@ -77,14 +77,24 @@ import { getToken } from './secureStorage';
 // Your LAN IP will change whenever you connect to a new network, so
 // expect to update this line when switching between home/office/etc.
 // ---------------------------------------------------
-const LAN_IP = '10.0.0.152';            // ← your machine's Wi-Fi LAN IP
+// ── Switch between local dev and deployed backend ─────────────
+//
+// After deploying to Render:
+//   1. Paste your Render URL into DEPLOYED_API_URL below
+//   2. Flip USE_DEPLOYED to true
+//   3. Everyone on the team hits the same live API
+//
+const USE_DEPLOYED     = false;                            // ← flip to true after deploying
+const DEPLOYED_API_URL = 'https://your-app.onrender.com'; // ← paste your Render URL here
+
+const LAN_IP = '10.0.0.152';            // ← your machine's Wi-Fi LAN IP (local dev only)
 const PORT   = 5000;
 
-// Web uses localhost. Everything else (phone, emulator) uses the
-// LAN IP — the firewall rule on port 5000 covers all of them.
-export const API_BASE_URL = Platform.OS === 'web'
-  ? `http://localhost:${PORT}`
-  : `http://${LAN_IP}:${PORT}`;
+export const API_BASE_URL = USE_DEPLOYED
+  ? DEPLOYED_API_URL
+  : Platform.OS === 'web'
+    ? `http://localhost:${PORT}`
+    : `http://${LAN_IP}:${PORT}`;
 
 // ── Types ──────────────────────────────────────────────────────
 
