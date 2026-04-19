@@ -7,12 +7,12 @@ class InspectionAssistSchema(Schema):
 
 class SaveReportSchema(Schema):
     """Payload the frontend sends when saving an AI-generated report."""
-    title              = fields.Str(required=True)
-    priority           = fields.Str(required=True, validate=lambda v: v in ('low', 'medium', 'high'))
-    category           = fields.Str(required=True)
-    description        = fields.Str(required=True)
+    title               = fields.Str(required=True)
+    priority            = fields.Str(required=True, validate=lambda v: v in ('low', 'medium', 'high'))
+    category            = fields.Str(required=True)
+    description         = fields.Str(required=True)
     recommended_actions = fields.List(fields.Str(), required=True)
-    raw_notes          = fields.Str(required=False, load_default=None)
+    raw_notes           = fields.Str(required=False, load_default=None)
 
 
 class AiReportSchema(Schema):

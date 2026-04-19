@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 // ─── DEV MODE — set to false before shipping ──────────────────────────────────
 const DEV_MODE = true;
 
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 type Status = 'driving' | 'work' | 'offline';
 
 const statusOptions: { value: Status; label: string; color: string; bg: string; border: string }[] = [
@@ -33,7 +34,7 @@ const recentActivities = [
 export default function HomeScreen() {
     const [currentStatus, setCurrentStatus] = useState<Status>('work');
     const [isStatusOpen, setIsStatusOpen] = useState(false);
-    const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const nav = useNavigation<Nav>();
     const { logout } = useAuth();
     const route = useRoute();
 
@@ -319,6 +320,22 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
 
+    // Warning
+    warning: {
+        width: '90%',
+        backgroundColor: '#dc2626',
+        borderRadius: 12,
+        padding: 16,
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    warningText: {
+        color: 'white',
+        fontSize: 13,
+        fontFamily: 'poppins-bold',
+        textAlign: 'center',
+    },
+
     // Dev panel
     devPanel: {
         width: '90%',
@@ -376,21 +393,4 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontFamily: 'poppins-bold',
     },
-
-    // Warning
-    warning: {
-        width: '90%',
-        backgroundColor: '#dc2626',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    warningText: {
-        color: 'white',
-        fontSize: 13,
-        fontFamily: 'poppins-bold',
-        textAlign: 'center',
-    },
-
 });
