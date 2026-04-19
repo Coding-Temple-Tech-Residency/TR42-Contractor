@@ -7,7 +7,7 @@ import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
 import { useAuth } from '../contexts/AuthContext';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 type Status = 'driving' | 'work' | 'offline';
 

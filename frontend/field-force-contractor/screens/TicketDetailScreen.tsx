@@ -9,7 +9,7 @@ const DEV_MODE = true;
 export default function TicketDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { taskId } = route.params;
+  const { taskId, assigned } = route.params;
 
   const [taskStatus, setTaskStatus] = useState<'not_started' | 'in_progress' | 'ready_to_submit'>('not_started');
   const [notes, setNotes] = useState('');
@@ -31,6 +31,7 @@ export default function TicketDetailScreen() {
     description: 'Install new gas pump model XR-500 at station #42. Ensure proper connection to underground tank and test all safety mechanisms before completion.',
     photosRequired: 3,
     photosSubmitted: taskStatus === 'ready_to_submit' ? 3 : 0,
+    pointOfContact: { name: 'John Martinez', phone: '+1 (555) 012-3456' },
   };
 
   const toggleListening = () => {
@@ -121,19 +122,18 @@ export default function TicketDetailScreen() {
     }, 1500);
   };
 
+  const handleAcceptTask = () => {
+    // TODO: API call to accept task
+    navigation.goBack();
+  };
+
+  const handleDeclineTask = () => {
+    // TODO: API call to decline task
+    navigation.goBack();
+  };
+
   return (
     <MainFrame header='home'>
-
-      {/* ── Back Header ── */}
-      <View style={styles.backHeader}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color="white" />
-        </TouchableOpacity>
-        <View style={styles.backHeaderText}>
-          <Text style={styles.backTitle}>Task Details</Text>
-          <Text style={styles.backSubtitle}>ID: #{task.id}</Text>
-        </View>
-      </View>
 
       {/* ── Task Title + Status ── */}
       <View style={styles.section}>
@@ -150,6 +150,20 @@ export default function TicketDetailScreen() {
           </Text>
         </View>
       </View>
+
+      {/* ── Accept and Decline Buttons ── */}
+      {!assigned && (
+        <View style={styles.assignRow}>
+          <TouchableOpacity style={styles.acceptBtn} onPress={handleAcceptTask}>
+            <Ionicons name="checkmark" size={12} color="white" />
+            <Text style={styles.btnText}>Accept</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.declineBtn} onPress={handleDeclineTask}>
+            <Ionicons name="close" size={12} color="white" />
+            <Text style={styles.btnText}>Decline</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ── Location ── */}
       <View style={styles.infoCard}>
@@ -170,6 +184,18 @@ export default function TicketDetailScreen() {
         <View style={styles.infoText}>
           <Text style={styles.infoLabel}>Deadline</Text>
           <Text style={styles.infoValue}>{task.deadline}</Text>
+        </View>
+      </View>
+
+      {/* ── Point of Contact ── */}
+      <View style={styles.infoCard}>
+        <View style={styles.infoIcon}>
+          <Ionicons name="person" size={18} color="#ff8c00" />
+        </View>
+        <View style={styles.infoText}>
+          <Text style={styles.infoLabel}>Point of Contact</Text>
+          <Text style={styles.infoValue}>{task.pointOfContact.name}</Text>
+          <Text style={styles.taskDetail}>{task.pointOfContact.phone}</Text>
         </View>
       </View>
 
@@ -227,7 +253,7 @@ export default function TicketDetailScreen() {
 
       {/* ── Action Buttons ── */}
       <View style={styles.actions}>
-        {taskStatus === 'not_started' && (
+        {taskStatus === 'not_started' && assigned && (
           <TouchableOpacity style={styles.btnPrimary} onPress={handleStartTask}>
             <Ionicons name="play" size={20} color="white" />
             <Text style={styles.btnText}>Start Task</Text>
@@ -398,24 +424,6 @@ const CARD_BG = 'rgba(255,255,255,0.1)';
 const BORDER  = 'rgba(255,255,255,0.15)';
 
 const styles = StyleSheet.create({
-  backHeader: {
-    width: '90%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
-    marginBottom: 16,
-  },
-  backBtn: {
-    width: 40, height: 40,
-    borderRadius: 8,
-    backgroundColor: CARD_BG,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backHeaderText: { flex: 1 },
-  backTitle: { fontSize: 17, fontFamily: 'poppins-bold', color: 'white' },
-  backSubtitle: { fontSize: 11, color: '#9ca3af' },
 
   section: { width: '90%', marginBottom: 12 },
   taskTitle: { fontSize: 20, fontFamily: 'poppins-bold', color: 'white', marginBottom: 8 },
@@ -564,4 +572,28 @@ const styles = StyleSheet.create({
   hintText:    { fontSize: 12, color: '#9ca3af', textAlign: 'center' },
   pinLink:     { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' },
   pinLinkText: { fontSize: 13, fontFamily: 'poppins-bold', color: '#ff8c00', textDecorationLine: 'underline' },
+
+  taskDetail: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+
+  assignRow: {
+    width: '90%',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginBottom: 8,
+  },
+  acceptBtn: {
+    backgroundColor: '#ff8c00',
+    borderRadius: 8, paddingVertical: 8,
+    paddingHorizontal: 14,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 6,
+  },
+  declineBtn: {
+    backgroundColor: '#dc2626',
+    borderRadius: 8, paddingVertical: 8,
+    paddingHorizontal: 14,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 6,
+  },
 });
