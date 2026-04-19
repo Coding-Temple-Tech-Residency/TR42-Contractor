@@ -163,6 +163,10 @@ export default function HomeScreen() {
                             <Ionicons name="sparkles-outline" size={18} color="#f59e0b" />
                             <Text style={styles.devButtonText}>AI Assist</Text>
                         </TouchableOpacity>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('SavedReports')}>
+                            <Ionicons name="document-text-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>Saved Reports</Text>
+                        </TouchableOpacity>
                     </View>
                     <TouchableOpacity style={styles.devLogoutButton} onPress={logout}>
                         <Ionicons name="log-out-outline" size={16} color="#ef4444" />

@@ -24,6 +24,7 @@ import TicketDetailScreen from "./screens/TicketDetailScreen";
 import InspectionScreen from "./screens/InspectionScreen";
 import { InspectionAssistScreen } from "./screens/InspectionAssistScreen";
 import DriveTimeTrackerScreen from "./screens/DriveTimeTrackerScreen";
+import { SavedReportsScreen } from "./screens/SavedReportsScreen";
 
 // ── TROY — Auth screens ──────────────────────────────────────
 import LoginScreen           from "./screens/LoginScreen";
@@ -70,6 +71,9 @@ export type RootStackParamList = {
   InspectionAssist:  undefined;
   DriveTimeTracker:  undefined;
 
+  // ── Aldo — Saved Reports ─────────────────────────────────────
+  SavedReports: undefined;
+
   // ── Charlie — Dashboard (placeholder until real screen is built) ──
   Dashboard:       undefined;
 };
@@ -96,6 +100,8 @@ function RootNavigator() {
     <StackNavigator.Navigator screenOptions={screenConfig.window}>
       {isAuthenticated ? (
         // ── Protected App screens ─────────────────────────────────────────
+        // First screen is Inspection — the daily gate. After passing (or skipping)
+        // it navigates to Dashboard. All other app screens follow.
         <>
           <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
           <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
@@ -109,11 +115,14 @@ function RootNavigator() {
           <StackNavigator.Screen name="LicenseDetails"   component={LicenseScreen}          />
           <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen} />
           <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen} />
+          <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}     />
           {/* SplashScreen kept for Jonathan's direct nav references */}
           <StackNavigator.Screen name="SplashScreen"     component={SplashScreen}           />
         </>
       ) : (
         // ── Public Auth screens ───────────────────────────────────────────
+        // Login is the entry point. After a successful login() call the auth
+        // state flips and React Navigation auto-routes to Inspection above.
         <>
           <StackNavigator.Screen name="Login"           component={LoginScreen}           />
           <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
