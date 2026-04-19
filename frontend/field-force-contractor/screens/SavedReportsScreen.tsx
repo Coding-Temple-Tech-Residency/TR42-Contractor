@@ -175,9 +175,7 @@ export const SavedReportsScreen: FC = () => {
                     contentContainerStyle={s.list}
                     showsVerticalScrollIndicator={false}
                     ListEmptyComponent={<EmptyState />}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={() => fetchReports(true)} tintColor="#a78bfa" />
-                    }
+                    scrollEnabled={false}
                 />
             )}
         </MainFrame>
