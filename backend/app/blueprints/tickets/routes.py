@@ -72,14 +72,12 @@ def update_ticket(ticket_id):
                 start_time_utc = ensure_utc(ticket.start_time)
                 if end_time_utc < start_time_utc:
                     ticket.anomaly_flag = True
-                    ticket.anomaly_reason = "Logged end time is before logged start time."
+                    ticket.anomaly_reason += "Logged end time is before logged start time."
 
                 if ticket_update_data["end_location"] == ticket.start_location and ticket.designated_route is not None:
                     ticket.anomaly_flag = True
-                    ticket.anomaly_reason = "There is a designated route. Logged end location should show as different from start location."
+                    ticket.anomaly_reason += "There is a designated route. Logged end location should show as different from start location."
                 
-                #Check for time anomaly (look into how to check against estimated_duration. How long before anomaly time throws up a flag?)
-                #Consider an hour difference to be significant in the meantime
 
             
 
