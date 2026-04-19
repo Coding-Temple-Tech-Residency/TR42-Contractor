@@ -30,7 +30,9 @@ from app.models import (
     Tickets, Work_orders,
 )
 
-app = create_app('DevelopmentConfig')
+import os
+config = 'ProductionConfig' if os.environ.get('DATABASE_URL') else 'DevelopmentConfig'
+app = create_app(config)
 
 # ── Inspection checklist ──────────────────────────────────────────────────────
 

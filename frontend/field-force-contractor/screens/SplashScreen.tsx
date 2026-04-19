@@ -1,4 +1,4 @@
-import {FC, useEffect, useState} from "react"
+import {FC, useEffect, useRef, useState} from "react"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"
@@ -12,6 +12,7 @@ export const SplashScreen:FC = () =>{
 const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
 const { isAuthenticated, isLoading } = useAuth()
 const [splashDone, setSplashDone] = useState(false)
+const navigated = useRef(false)
 
  useEffect(() =>{
   const timer = setTimeout(() => setSplashDone(true), 2500)
@@ -19,7 +20,8 @@ const [splashDone, setSplashDone] = useState(false)
  },[])
 
  useEffect(() =>{
-  if (splashDone && !isLoading) {
+  if (splashDone && !isLoading && !navigated.current) {
+   navigated.current = true
    nav.navigate(isAuthenticated ? "Dashboard" : "Login")
   }
  },[splashDone, isLoading, isAuthenticated])

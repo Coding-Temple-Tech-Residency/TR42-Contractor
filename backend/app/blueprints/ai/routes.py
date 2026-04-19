@@ -8,9 +8,15 @@ from marshmallow import ValidationError
 
 log = logging.getLogger(__name__)
 
+from app.models import AiInspectionReports, db
 from app.util.auth import token_required
 from . import ai_bp
-from .schemas import inspection_assist_schema
+from .schemas import (
+    inspection_assist_schema,
+    save_report_schema,
+    ai_report_schema,
+    ai_reports_schema,
+)
 
 _client = None
 
@@ -69,3 +75,56 @@ def inspection_assist():
     except Exception as e:
         log.exception('Unexpected error in inspection-assist')
         return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /api/ai/save-report
+# Saves an AI-generated inspection report to the database.
+# The frontend sends the structured report object it received from /inspection-assist.
+# ─────────────────────────────────────────────────────────────────────────────
+@ai_bp.route('/save-report', methods=['POST'])
+@token_required
+def save_report():
+    try:
+        data = save_report_schema.load(request.get_json() or {})
+    except ValidationError as e:
+        return jsonify(e.messages), 400
+
+    report = AiInspectionReports(
+        contractor_id       = request.user_id,
+        title               = data['title'],
+        priority            = data['priority'],
+        category            = data['category'],
+        description         = data['description'],
+        recommended_actions = json.dumps(data['recommended_actions']),
+        raw_notes           = data.get('raw_notes'),
+    )
+    db.session.add(report)
+    db.session.commit()
+
+    # Deserialise recommended_actions back to a list before returning
+    result = ai_report_schema.dump(report)
+    result['recommended_actions'] = json.loads(report.recommended_actions)
+    return jsonify(result), 201
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /api/ai/reports
+# Returns all saved AI inspection reports for the logged-in contractor,
+# newest first.
+# ─────────────────────────────────────────────────────────────────────────────
+@ai_bp.route('/reports', methods=['GET'])
+@token_required
+def get_reports():
+    reports = (
+        db.session.query(AiInspectionReports)
+        .filter_by(contractor_id=request.user_id)
+        .order_by(AiInspectionReports.created_at.desc())
+        .all()
+    )
+
+    results = ai_reports_schema.dump(reports)
+    for item, row in zip(results, reports):
+        item['recommended_actions'] = json.loads(row.recommended_actions)
+
+    return jsonify(results), 200
