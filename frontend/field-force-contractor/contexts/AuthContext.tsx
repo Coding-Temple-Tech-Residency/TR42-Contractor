@@ -10,6 +10,7 @@ import React, {
   ReactNode,
 } from 'react';
 import { getToken, saveToken, deleteToken } from '../utils/secureStorage';
+import { registerAuthFailureHandler } from '../utils/api';
 import type { UserInfo } from '../utils/api';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -54,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    registerAuthFailureHandler(() => { setToken(null); setUser(null); });
+
     const restoreSession = async () => {
       try {
         const stored = await getToken();

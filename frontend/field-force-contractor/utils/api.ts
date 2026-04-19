@@ -4,7 +4,10 @@
 // and throws a typed ApiError on non-2xx responses.
 
 import { Platform } from 'react-native';
-import { getToken } from './secureStorage';
+import { getToken, deleteToken } from './secureStorage';
+
+let _onAuthFailure: (() => void) | null = null;
+export function registerAuthFailureHandler(cb: () => void) { _onAuthFailure = cb; }
 
 // ── Config ─────────────────────────────────────────────────────
 //
@@ -158,6 +161,10 @@ async function request<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 403) {
+      await deleteToken();
+      _onAuthFailure?.();
+    }
     const err = body as Partial<ApiError>;
     throw {
       status: response.status,
