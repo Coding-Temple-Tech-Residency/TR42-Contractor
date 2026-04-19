@@ -9,7 +9,7 @@ import { LoadFonts } from "./utils/LoadFonts";
 };
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 
 // ── Jonathan ──────────────────────────────────────
@@ -76,50 +76,42 @@ export type RootStackParamList = {
 
 const StackNavigator = createNativeStackNavigator();
 
-// ── RootNavigator — must be inside AuthProvider to use useAuth() ──
+// ── RootNavigator — all screens always registered so navigation never fails ──
 function RootNavigator() {
-  const { isAuthenticated } = useAuth();
-
   return (
     <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="SplashScreen">
 
-      {/* ── Always visible (before auth check) ── */}
+      {/* ── Splash ── */}
       <StackNavigator.Screen name="SplashScreen" component={SplashScreen} />
 
-      {!isAuthenticated ? (
-        <>
-          {/* ── Auth screens — only shown when NOT logged in ── */}
-          <StackNavigator.Screen name="Login"           component={LoginScreen}           />
-          <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
-          <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
-          <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
-          <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
-        </>
-      ) : (
-        <>
-          {/* ── App screens — only shown when logged in (token present) ── */}
+      {/* ── Auth screens ── */}
+      <StackNavigator.Screen name="Login"           component={LoginScreen}           />
+      <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
+      <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
+      <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
+      <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
 
-          {/* Charlie */}
-          <StackNavigator.Screen name="Dashboard"       component={HomeScreen}            />
-          <StackNavigator.Screen name="Home"            component={HomeScreen}            />
+      {/* ── App screens ── */}
 
-          {/* Jonathan */}
-          <StackNavigator.Screen name="Blank"           component={Blank}                 />
-          <StackNavigator.Screen name="Contacts"        component={Contacts}              />
-          <StackNavigator.Screen name="Chat"            component={Chat}                  />
+      {/* Charlie */}
+      <StackNavigator.Screen name="Dashboard"       component={HomeScreen}            />
+      <StackNavigator.Screen name="Home"            component={HomeScreen}            />
 
-          {/* Troy */}
-          <StackNavigator.Screen name="Profile"         component={ProfileScreen}         />
-          <StackNavigator.Screen name="LicenseDetails"  component={LicenseScreen}         />
-          <StackNavigator.Screen name="Tickets"         component={TicketsScreen}         />
-          <StackNavigator.Screen name="TicketDetail"    component={TicketDetailScreen}    />
+      {/* Jonathan */}
+      <StackNavigator.Screen name="Blank"           component={Blank}                 />
+      <StackNavigator.Screen name="Contacts"        component={Contacts}              />
+      <StackNavigator.Screen name="Chat"            component={Chat}                  />
 
-          {/* Aldo */}
-          <StackNavigator.Screen name="Inspection"       component={InspectionScreen}      />
-          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen}/>
-          <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}/>
-        </>
-      )}
+      {/* Troy */}
+      <StackNavigator.Screen name="Profile"         component={ProfileScreen}         />
+      <StackNavigator.Screen name="LicenseDetails"  component={LicenseScreen}         />
+      <StackNavigator.Screen name="Tickets"         component={TicketsScreen}         />
+      <StackNavigator.Screen name="TicketDetail"    component={TicketDetailScreen}    />
+
+      {/* Aldo */}
+      <StackNavigator.Screen name="Inspection"       component={InspectionScreen}      />
+      <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen}/>
+      <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}/>
 
     </StackNavigator.Navigator>
   );
