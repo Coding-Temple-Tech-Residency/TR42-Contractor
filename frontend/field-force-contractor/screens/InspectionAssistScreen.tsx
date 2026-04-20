@@ -160,7 +160,7 @@ const AIBubble: FC<AIBubbleProps> = ({ text, time, reportData, saved, onSave }) 
 
 const UserBubble: FC<{ text: string; time: string }> = ({ text, time }) => (
     <View style={s.rowSent}>
-        <View style={{ alignItems: 'flex-end' }}>
+        <View style={s.userColumn}>
             <View style={s.userBubble}>
                 <Text style={s.userText}>{text}</Text>
             </View>
@@ -423,13 +423,17 @@ const s = StyleSheet.create({
         justifyContent: 'flex-end',
         marginVertical: 4,
     },
+    userColumn: {
+        alignItems: 'flex-end',
+        maxWidth:   '80%',
+        flexShrink: 1,
+    },
     userBubble: {
         backgroundColor:         '#ffffff',
         borderRadius:            16,
         borderBottomRightRadius: 4,
         paddingVertical:         12,
         paddingHorizontal:       14,
-        maxWidth:                '80%',
     },
     userText: {
         fontFamily: 'poppins-regular',

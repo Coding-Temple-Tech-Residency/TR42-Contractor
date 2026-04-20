@@ -147,7 +147,7 @@ export default function HomeScreen() {
                 <View style={styles.devPanel}>
                     <Text style={styles.devLabel}>⚙ DEV TOOLS</Text>
                     <View style={styles.devGrid}>
-                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('Login')}>
+                        <TouchableOpacity style={styles.devButton} onPress={() => logout()}>
                             <Ionicons name="log-in-outline" size={18} color="#f59e0b" />
                             <Text style={styles.devButtonText}>Login</Text>
                         </TouchableOpacity>
