@@ -16,13 +16,25 @@ class Auth_users(Base):
     username: Mapped[str] = mapped_column(String(360), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String(500), nullable=False)
     role: Mapped[str] = mapped_column(String(360), nullable=False)  # vendor, client, contractor
-    # biometric_data: Mapped[str] = mapped_column(String(500), nullable=True)
+    
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False) #as seen on shared ERD, confirm how this is being used.
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     profile_photo: Mapped[str] = mapped_column(String(500), nullable=True) #update to linked photo table later
+    
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc),   nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     created_by: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=False)
     updated_by: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=True)
+
+    first_name: Mapped[str] = mapped_column(String(360), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(360), nullable=False)
+    middle_name: Mapped[str] = mapped_column(String(360), nullable=True)
+    contact_number: Mapped[str] = mapped_column(String(20), nullable=False)
+    alternate_number: Mapped[str] = mapped_column(String(20), nullable=True)
+    date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
+    ssn_last_four: Mapped[str] = mapped_column(String(4), nullable=True)
+    address_id: Mapped[str] = mapped_column(String(500), nullable=False)
 
     contractor = relationship("Contractors", uselist=False, back_populates="auth_user", foreign_keys="Contractors.id")
     vendor = relationship("Vendors", uselist=False, back_populates="auth_user", foreign_keys="Vendors.id")
@@ -34,36 +46,81 @@ class Contractors(Base):
     id: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), primary_key = True, nullable=False)
     vendor_id: Mapped[int] = mapped_column(ForeignKey('vendors.id'), nullable=False)
     manager_id: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=False)
-    first_name: Mapped[str] = mapped_column(String(360), nullable=False)
-    last_name: Mapped[str] = mapped_column(String(360), nullable=False)
+
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    tickets_completed: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    tickets_open: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     
+    biometric_enrolled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_onboarded: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_subcontractor: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_fte: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_licensed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_certified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    average_rating: Mapped[float] = mapped_column(Float, nullable=True)
+    years_experience: Mapped[int] = mapped_column(Integer, nullable=True)
+    preferred_job_types: Mapped[str] = mapped_column(String(500), nullable=True)
+
+    # created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
+    # updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    # created_by: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=False)
+    # updated_by: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=True)
+
     license_number: Mapped[str] = mapped_column(String(20), nullable=False)
     expiration_date: Mapped[date] = mapped_column(Date, nullable=False)
     contractor_type: Mapped[str] = mapped_column(String(360), nullable=False)  #clarify if contractor_type is necessary for contractors
-    status: Mapped[str] = mapped_column(String(20), nullable=False)  #clarify if active status is needed (ex. offboarded)
     tax_classification: Mapped[str] = mapped_column(String(360), nullable=False)
-    # approved_status: Mapped[str] = mapped_column(String(100), nullable=False) clarify if approval status is needed for contractors (ex. pending, approved, rejected)
-    contact_number: Mapped[str] = mapped_column(String(20), nullable=False)
-    date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
-    address: Mapped[str] = mapped_column(String(500), nullable=False)
+    
     offline_pin: Mapped[str] = mapped_column(String(10), nullable=True)
 
     auth_user = relationship("Auth_users", back_populates="contractor", foreign_keys=[id])
     
+    # the five commented fields below are moved to auth_users.
+    # first_name: Mapped[str] = mapped_column(String(360), nullable=False)
+    # last_name: Mapped[str] = mapped_column(String(360), nullable=False)
+    # contact_number: Mapped[str] = mapped_column(String(20), nullable=False)
+    # date_of_birth: Mapped[date] = mapped_column(Date, nullable=False)
+    # address: Mapped[str] = mapped_column(String(500), nullable=False)
+
+
 
 class Work_orders(Base):
     __tablename__ = 'work_orders'
 
     id: Mapped[int] = mapped_column(primary_key = True)
     assigned_vendor: Mapped[int] = mapped_column(ForeignKey('vendors.id'), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    client_id: Mapped[int] = mapped_column(ForeignKey('clients.id'), nullable=False)
+    
+    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
-    due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    
+    work_order_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    estimated_start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    estimated_end_date: Mapped[date] = mapped_column(Date, nullable=False)
     current_status: Mapped[str] = mapped_column(String(360), nullable=False)
+
     location: Mapped[str] = mapped_column(String(500), nullable=False) #long and lat should be stored as string and parsed by frontend for mapping, clarify if this should be a separate table for multiple locations per work order
+    location_type: Mapped[str] = mapped_column(String(360), nullable=False)
+    # latitude: Mapped[float] = mapped_column(Float, nullable=True)
+    # longitude: Mapped[float] = mapped_column(Float, nullable=True)
+
     estimated_cost: Mapped[float] = mapped_column(Float, nullable=False)
     estimated_duration: Mapped[float] = mapped_column(Float, nullable=False)
     priority: Mapped[str] = mapped_column(String(360), nullable=False)
+
+    # comments: Mapped[str] = mapped_column(String(500), nullable=True)
+    # well_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    # service_type: Mapped[str] = mapped_column(String(360), nullable=True)
+    # estimated_quantity: Mapped[float] = mapped_column(Float, nullable=True)
+    # is_recurring: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # recurrence_type: Mapped[str] = mapped_column(String(360), nullable=True)
+    # cancelled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    # cancellation_reason: Mapped[str] = mapped_column(String(500), nullable=True)
+    # created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
+    # updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    # created_by: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=False)
+    # updated_by: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=True)
 
 
 
@@ -72,20 +129,26 @@ class Tickets(Base):
 
     id: Mapped[int] = mapped_column(primary_key = True)
     work_order_id: Mapped[int] = mapped_column(ForeignKey('work_orders.id'), index=True, nullable=False)
+    invoice_id: Mapped[int] = mapped_column(Integer, nullable=True)
     vendor_id: Mapped[int] = mapped_column(ForeignKey('vendors.id'), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     priority: Mapped[str] = mapped_column(String(360), nullable=False)
     status: Mapped[str] = mapped_column(String(360), nullable=False) #ex. to_do, in_progress, completed
 
     assigned_contractor: Mapped[int] = mapped_column(ForeignKey('contractors.id'))
-    contractor_assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    contractor_assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True)) #change to assigned_at
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True) #due_date
     start_location: Mapped[str] = mapped_column(String(500), nullable=True)
     end_location: Mapped[str] = mapped_column(String(500), nullable=True)
-    designated_route: Mapped[str] = mapped_column(String(500), nullable=True)
+    designated_route: Mapped[str] = mapped_column(String(500), nullable=True) #route
     
+    estimated_duration: Mapped[float] = mapped_column(Float, nullable=True)
+    service_type: Mapped[str] = mapped_column(String(360), nullable=True)
+
     estimated_quantity: Mapped[float] = mapped_column(Float)
     unit: Mapped[str] = mapped_column(String(360))
     special_requirements: Mapped[str] = mapped_column(String(500))
@@ -93,6 +156,13 @@ class Tickets(Base):
     contractor_notes: Mapped[str] = mapped_column(String(500), nullable=True)
     anomaly_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     anomaly_reason: Mapped[str] = mapped_column(String(500), nullable=True)
+
+    # updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    # created_by: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=False)
+    # updated_by: Mapped[int] = mapped_column(ForeignKey('auth_users.id'), nullable=True)
+    # additional_information: Mapped[str] = mapped_column(String(500), nullable=True)
+
+
 
 
 #vendors and clients to be updated
@@ -206,6 +276,9 @@ class DutyLogs(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
 
     session = relationship("DutySessions", back_populates="logs")
+
+
+
 
 
 class Vendors(Base):
