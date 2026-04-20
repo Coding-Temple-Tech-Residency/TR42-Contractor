@@ -1,82 +1,50 @@
-# TR Project Template
+# Welcome to your Expo app 👋
 
-## Project Information
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
-**Project Name:**  Contractor Mobile 
-**Team Name:**  
-**Team Members:**  
-- Nicole Cespedes- Backend
-- Edward Cochran- Backend
-- Jonathan Hubbard - Full Stack (Frontend focus)
-- Troy Wenzel - Frontend
-- Johnna Auman - Cybersecurity
-- Charlie Estrada - Frontend
-- James Bustamante - Backend
-- Aldo Pena Herrera - Fullstack (Backend focus)
+## Get started
 
+1. Install dependencies
 
-**Tech Stack:** 
-Python Flask, SQL ALCHEMY 
-REACT NATIVE EXPO
+   ```bash
+   npm install
+   ```
 
-## Project Overview
+2. Start the app
 
-Provide a short description of your project:
+   ```bash
+   npx expo start
+   ```
 
-- What problem does it solve?  
-- Who is the target user?  
-- What core features were completed?  
+In the output, you'll find options to open the app in a
 
-## Setup & Documentation
+- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
-Include any necessary documentation below:
+You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-- Setup instructions  
-- Required environment variables
-- 
-- API documentation (if applicable)  
-- Test credentials (if applicable)  
-- Deployment link (if available)  
+## Get a fresh project
 
+When you're ready, run:
 
-## Authentication
+```bash
+npm run reset-project
+```
 
-The backend uses JWT-based authentication for protected API routes.
+This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-### Token Expiry
+## Learn more
 
-JWT access tokens expire **14 hours** after they are issued.
+To learn more about developing your project with Expo, look at the following resources:
 
-The token payload includes:
+- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
-- `iat`: token issued time
-- `exp`: token expiration time
-- `sub`: authenticated user ID
-- `role`: authenticated user role
+## Join the community
 
-Current configuration:
+Join our community of developers creating universal apps.
 
-```python
-'exp': datetime.now(timezone.utc) + timedelta(hours=14)
-
-## Notes
-
-List any known limitations, incomplete features, or important technical considerations.
-
-## Development Standards Reminder
-
-All submissions should reflect professional engineering standards:
-
-- Write clean, readable, and modular code  
-- Use clear naming conventions  
-- Remove unused files, variables, and console logs  
-- Follow consistent formatting and linting practices  
-- Write meaningful commit messages  
-- Keep branches organized and avoid pushing broken code to main  
-- Review teammate pull requests respectfully and constructively  
-
-Your repository should be organized, understandable, and demo-ready.
-
-## Intellectual Property Notice
-
-This project was created as part of a Coding Temple Tech Residency. All work produced during the residency is considered the intellectual property of Coding Temple or the sponsoring employer, unless otherwise stated in a signed agreement. By contributing to this project, you acknowledge and agree to these terms.
+- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
+- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.

@@ -1,0 +1,128 @@
+import { useEffect, useState } from "react";
+import { LoadFonts } from "./utils/LoadFonts";
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { AuthProvider }  from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+
+
+// ── Jonathan ──────────────────────────────────────
+import {Blank} from "./screens/Blank"; //Test playground page will be removed for development purpose only!
+import HomeScreen from "./screens/HomeScreen"
+import {screenConfig} from "./constants/ScreenConfig";
+import { Contacts } from "./screens/ContactScreen";
+import { SplashScreen } from "./screens/SplashScreen";
+import {Chat} from "./screens/ChatScreen";
+import TicketsScreen from "./screens/TicketsScreen";
+import TicketDetailScreen from "./screens/TicketDetailScreen";
+import InspectionScreen from "./screens/InspectionScreen";
+ 
+// ── Troy — Auth screens ───────────────────────────
+import LoginScreen           from "./screens/LoginScreen";
+import OfflineLoginScreen    from "./screens/OfflineLoginScreen";
+import BiometricScreen       from "./screens/BiometricScreen";
+import PasswordResetScreen   from "./screens/PasswordResetScreen";
+import OfflinePinResetScreen from "./screens/OfflinePinResetScreen";
+ 
+// ── Troy — Profile screens ────────────────────────
+import ProfileScreen     from "./screens/ProfileScreen";
+import LicenseScreen     from "./screens/LicenseScreen";
+import TaskHistoryScreen from "./screens/TaskHistoryScreen";
+ 
+export type RootStackParamList = {
+  // ── Jonathan — App screens ───────────────────────────────────
+  SplashScreen:  undefined;
+  Home:          undefined;
+  Blank:         undefined;
+  // ── Charlie — App screens ───────────────────────────────────
+  Contacts:      undefined;
+  Chat:          undefined;
+  Tickets:       undefined;
+  TicketDetail:  { taskId: number };
+
+  // ── Jonathan — Work Orders (placeholder until real screen built) ──
+  JobDetail:     { jobId: string; workOrderId: string };
+  // ── Charlie — Work Orders (placeholder until real screen built) ──
+  WorkOrders:    undefined;
+
+  // ── Troy — Auth screens ──────────────────────────────────────
+  Login:           undefined;
+  OfflineLogin:    undefined;
+
+  // BiometricCheck receives the pending token and user from LoginScreen.
+  // login() is NOT called until the biometric scan succeeds here, ensuring
+  // isAuthenticated never becomes true before identity is verified.
+  BiometricCheck: {
+    pendingToken: string;
+    pendingUser:  { id: number; username: string; role: string };
+  };
+
+  PasswordReset:   undefined;
+  OfflinePinReset: undefined;
+
+  // ── Troy — Profile screens ───────────────────────────────────
+  Profile:         undefined;
+  LicenseDetails:  undefined;
+  TaskHistory:     undefined;
+
+  // ── Aldo — Inspection screen ─────────────────────────────────
+  Inspection:      undefined;
+
+  // ── Charlie — Dashboard (placeholder until real screen is built) ──
+  Dashboard:       undefined;
+};
+
+const StackNavigator = createNativeStackNavigator();
+        
+export default function App() {
+  // ── Jonathan — Import External Fonts ─────────────────────────
+  // Loads custom fonts when the app starts, then updates state so
+  // the app only renders after the fonts are ready.
+  const [externalFontsLoaded, setExternalFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      let isLoaded = await LoadFonts();
+      setExternalFontsLoaded(isLoaded);
+    };
+    load();
+  }, []);
+ 
+  return (
+    (externalFontsLoaded) &&
+    <ThemeProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <StackNavigator.Navigator
+            screenOptions={screenConfig.window}
+            initialRouteName="SplashScreen"
+          >
+            {/* Jonathan */}
+            <StackNavigator.Screen name="SplashScreen" component={SplashScreen} />
+            <StackNavigator.Screen name="Blank"        component={Blank} />
+            <StackNavigator.Screen name="Contacts"     component={Contacts} />
+            <StackNavigator.Screen name="Chat"         component={Chat} />
+
+            {/* Charlie */}
+            <StackNavigator.Screen name="Home"      component={HomeScreen} />
+            <StackNavigator.Screen name="Dashboard" component={HomeScreen} />
+
+            {/* Troy */}
+            <StackNavigator.Screen name="Login"           component={LoginScreen}           />
+            <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
+            <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
+            <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
+            <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
+            <StackNavigator.Screen name="Profile"         component={ProfileScreen}         />
+            <StackNavigator.Screen name="LicenseDetails"  component={LicenseScreen}         />
+            <StackNavigator.Screen name="TaskHistory"     component={TaskHistoryScreen}     />
+            <StackNavigator.Screen name="Tickets"         component={TicketsScreen}         />
+            <StackNavigator.Screen name="TicketDetail"    component={TicketDetailScreen}    />
+            <StackNavigator.Screen name="Inspection"      component={InspectionScreen}      />
+
+          </StackNavigator.Navigator>
+        </NavigationContainer>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}

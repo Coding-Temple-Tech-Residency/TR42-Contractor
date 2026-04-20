@@ -1,0 +1,21 @@
+services:
+  field-force-contractor:
+    build: .
+    container_name: field-force-contractor_c
+    ports:
+     - "8081:8081"   # Metro
+     - "19000:19000" # Expo app
+     - "19001:19001" # Expo LAN
+     - "19002:19002" # Dev tools
+    volumes:
+     - .:/app
+     - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    stdin_open: true
+    tty: true
+  
+  
+
+
+
