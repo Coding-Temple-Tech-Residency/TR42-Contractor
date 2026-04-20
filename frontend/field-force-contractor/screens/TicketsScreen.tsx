@@ -11,6 +11,7 @@ interface Task {
   deadline?: string;
   location?: string;
   assigned?: boolean;
+  completedAt?: string;
 }
 
 export default function TicketsScreen() {
@@ -20,8 +21,8 @@ export default function TicketsScreen() {
     { id: 4, title: 'Quarterly Safety Inspection', completed: false, deadline: 'Tomorrow, 2:00 PM', location: 'Station #38', assigned: true },
     { id: 5, title: 'Maintenance Check', completed: false, deadline: 'Mar 22, 10:00 AM', location: 'Station #15', assigned: false },
     { id: 6, title: 'Tank Replacement', completed: false, deadline: 'Mar 23, 3:00 PM', location: 'Station #22', assigned: false },
-    { id: 1, title: 'Update project documentation', completed: true, assigned: true },
-    { id: 2, title: 'Review team feedback', completed: true, assigned: true },
+    { id: 1, title: 'Update project documentation', completed: true, assigned: true, completedAt: new Date().toISOString() },
+    { id: 2, title: 'Review team feedback', completed: true, assigned: true, completedAt: new Date().toISOString() },
   ]);
 
   const toggleTask = (id: number) => {
@@ -32,13 +33,17 @@ export default function TicketsScreen() {
 
   const handleTaskClick = (task: Task) => {
     if (!task.completed && task.deadline) {
-        navigation.navigate('TicketDetail' as never, { taskId: task.id } as never);
+        navigation.navigate('TicketDetail' as never, { taskId: task.id, assigned: task.assigned } as never);
     }
   };
 
   const assignedTasks = tasks.filter(t => t.assigned && !t.completed);
   const availableTasks = tasks.filter(t => !t.assigned && !t.completed);
-  const completedTasks = tasks.filter(t => t.completed);
+  const recentlyCompleted = tasks.filter(t => {
+    if (!t.completed || !t.completedAt) return false;
+    const diff = Date.now() - new Date(t.completedAt).getTime();
+    return diff <= 24 * 60 * 60 * 1000;
+    });
 
   return (
     <MainFrame header='home'>
@@ -50,6 +55,37 @@ export default function TicketsScreen() {
                 {assignedTasks.length} assigned • {availableTasks.length} available
             </Text>
         </View>
+
+        {/* Available Tasks */}
+        {availableTasks.length > 0 && (
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Available Tasks</Text>
+                {availableTasks.map(task => (
+                    <TouchableOpacity
+                        key={task.id}
+                        style={styles.taskCard}
+                        onPress={() => handleTaskClick(task)}
+                    >
+                        <Ionicons name="ellipse-outline" size={20} color="#9ca3af" />
+                        <View style={styles.taskText}>
+                            <Text style={styles.taskTitle}>{task.title}</Text>
+                            {task.deadline && (
+                                <Text style={styles.taskDetail}>
+                                    {task.location} • Due {task.deadline}
+                                </Text>
+                            )}
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
+                    </TouchableOpacity>
+                ))}
+            </View>
+        )}
+
+        {tasks.length === 0 && (
+            <View style={styles.empty}>
+                <Text style={styles.emptyText}>No tasks available</Text>
+            </View>
+        )}
 
         {/* Assigned Tasks */}
         {assignedTasks.length > 0 && (
@@ -85,36 +121,27 @@ export default function TicketsScreen() {
             </View>
         )}
 
-        {/* Available Tasks */}
-        {availableTasks.length > 0 && (
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Available Tasks</Text>
-                {availableTasks.map(task => (
-                    <TouchableOpacity
-                        key={task.id}
-                        style={styles.taskCard}
-                        onPress={() => handleTaskClick(task)}
-                    >
-                        <Ionicons name="ellipse-outline" size={20} color="#9ca3af" />
-                        <View style={styles.taskText}>
-                            <Text style={styles.taskTitle}>{task.title}</Text>
-                            {task.deadline && (
-                                <Text style={styles.taskDetail}>
-                                    {task.location} • Due {task.deadline}
-                                </Text>
-                            )}
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
-                    </TouchableOpacity>
-                ))}
+        {/* Recently Completed */}
+        {recentlyCompleted.length > 0 && (
+        <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+            <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+            <Text style={styles.sectionTitle}>Completed (Last 24hrs)</Text>
             </View>
-        )}
-
-        {tasks.length === 0 && (
-            <View style={styles.empty}>
-                <Text style={styles.emptyText}>No tasks available</Text>
+            {recentlyCompleted.map(task => (
+            <View key={task.id} style={styles.taskCard}>
+                <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                <View style={styles.taskText}>
+                <Text style={[styles.taskTitle, { color: '#9ca3af' }]}>{task.title}</Text>
+                {task.location && (
+                    <Text style={styles.taskDetail}>{task.location}</Text>
+                )}
+                </View>
             </View>
+            ))}
+        </View>
         )}
+        
 
     </MainFrame>
  );

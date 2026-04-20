@@ -7,7 +7,7 @@ export const Menus = {
   // component is used in MenuItem as the target screen name passed to navigation.navigate().
   
   Main: [
-    { label: "Home", component: "Home" },
+    { label: "Dashboard", component: "Home" },
     { label: "Login", component: "Login" },
     { label: "Profile", component: "Profile" },
     { label: "In Progress", component: "Blank" },
@@ -21,7 +21,7 @@ export const Menus = {
 
   Footer:[
 
-    {label:"Home",icon:Assets.icons.HomeIcon,component:"Home"},
+    {label:"Dashboard",icon:Assets.icons.HomeIcon,component:"Home"},
     {label:"Tickets",icon:Assets.icons.TaskIcon,component:"Tickets"},
     {label:"Contacts",icon:Assets.icons.ContactIcon,component:"Contacts"}
  ],
