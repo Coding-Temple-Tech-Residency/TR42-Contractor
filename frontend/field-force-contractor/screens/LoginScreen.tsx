@@ -7,7 +7,7 @@
 //   • ff-logo-name.png centered header bar (status-bar spacing handled by MainFrame)
 //   • No header/footer menus — user isn't authenticated yet
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -27,7 +27,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainFrame }          from '../components/MainFrame';
 import { RootStackParamList } from '@/App';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
-import { api, LoginResponse, ApiError } from '../utils/api';
+import { api, pingServer, LoginResponse, ApiError } from '../utils/api';
 import { useAuth }            from '../contexts/AuthContext';
 
 // This tells TypeScript what screen we're on so navigation.navigate()
@@ -102,7 +102,21 @@ export default function LoginScreen() {
   const [identifier,   setIdentifier]   = useState(''); // holds email OR username depending on LOGIN_FIELD
   const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false); // toggles the eye icon
-  const [isSubmitting, setIsSubmitting] = useState(false); // shows spinner on button
+  const [isSubmitting,      setIsSubmitting]      = useState(false); // shows spinner on button
+  // Flips to true if login is taking longer than ~8s — usually means Render
+  // is cold-starting and we want to reassure the user it's not hanging.
+  const [isSlowConnection,  setIsSlowConnection]  = useState(false);
+  const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Wake the Render free-tier backend up as soon as the login screen mounts,
+  // so by the time the user finishes typing their credentials the server is
+  // (hopefully) already warm. Fire-and-forget — errors are ignored.
+  useEffect(() => {
+    pingServer();
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
+  }, []);
 
   // Online/Offline toggle — this is a UI state indicator used for testing.
   // Tapping the pill just flips this value. It does NOT navigate by itself.
@@ -189,6 +203,10 @@ export default function LoginScreen() {
 
     setIsSubmitting(true);
     setLoginError('');
+    setIsSlowConnection(false);
+    // If the call is still running after 8s, assume Render is cold-starting
+    // and show a gentle "waking server up" message so the user doesn't bail.
+    slowTimerRef.current = setTimeout(() => setIsSlowConnection(true), 8_000);
 
     try {
       if (DEV_MODE) {
@@ -226,7 +244,12 @@ export default function LoginScreen() {
         setLoginError(apiErr.error || 'Something went wrong. Please try again.');
       }
     } finally {
+      if (slowTimerRef.current) {
+        clearTimeout(slowTimerRef.current);
+        slowTimerRef.current = null;
+      }
       setIsSubmitting(false);
+      setIsSlowConnection(false);
     }
   };
 
@@ -302,6 +325,18 @@ export default function LoginScreen() {
               <View style={styles.errorBanner}>
                 <Ionicons name="alert-circle-outline" size={18} color={colors.error} />
                 <Text style={styles.errorBannerText}>{loginError}</Text>
+              </View>
+            )}
+
+            {/* Cold-start notice: Render free tier sleeps after ~15 min idle.
+                We show this after the login has been pending for 8s to reassure
+                the user that the spinner isn't stuck. */}
+            {isSlowConnection && loginError === '' && (
+              <View style={styles.errorBanner}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.errorBannerText}>
+                  Waking server up — first login after idle can take up to a minute.
+                </Text>
               </View>
             )}
 
