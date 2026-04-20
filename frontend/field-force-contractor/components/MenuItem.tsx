@@ -1,11 +1,11 @@
 import {Text,View,Pressable,Image} from "react-native"
-import {FC,useState} from "react"
-import {Styles} from "../constants/Styles"
-import { MenuItems } from "./Menu"
-import {Assets} from "../constants/Assets"
+import {FC} from "react"
+import {Styles} from "@/constants/Styles"
+import { MenuItems } from "@/components/Menu"
+import {Assets} from "@/constants/Assets"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import{RootStackParamList} from "../App"
+import{RootStackParamList} from "@/App"
 type Props = {
 menuItem:MenuItems
 }

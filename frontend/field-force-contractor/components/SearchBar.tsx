@@ -1,21 +1,25 @@
 import {View,TextInput,Pressable,Text,Image} from 'react-native';
-import {Styles} from '../constants/Styles';
+import {Styles} from '@/constants/Styles';
 import {Children, FC, ReactNode} from "react";
-import { Assets } from "../constants/Assets";
+import { Assets } from "@/constants/Assets";
 import {useState} from "react";
 import { Background } from '@react-navigation/elements';
+import {TextToSpeech} from "@/utils/SpeechRecognition"
+
 type props = {
 
     placeHolder?:string,
     buttonText?: string
+    onClick:Function
 }
 export const SearchBar:FC<props> = (props) => {
  const [searchPlaceHolder, setSearchPlaceHolder] = useState(props.placeHolder || "Search...");
  const [buttonText, setButtonText] = useState(props.buttonText || "Submit");
+ const[message,setMessage] = useState<string>("");
     return(<>
     <View style={Styles.SearchBar.Bar}>
-        <TextInput style={Styles.SearchBar.SearchInput} placeholder={searchPlaceHolder}/>
-        <Pressable style={({pressed}) => 
+        <TextInput value={message} onChangeText={setMessage} style={Styles.SearchBar.SearchInput} placeholder={searchPlaceHolder}/>
+        <Pressable onPress = {() =>{props.onClick(message); setMessage("");}} style={({pressed}) => 
             [Styles.SearchBar.SearchButton,
               {backgroundColor: (pressed) ? Styles.SearchBar.SearchButtonPressed.backgroundColor : Styles.SearchBar.SearchButton.backgroundColor}
             ]}>
@@ -31,8 +35,8 @@ export const SearchBar:FC<props> = (props) => {
                   }
               }
          </Pressable>
-          <Pressable style={({pressed}) =>[
-
+          <Pressable  style={({pressed}) =>[
+            
             Styles.SearchBar.TextToSpeechButton,
             {
               backgroundColor: (pressed) ? Styles.SearchBar.TextToSpeechButtonPressed.backgroundColor : Styles.SearchBar.TextToSpeechButton.backgroundColor

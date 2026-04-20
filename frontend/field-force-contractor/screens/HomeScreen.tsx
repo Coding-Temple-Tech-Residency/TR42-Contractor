@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
+import { useAuth } from '../contexts/AuthContext';
+
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 type Status = 'driving' | 'work' | 'offline';
 
@@ -24,6 +30,8 @@ const recentActivities = [
 ];
 
 export default function HomeScreen() {
+    const navigation = useNavigation<Nav>();
+    const { logout } = useAuth();
     const [currentStatus, setCurrentStatus] = useState<Status>('work');
     const [isStatusOpen, setIsStatusOpen] = useState(false);
 
@@ -122,6 +130,48 @@ export default function HomeScreen() {
             <View style={styles.warning}>
                 <Text style={styles.warningText}>Over 11 hours drive time, time for a break</Text>
             </View>
+
+            {/* ── DEV-ONLY: Truck Inspection entry point ─────────────────────
+                Temporary trigger until the real business rule is wired up
+                (inspection should fire when a ticket is accepted — pending
+                Edward / DOT research). Remove once that flow is in place. */}
+            <TouchableOpacity
+                style={styles.devBtn}
+                onPress={() => navigation.navigate('Login')}
+                activeOpacity={0.85}
+            >
+                <Ionicons name="log-in-outline" size={16} color="#f59e0b" />
+                <Text style={styles.devBtnText}>Login Screen (Dev)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.devBtn}
+                onPress={() => navigation.navigate('Inspection')}
+                activeOpacity={0.85}
+            >
+                <Ionicons name="construct-outline" size={16} color="#f59e0b" />
+                <Text style={styles.devBtnText}>Open Truck Inspection (Dev)</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.devBtn}
+                onPress={() => navigation.navigate('DriveTimeTracker')}
+                activeOpacity={0.85}
+            >
+                <Ionicons name="speedometer-outline" size={16} color="#f59e0b" />
+                <Text style={styles.devBtnText}>Drive Time Tracker (Dev)</Text>
+            </TouchableOpacity>
+
+            {/* DEV — Log out and return to Login. Also run seed_dev.py on the
+                backend to reset demo data before showing the login flow. */}
+            <TouchableOpacity
+                style={[styles.devBtn, styles.devLogoutBtn]}
+                onPress={logout}
+                activeOpacity={0.85}
+            >
+                <Ionicons name="log-out-outline" size={16} color="#ef4444" />
+                <Text style={[styles.devBtnText, { color: '#ef4444' }]}>Logout (Dev)</Text>
+            </TouchableOpacity>
 
         </MainFrame>
     );
@@ -286,6 +336,32 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: 'poppins-bold',
         textAlign: 'center',
+    },
+
+    // Dev-only entry point to Truck Inspection — remove when the real
+    // trigger (ticket accepted) is wired up.
+    devBtn: {
+        width: '90%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245,158,11,0.08)',
+        marginBottom: 24,
+    },
+    devBtnText: {
+        color: '#f59e0b',
+        fontSize: 13,
+        fontFamily: 'poppins-bold',
+    },
+    devLogoutBtn: {
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239,68,68,0.08)',
     },
 
 });

@@ -79,22 +79,134 @@ class Tickets(Base):
 
     assigned_contractor: Mapped[int] = mapped_column(ForeignKey('contractors.id'))
     contractor_assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    task_created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     start_location: Mapped[str] = mapped_column(String(500), nullable=True)
     end_location: Mapped[str] = mapped_column(String(500), nullable=True)
-
+    designated_route: Mapped[str] = mapped_column(String(500), nullable=True)
+    
     estimated_quantity: Mapped[float] = mapped_column(Float)
     unit: Mapped[str] = mapped_column(String(360))
     special_requirements: Mapped[str] = mapped_column(String(500))
     
-    contractor_notes: Mapped[str] = mapped_column(String(500))
+    contractor_notes: Mapped[str] = mapped_column(String(500), nullable=True)
     anomaly_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     anomaly_reason: Mapped[str] = mapped_column(String(500), nullable=True)
 
 
 #vendors and clients to be updated
+
+# ── Inspection models ─────────────────────────────────────────────────────────
+# Checklist sections and items are stored in the DB so vendors/admins can
+# configure them dynamically — no code changes needed to add a new section.
+
+class InspectionTemplates(Base):
+    """A named checklist template (e.g. 'Truck Pre-Trip Inspection')."""
+    __tablename__ = 'inspection_templates'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(String(500), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
+
+    sections = relationship("InspectionSections", back_populates="template", order_by="InspectionSections.display_order")
+
+
+class InspectionSections(Base):
+    """A section within a template (e.g. 'Engine Compartment', 'Lights Check')."""
+    __tablename__ = 'inspection_sections'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    template_id: Mapped[int] = mapped_column(ForeignKey('inspection_templates.id'), nullable=False)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    template = relationship("InspectionTemplates", back_populates="sections")
+    items = relationship("InspectionItems", back_populates="section", order_by="InspectionItems.display_order")
+
+
+class InspectionItems(Base):
+    """An individual check within a section (e.g. 'Check oil level')."""
+    __tablename__ = 'inspection_items'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    section_id: Mapped[int] = mapped_column(ForeignKey('inspection_sections.id'), nullable=False)
+    label: Mapped[str] = mapped_column(String(300), nullable=False)
+    display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    section = relationship("InspectionSections", back_populates="items")
+
+
+class Inspections(Base):
+    """A completed (or in-progress) inspection by a contractor."""
+    __tablename__ = 'inspections'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    template_id: Mapped[int] = mapped_column(ForeignKey('inspection_templates.id'), nullable=False)
+    contractor_id: Mapped[int] = mapped_column(ForeignKey('contractors.id'), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default='pending')  # pending, passed, failed, skipped
+    no_issues_found: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    skipped: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
+    notes: Mapped[str] = mapped_column(String(1000), nullable=True)
+
+    template = relationship("InspectionTemplates")
+    results = relationship("InspectionResults", back_populates="inspection")
+
+
+class InspectionResults(Base):
+    """Per-item result for an inspection (passed or failed + optional note)."""
+    __tablename__ = 'inspection_results'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    inspection_id: Mapped[int] = mapped_column(ForeignKey('inspections.id'), nullable=False)
+    item_id: Mapped[int] = mapped_column(ForeignKey('inspection_items.id'), nullable=False)
+    passed: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    note: Mapped[str] = mapped_column(String(500), nullable=True)
+
+    inspection = relationship("Inspections", back_populates="results")
+    item = relationship("InspectionItems")
+
+
+# ── Drive Time / Hours of Service models ──────────────────────────────────────
+# FMCSA-style duty status tracking. A DutySession represents a shift (from
+# first status change to end-of-day). DutyLogs are the individual segments
+# within that session (driving, on-duty, off-duty, sleeper-berth).
+
+class DutySessions(Base):
+    """A contractor's duty session for a given day / shift."""
+    __tablename__ = 'duty_sessions'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    contractor_id: Mapped[int] = mapped_column(ForeignKey('contractors.id'), nullable=False)
+    current_status: Mapped[str] = mapped_column(String(20), nullable=False, default='off_duty')  # driving, on_duty, off_duty, sleeper_berth
+    session_date: Mapped[date] = mapped_column(Date, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
+    ended_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
+
+    logs = relationship("DutyLogs", back_populates="session", order_by="DutyLogs.start_time")
+
+
+class DutyLogs(Base):
+    """A single duty segment within a session (e.g. 6:30 AM–10:15 AM Driving)."""
+    __tablename__ = 'duty_logs'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey('duty_sessions.id'), nullable=False)
+    contractor_id: Mapped[int] = mapped_column(ForeignKey('contractors.id'), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)  # driving, on_duty, off_duty, sleeper_berth
+    start_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)  # null = currently active
+    duration_seconds: Mapped[int] = mapped_column(Integer, nullable=True)  # computed when end_time is set
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
+
+    session = relationship("DutySessions", back_populates="logs")
+
 
 class Vendors(Base):
     __tablename__ = 'vendors'

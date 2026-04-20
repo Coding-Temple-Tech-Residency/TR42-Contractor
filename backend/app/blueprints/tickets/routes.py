@@ -7,6 +7,15 @@ from . import tickets_bp
 from app.util.auth import encode_token, token_required, vendor_required
 from datetime import datetime, timezone
 
+
+def ensure_utc(dt):
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        # Assume naive datetimes are in UTC (or adjust as needed)
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
 #created by vendor - must get info from work order and assign to contractor
 #contractor can update status, add notes.
 #any anomaly flags or updates will be sent to vendor and client to view
@@ -35,8 +44,6 @@ def update_ticket(ticket_id):
 
         #IF UPDATING STATUS: Check for time start/end and location start/end
         if key == "status":
-            if value not in ["to_do", "in_progress", "completed"]:
-                return jsonify({'error': 'Invalid status value'}), 400
             
             if value == "in_progress":
                 if ticket.start_time:
@@ -58,7 +65,24 @@ def update_ticket(ticket_id):
                     return jsonify({'error': 'end_time required when completing'}), 400
                 if "end_location" not in ticket_update_data:
                     return jsonify({'error': 'end_location required when completing'}), 400
-                   
+                
+                #ANOMALY CHECKS:
+                
+                end_time_utc = ensure_utc(ticket_update_data["end_time"])
+                start_time_utc = ensure_utc(ticket.start_time)
+                if end_time_utc < start_time_utc:
+                    ticket.anomaly_flag = True
+                    ticket.anomaly_reason = "Logged end time is before logged start time."
+
+                if ticket_update_data["end_location"] == ticket.start_location and ticket.designated_route is not None:
+                    ticket.anomaly_flag = True
+                    ticket.anomaly_reason = "There is a designated route. Logged end location should show as different from start location."
+                
+                #Check for time anomaly (look into how to check against estimated_duration. How long before anomaly time throws up a flag?)
+                #Consider an hour difference to be significant in the meantime
+
+            
+
         setattr(ticket, key, value)
 
     db.session.commit()

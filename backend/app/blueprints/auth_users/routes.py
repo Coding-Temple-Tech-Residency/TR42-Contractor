@@ -14,8 +14,28 @@ def login():
         data = login_schema.load(request.json)
     except ValidationError as e:
         return jsonify(e.messages), 400
-    
-    user = db.session.query(Auth_users).where(Auth_users.username==data['username']).first()
+
+    # Frontend sends `identifier` (accepts email OR username); legacy clients
+    # may still send `email` or `username` directly — accept any of the three.
+    identifier = (
+        data.get('identifier')
+        or data.get('email')
+        or data.get('username')
+        or ''
+    ).strip()
+
+    if not identifier:
+        return jsonify({
+            'error': 'Please provide an email address or username.',
+            'code':  'MISSING_IDENTIFIER',
+        }), 400
+
+    # Presence of '@' is a strong enough signal that the contractor typed an
+    # email. Both columns are unique so only one lookup is needed per request.
+    if '@' in identifier:
+        user = db.session.query(Auth_users).where(Auth_users.email == identifier).first()
+    else:
+        user = db.session.query(Auth_users).where(Auth_users.username == identifier).first()
 
     if user and check_password_hash(user.password, data['password']):
         token = encode_token(user.id, user.role)
@@ -24,9 +44,10 @@ def login():
             'token': token,
             'user': auth_user_schema.dump(user)
         }), 200
-    
+
+    # Generic message — don't leak whether the email/username was recognised
     return jsonify({
-        'error': 'Invalid username or password.',
+        'error': 'Invalid credentials.',
         'code':  'INVALID_CREDENTIALS',
     }), 401
 

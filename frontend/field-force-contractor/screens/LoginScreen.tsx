@@ -35,12 +35,16 @@ import { useAuth }            from '../contexts/AuthContext';
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⚙️  STAKEHOLDER CONFIG — change this one line after Tuesday's meeting
+// ⚙️  STAKEHOLDER CONFIG — change this one line if the policy shifts
 //
-//   'email'    = contractor logs in with their email address
-//   'username' = contractor logs in with a username
+//   'email'    = contractor logs in with their email address only
+//   'username' = contractor logs in with a username only
+//   'either'   = single field accepts email OR username (current default)
+//
+// The backend /auth/login endpoint detects '@' and looks up the correct
+// column, so all three options send the same `identifier` key over the wire.
 // ─────────────────────────────────────────────────────────────────────────────
-const LOGIN_FIELD: 'email' | 'username' = 'username';
+const LOGIN_FIELD: 'email' | 'username' | 'either' = 'either';
 
 // Labels, placeholder text, and keyboard type are all derived from the flag above
 // so only the one line above ever needs to change — nothing else in this file
@@ -54,6 +58,14 @@ const FIELD_CONFIG = {
   username: {
     label:          'Username',
     placeholder:    'Enter your username',
+    keyboardType:   'default' as const,
+    autoCapitalize: 'none' as const,
+  },
+  // 'either' — single field mode. Default keyboard since we can't assume
+  // they'll type an email; email-address keyboard would hide the period key.
+  either: {
+    label:          'Username',
+    placeholder:    'Username',
     keyboardType:   'default' as const,
     autoCapitalize: 'none' as const,
   },
@@ -71,7 +83,7 @@ const fieldConfig = FIELD_CONFIG[LOGIN_FIELD];
 //
 //  Set to false when the backend is ready and you want real API calls.
 // ─────────────────────────────────────────────────────────────────────────────
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 // A simple function to check if an email looks valid.
 // It uses a "regex" (regular expression) to check the format.
@@ -191,8 +203,10 @@ export default function LoginScreen() {
       }
 
       // ── PRODUCTION: call the real backend /auth/login endpoint ────────
+      // Always send `identifier` — the backend detects whether it's an email
+      // or username based on the '@' character and picks the right column.
       const res = await api.post<LoginResponse>('/auth/login', {
-        [LOGIN_FIELD]: identifier.trim(),
+        identifier: identifier.trim(),
         password,
       });
 
@@ -291,23 +305,29 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Email / Username input — label and behavior controlled by LOGIN_FIELD at the top */}
+            {/* Email / Username input — behavior controlled by LOGIN_FIELD at the top */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>{fieldConfig.label}</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  identifierError !== '' ? styles.inputError : null, // red border if error
-                ]}
-                value={identifier}
-                onChangeText={handleIdentifierChange}
-                onBlur={validateIdentifier} // validate when they leave the field
-                placeholder={fieldConfig.placeholder}
-                placeholderTextColor={colors.textMuted}
-                keyboardType={fieldConfig.keyboardType}
-                autoCapitalize={fieldConfig.autoCapitalize}
-                autoCorrect={false}
-              />
+              <View>
+                <TextInput
+                  style={[
+                    styles.input,
+                    identifier !== '' && styles.inputFilled,
+                    identifierError !== '' ? styles.inputError : null, // red border if error
+                  ]}
+                  value={identifier}
+                  onChangeText={handleIdentifierChange}
+                  onBlur={validateIdentifier} // validate when they leave the field
+                  placeholder=""
+                  keyboardType={fieldConfig.keyboardType}
+                  autoCapitalize={fieldConfig.autoCapitalize}
+                  autoCorrect={false}
+                />
+                {identifier === '' && (
+                  <Text style={styles.neonPlaceholder} pointerEvents="none">
+                    {fieldConfig.placeholder}
+                  </Text>
+                )}
+              </View>
               {/* Only shows the error text if there is one */}
               {identifierError !== '' && (
                 <View style={styles.fieldErrorRow}>
@@ -319,24 +339,28 @@ export default function LoginScreen() {
 
             {/* Password input */}
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
               {/* We wrap the input in a View so we can position the eye icon on top of it */}
               <View>
                 <TextInput
                   style={[
                     styles.input,
                     styles.inputPadRight, // extra right padding so text doesn't overlap the eye icon
+                    password !== '' && styles.inputFilled,
                     passwordError !== '' ? styles.inputError : null,
                   ]}
                   value={password}
                   onChangeText={handlePasswordChange}
                   onBlur={validatePassword}
-                  placeholder="Min. 6 characters"
-                  placeholderTextColor={colors.textMuted}
+                  placeholder=""
                   secureTextEntry={!showPassword} // hides/shows the password text
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
+                {password === '' && (
+                  <Text style={styles.neonPlaceholder} pointerEvents="none">
+                    Password
+                  </Text>
+                )}
                 {/* Eye icon button — toggles between showing and hiding the password */}
                 <TouchableOpacity
                   style={styles.eyeBtn}
@@ -463,6 +487,18 @@ const styles = StyleSheet.create({
     fontFamily:        fonts.regular,
     color:             colors.textWhite,
     fontSize:          fontSize.base,
+  },
+  inputFilled:   { backgroundColor: 'rgba(10,14,26,0.8)' }, // darkens when user starts typing
+  neonPlaceholder: {
+    position:          'absolute',
+    left:              16,
+    top:               14,
+    fontFamily:        fonts.regular,
+    fontSize:          fontSize.base,
+    color:             '#ff8c00',
+    textShadowColor:   'rgba(255,140,0,0.9)',
+    textShadowOffset:  { width: 0, height: 0 },
+    textShadowRadius:  10,
   },
   inputError:    { borderColor: colors.error }, // overrides the default border with red
   inputPadRight: { paddingRight: 48 },           // keeps text from going under the eye button
