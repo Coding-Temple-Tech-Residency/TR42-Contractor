@@ -16,13 +16,14 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
 import { api, ApiError } from '../utils/api';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'Inspection'>;
+type Nav   = NativeStackNavigationProp<RootStackParamList, 'Inspection'>;
+type Route = RouteProp<RootStackParamList, 'Inspection'>;
 
 // ── Types matching the backend response ─────────────────────────────────────
 
@@ -57,6 +58,8 @@ const GREEN   = '#22c55e';
 
 export default function InspectionScreen() {
   const navigation = useNavigation<Nav>();
+  const route      = useRoute<Route>();
+  const bypassGate = (route.params as any)?.bypassGate === true;
 
   const [template,      setTemplate]      = useState<ChecklistTemplate | null>(null);
   const [loading,       setLoading]        = useState(true);
@@ -73,25 +76,27 @@ export default function InspectionScreen() {
   //   2. Otherwise load the checklist template for display.
   useEffect(() => {
     const run = async () => {
-      // Step 1 — inspection gate
-      try {
-        const latest = await api.authGet<{ submitted_at?: string; created_at?: string }>(
-          '/inspections/latest',
-        );
-        const when = latest.submitted_at ?? latest.created_at;
-        if (when) {
-          // Backend returns ISO without 'Z' — append it so JS parses as UTC
-          const utcWhen = when.endsWith('Z') ? when : when + 'Z';
-          const sameDay =
-            new Date(utcWhen).toLocaleDateString() === new Date().toLocaleDateString();
-          if (sameDay) {
-            navigation.replace('Dashboard');
-            return;
+      // Step 1 — inspection gate (skipped when bypassGate is set by dev tools)
+      if (!bypassGate) {
+        try {
+          const latest = await api.authGet<{ submitted_at?: string; created_at?: string }>(
+            '/inspections/latest',
+          );
+          const when = latest.submitted_at ?? latest.created_at;
+          if (when) {
+            // Backend returns ISO without 'Z' — append it so JS parses as UTC
+            const utcWhen = when.endsWith('Z') ? when : when + 'Z';
+            const sameDay =
+              new Date(utcWhen).toLocaleDateString() === new Date().toLocaleDateString();
+            if (sameDay) {
+              navigation.replace('Dashboard');
+              return;
+            }
           }
+        } catch (err) {
+          // 404 = no inspections yet. Any other failure: let the user try the
+          // checklist flow — the submit call will surface any real API issue.
         }
-      } catch (err) {
-        // 404 = no inspections yet. Any other failure: let the user try the
-        // checklist flow — the submit call will surface any real API issue.
       }
 
       // Step 2 — load the checklist template

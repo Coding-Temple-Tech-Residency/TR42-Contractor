@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { TextInput, View, ActivityIndicator } from "react-native";
 import { LoadFonts } from "./utils/LoadFonts";
+
+// Dark translucent keyboard on iOS for every TextInput in the app
+(TextInput as any).defaultProps = {
+  ...((TextInput as any).defaultProps ?? {}),
+  keyboardAppearance: 'dark',
+};
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -15,7 +22,9 @@ import {Chat} from "./screens/ChatScreen";
 import TicketsScreen from "./screens/TicketsScreen";
 import TicketDetailScreen from "./screens/TicketDetailScreen";
 import InspectionScreen from "./screens/InspectionScreen";
+import { InspectionAssistScreen } from "./screens/InspectionAssistScreen";
 import DriveTimeTrackerScreen from "./screens/DriveTimeTrackerScreen";
+import { SavedReportsScreen } from "./screens/SavedReportsScreen";
 
 // ── TROY — Auth screens ──────────────────────────────────────
 import LoginScreen           from "./screens/LoginScreen";
@@ -29,13 +38,15 @@ import ProfileScreen from "./screens/ProfileScreen";
 import LicenseScreen from "./screens/LicenseScreen";
 
 export type RootStackParamList = {
-  // ── Jonathan — App screens ───────────────────────────────────
+  // ── Always visible ───────────────────────────────────────────
   SplashScreen:  undefined;
+
+  // ── Jonathan — App screens ───────────────────────────────────
   Home:          undefined;
   Blank:         undefined;
   // ── Charlie — App screens ───────────────────────────────────
   Contacts:      undefined;
-  Chat:          undefined;
+  Chat:          { name: string };
   Tickets:       undefined;
   TicketDetail:  { taskId: number };
 
@@ -55,11 +66,13 @@ export type RootStackParamList = {
   Profile:         undefined;
   LicenseDetails:  undefined;
 
-  // ── Aldo — Inspection screen ──────────────────────────────────
-  Inspection:      undefined;
+  // ── Aldo — Inspection screen + AI assist + Drive Time ────────
+  Inspection:        { bypassGate?: boolean } | undefined;
+  InspectionAssist:  undefined;
+  DriveTimeTracker:  undefined;
 
-  // ── Aldo — Drive Time Tracker ────────────────────────────────
-  DriveTimeTracker: undefined;
+  // ── Aldo — Saved Reports ─────────────────────────────────────
+  SavedReports: undefined;
 
   // ── Charlie — Dashboard (placeholder until real screen is built) ──
   Dashboard:       undefined;
@@ -100,7 +113,9 @@ function RootNavigator() {
           <StackNavigator.Screen name="TicketDetail"     component={TicketDetailScreen}     />
           <StackNavigator.Screen name="Profile"          component={ProfileScreen}          />
           <StackNavigator.Screen name="LicenseDetails"   component={LicenseScreen}          />
+          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen} />
           <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen} />
+          <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}     />
           {/* SplashScreen kept for Jonathan's direct nav references */}
           <StackNavigator.Screen name="SplashScreen"     component={SplashScreen}           />
         </>

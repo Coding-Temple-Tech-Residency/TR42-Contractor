@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../App';
 import { MainFrame } from '../components/MainFrame';
 import { useAuth } from '../contexts/AuthContext';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
+// ─── DEV MODE — set to false before shipping ──────────────────────────────────
+const DEV_MODE = true;
 
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 type Status = 'driving' | 'work' | 'offline';
 
 const statusOptions: { value: Status; label: string; color: string; bg: string; border: string }[] = [
@@ -30,10 +32,19 @@ const recentActivities = [
 ];
 
 export default function HomeScreen() {
-    const navigation = useNavigation<Nav>();
-    const { logout } = useAuth();
     const [currentStatus, setCurrentStatus] = useState<Status>('work');
     const [isStatusOpen, setIsStatusOpen] = useState(false);
+    const nav = useNavigation<Nav>();
+    const { logout } = useAuth();
+    const route = useRoute();
+
+    // If we land on the legacy "Home" route (e.g. SplashScreen timer),
+    // silently redirect to "Dashboard" so the back stack stays clean.
+    useEffect(() => {
+        if (route.name === 'Home') {
+            nav.replace('Dashboard');
+        }
+    }, []);
 
     const currentStatusData = statusOptions.find(s => s.value === currentStatus)!;
 
@@ -131,47 +142,38 @@ export default function HomeScreen() {
                 <Text style={styles.warningText}>Over 11 hours drive time, time for a break</Text>
             </View>
 
-            {/* ── DEV-ONLY: Truck Inspection entry point ─────────────────────
-                Temporary trigger until the real business rule is wired up
-                (inspection should fire when a ticket is accepted — pending
-                Edward / DOT research). Remove once that flow is in place. */}
-            <TouchableOpacity
-                style={styles.devBtn}
-                onPress={() => navigation.navigate('Login')}
-                activeOpacity={0.85}
-            >
-                <Ionicons name="log-in-outline" size={16} color="#f59e0b" />
-                <Text style={styles.devBtnText}>Login Screen (Dev)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.devBtn}
-                onPress={() => navigation.navigate('Inspection')}
-                activeOpacity={0.85}
-            >
-                <Ionicons name="construct-outline" size={16} color="#f59e0b" />
-                <Text style={styles.devBtnText}>Open Truck Inspection (Dev)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.devBtn}
-                onPress={() => navigation.navigate('DriveTimeTracker')}
-                activeOpacity={0.85}
-            >
-                <Ionicons name="speedometer-outline" size={16} color="#f59e0b" />
-                <Text style={styles.devBtnText}>Drive Time Tracker (Dev)</Text>
-            </TouchableOpacity>
-
-            {/* DEV — Log out and return to Login. Also run seed_dev.py on the
-                backend to reset demo data before showing the login flow. */}
-            <TouchableOpacity
-                style={[styles.devBtn, styles.devLogoutBtn]}
-                onPress={logout}
-                activeOpacity={0.85}
-            >
-                <Ionicons name="log-out-outline" size={16} color="#ef4444" />
-                <Text style={[styles.devBtnText, { color: '#ef4444' }]}>Logout (Dev)</Text>
-            </TouchableOpacity>
+            {/* ── DEV: Quick navigation ── */}
+            {DEV_MODE && (
+                <View style={styles.devPanel}>
+                    <Text style={styles.devLabel}>⚙ DEV TOOLS</Text>
+                    <View style={styles.devGrid}>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('Login')}>
+                            <Ionicons name="log-in-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>Login</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('Inspection', { bypassGate: true })}>
+                            <Ionicons name="construct-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>Inspection</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('DriveTimeTracker')}>
+                            <Ionicons name="speedometer-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>Drive Time</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('InspectionAssist')}>
+                            <Ionicons name="sparkles-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>AI Assist</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.devButton} onPress={() => nav.navigate('SavedReports')}>
+                            <Ionicons name="document-text-outline" size={18} color="#f59e0b" />
+                            <Text style={styles.devButtonText}>Saved Reports</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity style={styles.devLogoutButton} onPress={logout}>
+                        <Ionicons name="log-out-outline" size={16} color="#ef4444" />
+                        <Text style={styles.devLogoutText}>Logout</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
         </MainFrame>
     );
@@ -338,30 +340,61 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 
-    // Dev-only entry point to Truck Inspection — remove when the real
-    // trigger (ticket accepted) is wired up.
-    devBtn: {
+    // Dev panel
+    devPanel: {
         width: '90%',
+        backgroundColor: 'rgba(245,158,11,0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(245,158,11,0.4)',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 24,
+        gap: 12,
+    },
+    devLabel: {
+        fontSize: 11,
+        fontFamily: 'poppins-bold',
+        color: '#f59e0b',
+        letterSpacing: 2,
+        textAlign: 'center',
+    },
+    devGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    devButton: {
+        flex: 1,
+        minWidth: '45%',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 12,
+        backgroundColor: 'rgba(245,158,11,0.15)',
         borderWidth: 1,
-        borderColor: '#f59e0b',
-        backgroundColor: 'rgba(245,158,11,0.08)',
-        marginBottom: 24,
+        borderColor: 'rgba(245,158,11,0.3)',
+        borderRadius: 8,
+        paddingVertical: 6,
+        gap: 6,
     },
-    devBtnText: {
+    devButtonText: {
         color: '#f59e0b',
-        fontSize: 13,
+        fontSize: 12,
         fontFamily: 'poppins-bold',
     },
-    devLogoutBtn: {
-        borderColor: '#ef4444',
-        backgroundColor: 'rgba(239,68,68,0.08)',
+    devLogoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(239,68,68,0.12)',
+        borderWidth: 1,
+        borderColor: 'rgba(239,68,68,0.3)',
+        borderRadius: 8,
+        paddingVertical: 6,
+        gap: 6,
     },
-
+    devLogoutText: {
+        color: '#ef4444',
+        fontSize: 12,
+        fontFamily: 'poppins-bold',
+    },
 });

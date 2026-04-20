@@ -208,6 +208,29 @@ class DutyLogs(Base):
     session = relationship("DutySessions", back_populates="logs")
 
 
+class AiInspectionReports(Base):
+    """AI-generated inspection report saved by a contractor from the inspection assistant.
+
+    Optionally tied back to a formal Inspections row via inspection_id — e.g. when
+    the contractor generates an AI report while completing a scheduled inspection.
+    Left nullable because reports can also be standalone (ad-hoc field notes).
+    """
+    __tablename__ = 'ai_inspection_reports'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    contractor_id: Mapped[int] = mapped_column(ForeignKey('contractors.id'), nullable=False, index=True)
+    inspection_id: Mapped[int] = mapped_column(ForeignKey('inspections.id'), nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    priority: Mapped[str] = mapped_column(String(20), nullable=False)   # low | medium | high
+    category: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[str] = mapped_column(String(2000), nullable=False)
+    recommended_actions: Mapped[str] = mapped_column(String(3000), nullable=False)  # JSON array stored as string
+    raw_notes: Mapped[str] = mapped_column(String(2000), nullable=True)             # original field notes
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
+
+    inspection = relationship("Inspections")
+
+
 class Vendors(Base):
     __tablename__ = 'vendors'
 

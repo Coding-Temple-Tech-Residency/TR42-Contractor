@@ -11,14 +11,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { FieldForceHeader, SubHeader } from '../components/FieldForceHeader';
-import { BottomNavigation } from '../components/BottomNavigation';
+import { MainFrame } from '../components/MainFrame';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 
 // ---------------------------------------------------------------
@@ -127,18 +123,8 @@ export default function LicenseScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-
-      {/* Avatar shown because this is inside the main app (user is logged in) */}
-      <FieldForceHeader />
-      <SubHeader title="License Details" />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <MainFrame header="home">
+      <View style={styles.scrollContent}>
 
         {/* ── License card ─────────────────────────────────── */}
         <View style={styles.licenseCard}>
@@ -194,16 +180,12 @@ export default function LicenseScreen() {
           />
         </View>
 
-      </ScrollView>
-
-      <BottomNavigation />
-    </SafeAreaView>
+      </View>
+    </MainFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: colors.background },
-  scroll:       { flex: 1 },
   scrollContent: { gap: spacing.md, paddingBottom: spacing.xl },
 
   // The card at the top with photo + license info
