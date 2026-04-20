@@ -25,9 +25,10 @@ from app import create_app
 from app.models import (
     db,
     Auth_users, Contractors, Vendors,
-    InspectionTemplates, InspectionSections, InspectionItems, Inspections,
+    InspectionTemplates, InspectionSections, InspectionItems, Inspections, InspectionResults,
     DutySessions, DutyLogs,
     Tickets, Work_orders,
+    AiInspectionReports,
 )
 
 import os
@@ -99,19 +100,11 @@ def mins_ago(m):
 # ── Wipe ──────────────────────────────────────────────────────────────────────
 
 def wipe(session):
-    """Delete all rows in dependency order (children before parents)."""
+    """Truncate all app tables, resetting sequences so IDs start at 1."""
     print('Wiping existing data...')
-    session.query(DutyLogs).delete()
-    session.query(DutySessions).delete()
-    session.query(Inspections).delete()
-    session.query(InspectionItems).delete()
-    session.query(InspectionSections).delete()
-    session.query(InspectionTemplates).delete()
-    session.query(Tickets).delete()
-    session.query(Work_orders).delete()
-    session.query(Contractors).delete()
-    session.query(Vendors).delete()
-    session.query(Auth_users).delete()
+    session.execute(db.text(
+        'TRUNCATE TABLE auth_users RESTART IDENTITY CASCADE'
+    ))
     session.commit()
     print('  [OK] All rows cleared')
 
@@ -121,6 +114,16 @@ def wipe(session):
 def seed_users(session):
     print('Seeding users...')
     pw = generate_password_hash('123456')
+
+    # Defer FK checks so self-referential created_by resolves at commit time
+    try:
+        session.execute(db.text(
+            'ALTER TABLE auth_users ALTER CONSTRAINT auth_users_created_by_fkey '
+            'DEFERRABLE INITIALLY DEFERRED'
+        ))
+        session.commit()
+    except Exception:
+        session.rollback()
 
     # Vendor / manager user (self-referential created_by handled below)
     vendor_auth = Auth_users(

@@ -86,14 +86,29 @@ function formatHMS(totalSeconds: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+// Robust backend-date parser.
+// Handles:
+//   • Python/Marshmallow ISO with microseconds ("...45.123456") — Hermes
+//     only accepts up to millisecond precision, so we trim extra digits.
+//   • Strings missing a timezone (treat as UTC).
+//   • Strings with an existing Z or ±HH:MM offset (leave untouched).
+function parseBackendDate(iso: string | null | undefined): Date | null {
+  if (!iso) return null;
+  // Trim microseconds (6 digits) → milliseconds (3 digits)
+  const trimmed = iso.replace(/(\.\d{3})\d+/, '$1');
+  const hasTz   = /(Z|[+-]\d{2}:?\d{2})$/.test(trimmed);
+  const d       = new Date(hasTz ? trimmed : trimmed + 'Z');
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function formatTime12(iso: string): string {
-  // Append Z if missing so JS parses as UTC → converts to local time correctly
-  const utc = iso.endsWith('Z') ? iso : iso + 'Z';
-  const d = new Date(utc);
+  const d = parseBackendDate(iso);
+  if (!d) return '--';
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -320,11 +335,12 @@ export default function DriveTimeTrackerScreen() {
           </View>
         ) : (
           logs.map(log => {
-            const toUTC = (s: string) => new Date(s.endsWith('Z') ? s : s + 'Z');
-            const durSecs = log.duration_seconds
-              ?? (log.end_time
-                ? Math.floor((toUTC(log.end_time).getTime() - toUTC(log.start_time).getTime()) / 1000)
-                : Math.floor((Date.now() - toUTC(log.start_time).getTime()) / 1000));
+            const startDate = parseBackendDate(log.start_time);
+            const endDate   = parseBackendDate(log.end_time);
+            const durSecs   = log.duration_seconds
+              ?? (startDate
+                ? Math.floor(((endDate ?? new Date()).getTime() - startDate.getTime()) / 1000)
+                : 0);
 
             return (
               <View key={log.id} style={styles.logRow}>

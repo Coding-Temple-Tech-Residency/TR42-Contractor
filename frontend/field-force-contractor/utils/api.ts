@@ -4,7 +4,10 @@
 // and throws a typed ApiError on non-2xx responses.
 
 import { Platform } from 'react-native';
-import { getToken } from './secureStorage';
+import { getToken, deleteToken } from './secureStorage';
+
+let _onAuthFailure: (() => void) | null = null;
+export function registerAuthFailureHandler(cb: () => void) { _onAuthFailure = cb; }
 
 // ── Config ─────────────────────────────────────────────────────
 //
@@ -123,6 +126,37 @@ export interface LoginResponse {
 
 // ── Core request helper ────────────────────────────────────────
 
+// Render's free tier spins down after ~15 min idle, and the first request back
+// takes 30–60s to cold-start. React Native's underlying fetch often aborts well
+// before that (≈10–30s depending on platform), which shows up to the user as
+// "Unable to connect" even though the server is just waking up. We set an
+// explicit 65s timeout so cold starts have enough time to resolve cleanly.
+const REQUEST_TIMEOUT_MS = 65_000;
+
+async function fetchWithTimeout(
+  url:       string,
+  options:   RequestInit,
+  timeoutMs: number = REQUEST_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Fire-and-forget wake-up ping. Call this from screens that care about
+ * latency (e.g. LoginScreen on mount) so the server starts warming up while
+ * the user is still reading/typing. Errors are swallowed — this is best-effort.
+ */
+export function pingServer(): void {
+  // Any hit on the domain triggers Render's wake-up, even a 404.
+  fetchWithTimeout(API_BASE_URL, { method: 'GET' }, 5_000).catch(() => {});
+}
+
 async function request<T>(
   path:         string,
   options:      RequestInit = {},
@@ -142,7 +176,7 @@ async function request<T>(
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+    response = await fetchWithTimeout(`${API_BASE_URL}${path}`, { ...options, headers });
   } catch {
     throw {
       status: 0,
@@ -158,6 +192,10 @@ async function request<T>(
   }
 
   if (!response.ok) {
+    if (response.status === 403) {
+      await deleteToken();
+      _onAuthFailure?.();
+    }
     const err = body as Partial<ApiError>;
     throw {
       status: response.status,
