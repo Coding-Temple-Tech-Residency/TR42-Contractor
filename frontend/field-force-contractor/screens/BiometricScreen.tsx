@@ -1,33 +1,27 @@
 // BiometricScreen.tsx  —  Troy
+//
 // Online biometric verification screen.
-// Reached after a successful credential login (online OR offline pill state).
+// Reached after a successful credential login on LoginScreen.
 //
 // Flow:
-//   Login → BiometricCheck (this screen) → Dashboard       (scan succeeds)
-//                                        → OfflineLogin    (scan fails → PIN entry)
+//   LoginScreen (credentials OK) → BiometricCheck (this screen) → Home (scan succeeds)
+//                                                               → OfflineLogin (scan fails)
 //
-// OfflineLoginScreen is now purely a PIN entry screen.
-// The biometric step for ALL cases lives here.
+// ── WHY login() IS CALLED HERE, NOT IN LoginScreen ────────────────────────────
+// If App.tsx switches navigation stacks the moment isAuthenticated becomes true,
+// calling login() in LoginScreen before navigating here would cause this screen
+// to be unmounted immediately — the user would skip biometrics entirely.
 //
-// ─── DEV MODE NOTE ────────────────────────────────────────────────────────────
-//
-//  DEV_MODE = true  → scan ALWAYS SUCCEEDS so the full success flow can be tested.
-//                     Tap "Force Fail (Dev)" to manually trigger failure and
-//                     reach the PIN screen.
-//
-//  DEV_MODE = false → uses real expo-local-authentication (production).
-//                     Replace the setTimeout block in handleScan() with:
-//
-//    import * as LocalAuthentication from 'expo-local-authentication';
-//    const result = await LocalAuthentication.authenticateAsync({
-//      promptMessage: 'Verify your identity',
-//    });
-//    if (result.success) { navigation.replace('Inspection'); }
-//    else { setScanState('failed'); }
-//
+// Instead LoginScreen passes the API token and user as navigation params.
+// This screen calls login() only after a successful biometric scan, ensuring
+// the user is never considered authenticated until their identity is verified.
 // ──────────────────────────────────────────────────────────────────────────────
+//
+// DEV MODE = true  → scan always succeeds. Tap "Force Fail (Dev)" to test
+//                    the failure path.
+// DEV MODE = false → uses real expo-local-authentication.
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -36,80 +30,80 @@ import {
   StatusBar,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons }  from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp }          from '@react-navigation/native-stack';
+
+import { RootStackParamList }     from '../App';
 import { MainFrame } from '../components/MainFrame';
+import { SETTINGS_BIOMETRIC_KEY } from './ProfileScreen';
+import { useAuth }                from '../contexts/AuthContext';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'BiometricCheck'>;
+type Nav   = NativeStackNavigationProp<RootStackParamList, 'BiometricCheck'>;
+type Route = RouteProp<RootStackParamList, 'BiometricCheck'>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ⚙️  DEV MODE — set to false when real biometrics are ready.
-//
-//  true  = scan always succeeds. Use "Force Fail (Dev)" to test failure path.
-//  false = uses real expo-local-authentication hardware call.
-// ─────────────────────────────────────────────────────────────────────────────
 const DEV_MODE = true;
-
-// Amber — consistent with Login button and "Restricted Access" throughout the app
-const AMBER = '#f59e0b';
+const AMBER    = '#f59e0b';
 
 export default function BiometricScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation           = useNavigation<Nav>();
+  const route                = useRoute<Route>();
+  const { login }            = useAuth();
 
-  // Online/Offline toggle — mirrors the pill on the Login screen.
-  // Biometrics are local to the device and work regardless of connection.
-  // This pill is a server-status indicator and testing aid only.
-  const [isOffline, setIsOffline] = useState(false);
+  // Pending credentials passed from LoginScreen — not yet committed to AuthContext
+  const { pendingToken, pendingUser } = route.params;
 
-  // 'idle'     = waiting for the user to tap
-  // 'scanning' = scan in progress (spinner shown)
-  // 'failed'   = scan failed — retry + PIN fallback appear
-  const [scanState, setScanState] = useState('idle');
-
-  // Which biometric method is selected — face or fingerprint
+  const [isOffline,      setIsOffline]      = useState(false);
+  const [scanState,      setScanState]      = useState('idle');
   const [selectedMethod, setSelectedMethod] = useState('fingerprint');
 
-  // When the user switches methods, reset any scan state too
+  // Load the user's saved biometric preference from AsyncStorage so the
+  // correct method is pre-selected when this screen opens
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(SETTINGS_BIOMETRIC_KEY);
+        if (saved === 'face' || saved === 'fingerprint') {
+          setSelectedMethod(saved);
+        }
+      } catch {
+        // Fall back to fingerprint default
+      }
+    };
+    load();
+  }, []);
+
   const switchMethod = (method: string) => {
     setSelectedMethod(method);
     setScanState('idle');
   };
 
-  // This runs when the user taps the large scan button
-  const handleScan = () => {
+  const handleScan = async () => {
     if (scanState === 'scanning') return;
     setScanState('scanning');
 
-    setTimeout(() => {
+    setTimeout(async () => {
       if (DEV_MODE) {
-        // DEV MODE: always succeed so the full flow can be tested.
-        // Use "Force Fail (Dev)" button to test the failure/PIN path.
-        navigation.replace('Inspection');
+        await login(pendingToken, pendingUser);
+        navigation.replace('Home');
         return;
       }
-
-      // PRODUCTION: replace with real LocalAuthentication — see dev note above
       const scanWorked = Math.random() > 0.3;
       if (scanWorked) {
-        navigation.replace('Inspection');
+        await login(pendingToken, pendingUser);
+        navigation.replace('Home');
       } else {
         setScanState('failed');
       }
     }, 1500);
   };
 
-  // DEV ONLY — forces a failure so the PIN fallback path can be tested
   const handleForceFail = () => setScanState('failed');
+  const handleUsePIN    = () => navigation.replace('OfflineLogin');
 
-  // "Use PIN instead" — navigates to OfflineLoginScreen which is now
-  // purely a PIN entry screen. Works the same whether online or offline.
-  const handleUsePIN = () => navigation.replace('OfflineLogin');
-
-  const getScanIcon = () => (selectedMethod === 'face' ? 'scan' : 'finger-print');
-
+  const getScanIcon      = () => selectedMethod === 'face' ? 'scan' : 'finger-print';
   const getScanIconColor = () => {
     if (scanState === 'failed')   return colors.error;
     if (scanState === 'scanning') return colors.textWhite;
@@ -117,19 +111,13 @@ export default function BiometricScreen() {
   };
 
   return (
-    <MainFrame header="default" headerMenu={['none']} footerMenu={['none']}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+    <MainFrame header="default" headerMenu={['Menu2', ['Security Check']]} footerMenu={['none', []]}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-        {/* ── Online / Offline status pill ──────────────────────────────────
-            Sits directly below "Security Check" for visibility.
-            Tapping it toggles the mode. Biometrics work locally on the
-            device regardless — this pill is a server-status indicator only. */}
+      <View style={styles.topWrap}>
         <TouchableOpacity
           style={styles.statusPill}
-          onPress={() => {
-            setIsOffline(!isOffline);
-            setScanState('idle');
-          }}
+          onPress={() => { setIsOffline(!isOffline); setScanState('idle'); }}
           activeOpacity={0.8}
         >
           <Ionicons
@@ -141,148 +129,103 @@ export default function BiometricScreen() {
             {isOffline ? 'Offline' : 'Online'}
           </Text>
         </TouchableOpacity>
+      </View>
 
-        <View style={styles.body}>
+      <View style={styles.body}>
 
-          {/* Prompt text — white for clear readability on the dark background */}
-          <Text style={styles.promptText}>BIOMETRIC IDENTITY</Text>
-          <Text style={styles.promptText}>CHECK REQUIRED</Text>
+        <Text style={styles.promptText}>BIOMETRIC IDENTITY</Text>
+        <Text style={styles.promptText}>CHECK REQUIRED</Text>
 
-          {/* ── Method toggle — Face ID / Fingerprint ──────────────────────
-              Active method highlights in amber to match the Login button.  */}
-          <View style={styles.methodRow}>
-
-            <TouchableOpacity
-              style={[styles.methodBtn, selectedMethod === 'face' && styles.methodBtnActive]}
-              onPress={() => switchMethod('face')}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="scan-outline"
-                size={20}
-                color={selectedMethod === 'face' ? AMBER : colors.textMuted}
-              />
-              <Text style={[styles.methodLabel, selectedMethod === 'face' && styles.methodLabelActive]}>
-                Face ID
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.methodBtn, selectedMethod === 'fingerprint' && styles.methodBtnActive]}
-              onPress={() => switchMethod('fingerprint')}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="finger-print"
-                size={20}
-                color={selectedMethod === 'fingerprint' ? AMBER : colors.textMuted}
-              />
-              <Text style={[styles.methodLabel, selectedMethod === 'fingerprint' && styles.methodLabelActive]}>
-                Fingerprint
-              </Text>
-            </TouchableOpacity>
-
-          </View>
-
-          {/* ── Large scan button ────────────────────────────────────────────
-              Border and icon color reflect current scan state:
-                idle     = amber  (inviting tap)
-                scanning = muted gray + spinner
-                failed   = error red                                         */}
+        {/* Method toggle — pre-selected from saved preference */}
+        <View style={styles.methodRow}>
           <TouchableOpacity
-            style={[
-              styles.scanButton,
-              scanState === 'scanning' && styles.scanButtonScanning,
-              scanState === 'failed'   && styles.scanButtonFailed,
-            ]}
-            onPress={handleScan}
-            activeOpacity={0.85}
-            disabled={scanState === 'scanning'}
+            style={[styles.methodBtn, selectedMethod === 'face' && styles.methodBtnActive]}
+            onPress={() => switchMethod('face')}
+            activeOpacity={0.8}
           >
-            {scanState === 'scanning' ? (
-              <ActivityIndicator size={64} color={colors.textWhite} />
-            ) : (
-              <Ionicons name={getScanIcon()} size={80} color={getScanIconColor()} />
-            )}
+            <Ionicons
+              name="scan-outline"
+              size={20}
+              color={selectedMethod === 'face' ? AMBER : colors.textMuted}
+            />
+            <Text style={[styles.methodLabel, selectedMethod === 'face' && styles.methodLabelActive]}>
+              Face ID
+            </Text>
           </TouchableOpacity>
 
-          {/* Status hint text */}
-          {scanState === 'idle' && (
-            <Text style={styles.hintText}>
-              {selectedMethod === 'face' ? 'Tap to scan your face' : 'Tap to scan fingerprint'}
+          <TouchableOpacity
+            style={[styles.methodBtn, selectedMethod === 'fingerprint' && styles.methodBtnActive]}
+            onPress={() => switchMethod('fingerprint')}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name="finger-print"
+              size={20}
+              color={selectedMethod === 'fingerprint' ? AMBER : colors.textMuted}
+            />
+            <Text style={[styles.methodLabel, selectedMethod === 'fingerprint' && styles.methodLabelActive]}>
+              Fingerprint
             </Text>
-          )}
-          {scanState === 'scanning' && (
-            <Text style={styles.hintText}>Scanning…</Text>
-          )}
-
-          {/* ── DEV MODE: Force Fail button ───────────────────────────────
-              Only shown in dev. Lets you trigger the failure path manually
-              without waiting for a random failed scan.
-              Remove this entire block before going to production.          */}
-          {DEV_MODE && scanState === 'idle' && (
-            <TouchableOpacity
-              style={styles.devFailBtn}
-              onPress={handleForceFail}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="construct-outline" size={14} color={colors.warning} />
-              <Text style={styles.devFailText}>Force Fail (Dev)</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* ── Failed state ─────────────────────────────────────────────────
-              Only shown after a failed scan — never during idle or scanning.
-              "Use PIN instead" goes to OfflineLoginScreen (PIN entry only).
-              Both online and offline use the same PIN screen.               */}
-          {scanState === 'failed' && (
-            <View style={styles.failedSection}>
-              <Text style={styles.errorText}>Scan failed — please try again.</Text>
-
-              {/* Retry the scan */}
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={() => setScanState('idle')}
-              >
-                <Text style={styles.retryButtonText}>Retry</Text>
-              </TouchableOpacity>
-
-              {/* PIN fallback — navigates to PIN entry screen, NOT back to biometrics */}
-              <TouchableOpacity
-                style={styles.pinLink}
-                onPress={handleUsePIN}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="keypad-outline" size={16} color={AMBER} />
-                <Text style={styles.pinLinkText}>Use PIN instead</Text>
-              </TouchableOpacity>
-
-            </View>
-          )}
-
-          {/* Quick method switch — only shown at idle, not after failure */}
-          {scanState === 'idle' && (
-            <TouchableOpacity
-              style={styles.switchLink}
-              onPress={() => switchMethod(selectedMethod === 'face' ? 'fingerprint' : 'face')}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.switchLinkText}>
-                Use {selectedMethod === 'face' ? 'fingerprint' : 'Face ID'} instead
-              </Text>
-            </TouchableOpacity>
-          )}
-
+          </TouchableOpacity>
         </View>
+
+        {/* Large scan button */}
+        <TouchableOpacity
+          style={[
+            styles.scanButton,
+            scanState === 'scanning' && styles.scanButtonScanning,
+            scanState === 'failed'   && styles.scanButtonFailed,
+          ]}
+          onPress={handleScan}
+          activeOpacity={0.85}
+          disabled={scanState === 'scanning'}
+        >
+          {scanState === 'scanning' ? (
+            <ActivityIndicator size={64} color={colors.primary} />
+          ) : (
+            <Ionicons name={getScanIcon()} size={80} color={getScanIconColor()} />
+          )}
+        </TouchableOpacity>
+
+        {scanState === 'idle' && (
+          <Text style={styles.hintText}>
+            {selectedMethod === 'face' ? 'Tap to scan your face' : 'Tap to scan fingerprint'}
+          </Text>
+        )}
+        {scanState === 'scanning' && (
+          <Text style={styles.hintText}>Scanning…</Text>
+        )}
+
+        {/* DEV: Force Fail — remove entire block before production */}
+        {DEV_MODE && scanState === 'idle' && (
+          <TouchableOpacity style={styles.devFailBtn} onPress={handleForceFail} activeOpacity={0.8}>
+            <Ionicons name="construct-outline" size={14} color={colors.warning} />
+            <Text style={styles.devFailText}>Force Fail (Dev)</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Failed state — retry + PIN fallback */}
+        {scanState === 'failed' && (
+          <View style={styles.failedSection}>
+            <Text style={styles.errorText}>Scan failed — please try again.</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => setScanState('idle')}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.pinLink} onPress={handleUsePIN} activeOpacity={0.7}>
+              <Ionicons name="keypad-outline" size={16} color={AMBER} />
+              <Text style={styles.pinLinkText}>Use PIN instead</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+      </View>
     </MainFrame>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Styles
-// ─────────────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  // ── Online/Offline pill — directly below SubHeader ───────────────────────
+  topWrap: { alignSelf: 'stretch' },
+
   statusPill: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -290,20 +233,19 @@ const styles = StyleSheet.create({
     gap:               6,
     paddingVertical:   spacing.sm,
     borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   statusText: { fontFamily: fonts.bold, fontSize: fontSize.sm },
 
-  // ── Body ─────────────────────────────────────────────────────────────────
   body: {
-    flex:              1,
+    width:             '100%',
     alignItems:        'center',
-    justifyContent:    'flex-start',
     paddingHorizontal: spacing.lg,
     paddingTop:        spacing.xl * 1.5,
+    paddingBottom:     spacing.xl,
     gap:               spacing.md,
   },
 
-  // ── Prompt text — white ───────────────────────────────────────────────────
   promptText: {
     fontFamily:    fonts.bold,
     fontSize:      fontSize.lg,
@@ -313,7 +255,6 @@ const styles = StyleSheet.create({
     marginTop:     spacing.md,
   },
 
-  // ── Method toggle buttons ─────────────────────────────────────────────────
   methodRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   methodBtn: {
     flexDirection:     'row',
@@ -333,7 +274,6 @@ const styles = StyleSheet.create({
   methodLabel:       { fontFamily: fonts.regular, fontSize: fontSize.sm, color: colors.textMuted },
   methodLabelActive: { fontFamily: fonts.bold, color: AMBER },
 
-  // ── Scan button ───────────────────────────────────────────────────────────
   scanButton: {
     width:           160,
     height:          160,
@@ -356,7 +296,6 @@ const styles = StyleSheet.create({
 
   hintText: { fontFamily: fonts.regular, fontSize: fontSize.sm, color: colors.textMuted },
 
-  // ── DEV force-fail button ─────────────────────────────────────────────────
   devFailBtn: {
     flexDirection:     'row',
     alignItems:        'center',
@@ -370,8 +309,7 @@ const styles = StyleSheet.create({
   },
   devFailText: { fontFamily: fonts.regular, fontSize: fontSize.xs, color: colors.warning },
 
-  // ── Failed section ────────────────────────────────────────────────────────
-  failedSection: { alignItems: 'center', gap: spacing.md },
+  failedSection:   { alignItems: 'center', gap: spacing.md },
   errorText: {
     fontFamily: fonts.regular,
     fontSize:   fontSize.sm,
@@ -389,21 +327,11 @@ const styles = StyleSheet.create({
   },
   retryButtonText: { fontFamily: fonts.bold, color: colors.textWhite, fontSize: fontSize.base },
 
-  // ── PIN link — only after failed scan ────────────────────────────────────
-  pinLink: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.xs },
+  pinLink:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.xs },
   pinLinkText: {
     fontFamily:         fonts.bold,
     fontSize:           fontSize.sm,
     color:              AMBER,
-    textDecorationLine: 'underline',
-  },
-
-  // ── Switch method link — only at idle ────────────────────────────────────
-  switchLink: { marginTop: spacing.xs },
-  switchLinkText: {
-    fontFamily:         fonts.regular,
-    fontSize:           fontSize.sm,
-    color:              colors.textMuted,
     textDecorationLine: 'underline',
   },
 });

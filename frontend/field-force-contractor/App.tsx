@@ -11,6 +11,7 @@ import { LoadFonts } from "./utils/LoadFonts";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // ── Jonathan ──────────────────────────────────────
 import {Blank} from "./screens/Blank";
@@ -34,8 +35,9 @@ import PasswordResetScreen   from "./screens/PasswordResetScreen";
 import OfflinePinResetScreen from "./screens/OfflinePinResetScreen";
 
 // ── TROY — Profile screens ───────────────────────────────────
-import ProfileScreen from "./screens/ProfileScreen";
-import LicenseScreen from "./screens/LicenseScreen";
+import ProfileScreen     from "./screens/ProfileScreen";
+import LicenseScreen     from "./screens/LicenseScreen";
+import TaskHistoryScreen from "./screens/TaskHistoryScreen";
 
 export type RootStackParamList = {
   // ── Always visible ───────────────────────────────────────────
@@ -58,13 +60,22 @@ export type RootStackParamList = {
   // ── Troy — Auth screens ──────────────────────────────────────
   Login:           undefined;
   OfflineLogin:    undefined;
-  BiometricCheck:  undefined;
+
+  // BiometricCheck receives the pending token and user from LoginScreen.
+  // login() is NOT called until the biometric scan succeeds here, ensuring
+  // isAuthenticated never becomes true before identity is verified.
+  BiometricCheck: {
+    pendingToken: string;
+    pendingUser:  { id: number; username: string; role: string };
+  };
+
   PasswordReset:   undefined;
   OfflinePinReset: undefined;
 
   // ── Troy — Profile screens ───────────────────────────────────
   Profile:         undefined;
   LicenseDetails:  undefined;
+  TaskHistory:     undefined;
 
   // ── Aldo — Inspection screen + AI assist + Drive Time ────────
   Inspection:        { bypassGate?: boolean } | undefined;
@@ -113,6 +124,7 @@ function RootNavigator() {
           <StackNavigator.Screen name="TicketDetail"     component={TicketDetailScreen}     />
           <StackNavigator.Screen name="Profile"          component={ProfileScreen}          />
           <StackNavigator.Screen name="LicenseDetails"   component={LicenseScreen}          />
+          <StackNavigator.Screen name="TaskHistory"      component={TaskHistoryScreen}      />
           <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen} />
           <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen} />
           <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}     />
@@ -150,10 +162,12 @@ export default function App() {
   if (!externalFontsLoaded) return null;
 
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <RootNavigator />
+        </NavigationContainer>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

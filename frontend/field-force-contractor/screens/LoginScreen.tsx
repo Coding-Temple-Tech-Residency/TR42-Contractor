@@ -6,8 +6,13 @@
 //   • SplashScreenBackGround.png background
 //   • ff-logo-name.png centered header bar (status-bar spacing handled by MainFrame)
 //   • No header/footer menus — user isn't authenticated yet
+//
+// ── AUTH FLOW FIX ──────────────────────────────────────────────────────────────
+// login() is NOT called here. Token + user are passed as nav params to
+// BiometricCheck, which calls login() only after a successful scan.
+// ──────────────────────────────────────────────────────────────────────────────
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -27,27 +32,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainFrame }          from '../components/MainFrame';
 import { RootStackParamList } from '@/App';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
-import { api, pingServer, LoginResponse, ApiError } from '../utils/api';
-import { useAuth }            from '../contexts/AuthContext';
+import { api, LoginResponse, ApiError } from '../utils/api';
 
-// This tells TypeScript what screen we're on so navigation.navigate()
-// knows which screens are valid to go to from here
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⚙️  STAKEHOLDER CONFIG — change this one line if the policy shifts
-//
-//   'email'    = contractor logs in with their email address only
-//   'username' = contractor logs in with a username only
-//   'either'   = single field accepts email OR username (current default)
-//
-// The backend /auth/login endpoint detects '@' and looks up the correct
-// column, so all three options send the same `identifier` key over the wire.
+// ⚙️  STAKEHOLDER CONFIG
+//   'email'    = contractor logs in with their email address
+//   'username' = contractor logs in with a username / email (accepted by backend)
 // ─────────────────────────────────────────────────────────────────────────────
-const LOGIN_FIELD: 'email' | 'username' | 'either' = 'either';
+const LOGIN_FIELD: 'email' | 'username' = 'username';
 
-// Labels, placeholder text, and keyboard type are all derived from the flag above
-// so only the one line above ever needs to change — nothing else in this file
 const FIELD_CONFIG = {
   email: {
     label:          'Email Address',
@@ -56,16 +51,8 @@ const FIELD_CONFIG = {
     autoCapitalize: 'none' as const,
   },
   username: {
-    label:          'Username',
-    placeholder:    'Enter your username',
-    keyboardType:   'default' as const,
-    autoCapitalize: 'none' as const,
-  },
-  // 'either' — single field mode. Default keyboard since we can't assume
-  // they'll type an email; email-address keyboard would hide the period key.
-  either: {
-    label:          'Username',
-    placeholder:    'Username',
+    label:          'Username or Email',
+    placeholder:    'Enter your username or email',
     keyboardType:   'default' as const,
     autoCapitalize: 'none' as const,
   },
@@ -74,88 +61,55 @@ const FIELD_CONFIG = {
 const fieldConfig = FIELD_CONFIG[LOGIN_FIELD];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⚙️  DEV MODE — set this to true to bypass the real API call while testing.
-//
-//  When DEV_MODE is true:
-//    • Any non-empty username + password (6+ chars) will succeed immediately
-//    • No network request is made — the connection timeout error disappears
-//    • The app routes correctly based on the Online/Offline pill state
-//
-//  Set to false when the backend is ready and you want real API calls.
+// ⚙️  DEV MODE
+//  true  = any non-empty username + password (6+ chars) succeeds immediately.
+//  Set to false when the backend is ready.
 // ─────────────────────────────────────────────────────────────────────────────
-const DEV_MODE = false;
+const DEV_MODE = true;
 
-// A simple function to check if an email looks valid.
-// It uses a "regex" (regular expression) to check the format.
-// Only used when LOGIN_FIELD === 'email'.
 const isValidEmail = (value: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(value.trim());
 };
 
+const AMBER = '#f59e0b';
+
 // ─────────────────────────────────────────────────────────────────────────────
 export default function LoginScreen() {
   const navigation = useNavigation<Nav>();
-  const { login }  = useAuth();
 
-  // useState stores values that can change. When they change, the screen re-renders.
-  const [identifier,   setIdentifier]   = useState(''); // holds email OR username depending on LOGIN_FIELD
+  const [identifier,   setIdentifier]   = useState('');
   const [password,     setPassword]     = useState('');
-  const [showPassword, setShowPassword] = useState(false); // toggles the eye icon
-  const [isSubmitting,      setIsSubmitting]      = useState(false); // shows spinner on button
-  // Flips to true if login is taking longer than ~8s — usually means Render
-  // is cold-starting and we want to reassure the user it's not hanging.
-  const [isSlowConnection,  setIsSlowConnection]  = useState(false);
-  const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOffline,    setIsOffline]    = useState(false);
 
-  // Wake the Render free-tier backend up as soon as the login screen mounts,
-  // so by the time the user finishes typing their credentials the server is
-  // (hopefully) already warm. Fire-and-forget — errors are ignored.
-  useEffect(() => {
-    pingServer();
-    return () => {
-      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
-    };
-  }, []);
-
-  // Online/Offline toggle — this is a UI state indicator used for testing.
-  // Tapping the pill just flips this value. It does NOT navigate by itself.
-  // The Login button uses this to decide where to route after a successful login:
-  //   Online  → BiometricCheck (normal flow)
-  //   Offline → OfflineLogin   (PIN-based flow)
-  const [isOffline, setIsOffline] = useState(false);
-
-  // These hold error messages. Empty string '' means no error to show.
   const [identifierError, setIdentifierError] = useState('');
   const [passwordError,   setPasswordError]   = useState('');
-  const [loginError,      setLoginError]      = useState(''); // shown when credentials are wrong
+  const [loginError,      setLoginError]      = useState('');
 
-  // ── Validation ───────────────────────────────────────────────────────────
+  // ── Validation ─────────────────────────────────────────────────────────────
 
-  // This runs when the user taps away from the identifier field (on blur)
   const validateIdentifier = () => {
     if (identifier.trim() === '') {
       setIdentifierError(`Please enter your ${fieldConfig.label.toLowerCase()}.`);
     } else if (LOGIN_FIELD === 'email' && !isValidEmail(identifier)) {
       setIdentifierError('Please enter a valid email address (e.g. name@example.com).');
     } else {
-      setIdentifierError(''); // clear any previous error if it's valid now
+      setIdentifierError('');
     }
   };
 
-  // This runs when the user taps away from the password field
   const validatePassword = () => {
     if (password === '') {
       setPasswordError('Please enter your password.');
     } else if (password.length < 6) {
       setPasswordError('Password must be at least 6 characters.');
     } else {
-      setPasswordError(''); // clear error
+      setPasswordError('');
     }
   };
 
-  // When the user changes the identifier field, clear any errors so they
-  // don't see stale error messages while they're still typing
   const handleIdentifierChange = (newValue: string) => {
     setIdentifier(newValue);
     setIdentifierError('');
@@ -168,14 +122,9 @@ export default function LoginScreen() {
     setLoginError('');
   };
 
-  // ── Submit ───────────────────────────────────────────────────────────────
+  // ── Submit ──────────────────────────────────────────────────────────────────
 
-  // This runs when the user taps the Login button.
-  // After a successful login it routes based on the Online/Offline pill:
-  //   Online  → BiometricCheck
-  //   Offline → OfflineLogin
   const handleLogin = async () => {
-    // First check if both fields are valid before doing anything
     let everythingIsValid = true;
 
     if (identifier.trim() === '') {
@@ -198,41 +147,31 @@ export default function LoginScreen() {
       setPasswordError('');
     }
 
-    // If either field has an error, stop here and don't try to log in
     if (!everythingIsValid) return;
 
     setIsSubmitting(true);
     setLoginError('');
-    setIsSlowConnection(false);
-    // If the call is still running after 8s, assume Render is cold-starting
-    // and show a gentle "waking server up" message so the user doesn't bail.
-    slowTimerRef.current = setTimeout(() => setIsSlowConnection(true), 8_000);
 
     try {
       if (DEV_MODE) {
-        // ── DEV MODE: skip the real API call ──────────────────────────────
-        // Simulate a short network delay so the spinner is visible
         await new Promise(resolve => setTimeout(resolve, 800));
-
-        // Both online and offline go to biometrics first.
-        // If biometrics fail, BiometricScreen routes to the PIN screen.
-        navigation.navigate('BiometricCheck');
+        navigation.navigate('BiometricCheck', {
+          pendingToken: 'dev-token',
+          pendingUser:  { id: 0, username: identifier.trim(), role: 'contractor' },
+        });
         return;
       }
 
-      // ── PRODUCTION: call the real backend /auth/login endpoint ────────
-      // Always send `identifier` — the backend detects whether it's an email
-      // or username based on the '@' character and picks the right column.
       const res = await api.post<LoginResponse>('/auth/login', {
         identifier: identifier.trim(),
         password,
       });
 
-      // Store JWT + user info in AuthContext (persists to SecureStore)
-      await login(res.token, res.user);
-
-      // Both online and offline go to biometrics first.
-      navigation.navigate('BiometricCheck');
+      // Do NOT call login() here — BiometricCheck calls it after scan succeeds
+      navigation.navigate('BiometricCheck', {
+        pendingToken: res.token,
+        pendingUser:  res.user,
+      });
 
     } catch (err) {
       const apiErr = err as ApiError;
@@ -244,49 +183,33 @@ export default function LoginScreen() {
         setLoginError(apiErr.error || 'Something went wrong. Please try again.');
       }
     } finally {
-      if (slowTimerRef.current) {
-        clearTimeout(slowTimerRef.current);
-        slowTimerRef.current = null;
-      }
       setIsSubmitting(false);
-      setIsSlowConnection(false);
     }
   };
 
-  // The Login button should look "active" only when both fields look valid
   const formLooksReady =
     identifier.trim().length > 0 &&
     (LOGIN_FIELD === 'email' ? isValidEmail(identifier) : true) &&
     password.length >= 6;
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Render ──────────────────────────────────────────────────────────────────
+
   return (
     <MainFrame header="default" headerMenu={['none']} footerMenu={['none']}>
 
-      {/* Makes the status bar text white so it's visible on our dark background */}
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* KeyboardAvoidingView pushes the form up when the keyboard opens
-          so the inputs don't get hidden behind it */}
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled" // lets buttons work even if keyboard is open
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
 
-          {/* Online/Offline status pill ─────────────────────────────────────
-              This is a VISUAL TOGGLE ONLY — tapping it flips the pill between
-              Online (green) and Offline (amber) so you can test both flows.
-              It does NOT navigate anywhere by itself.
-              The Login button reads this state and routes accordingly:
-                Online  → BiometricCheck
-                Offline → OfflineLogin                                       */}
+          {/* Online/Offline status pill — visual toggle only for testing */}
           <TouchableOpacity
             style={styles.statusPill}
             onPress={() => setIsOffline(!isOffline)}
@@ -302,25 +225,22 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Generic person icon — in production this could show the user's photo */}
+          {/* Avatar */}
           <View style={styles.avatarCircle}>
             <Ionicons name="person" size={52} color="#8a9bb8" />
           </View>
 
-          {/* App branding */}
+          {/* Branding — "Field Force" title removed since the header already shows it.
+              "Contractor Portal" is promoted to be the main headline so it is clear
+              what this login page is for. "Restricted Access" stays in amber below. */}
           <View style={styles.brandBlock}>
-            <Text style={styles.brandTitle}>Field Force</Text>
-            <View style={styles.brandLine} />
-            <Text style={styles.brandSub}>Contractor Portal</Text>
-            {/* Amber color draws attention to "Restricted Access" — matches Troy's mockup */}
+            <Text style={styles.brandPortal}>Contractor Portal</Text>
             <Text style={styles.brandRestricted}>Restricted Access</Text>
           </View>
 
-          {/* The login form */}
+          {/* Form */}
           <View style={styles.form}>
 
-            {/* This red banner only shows up when the wrong credentials are entered.
-                It stays hidden (renders nothing) when loginError is an empty string. */}
             {loginError !== '' && (
               <View style={styles.errorBanner}>
                 <Ionicons name="alert-circle-outline" size={18} color={colors.error} />
@@ -328,42 +248,20 @@ export default function LoginScreen() {
               </View>
             )}
 
-            {/* Cold-start notice: Render free tier sleeps after ~15 min idle.
-                We show this after the login has been pending for 8s to reassure
-                the user that the spinner isn't stuck. */}
-            {isSlowConnection && loginError === '' && (
-              <View style={styles.errorBanner}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text style={styles.errorBannerText}>
-                  Waking server up — first login after idle can take up to a minute.
-                </Text>
-              </View>
-            )}
-
-            {/* Email / Username input — behavior controlled by LOGIN_FIELD at the top */}
+            {/* Username / Email input — orange placeholder, no label above */}
             <View style={styles.fieldGroup}>
-              <View>
-                <TextInput
-                  style={[
-                    styles.input,
-                    identifier !== '' && styles.inputFilled,
-                    identifierError !== '' ? styles.inputError : null, // red border if error
-                  ]}
-                  value={identifier}
-                  onChangeText={handleIdentifierChange}
-                  onBlur={validateIdentifier} // validate when they leave the field
-                  placeholder=""
-                  keyboardType={fieldConfig.keyboardType}
-                  autoCapitalize={fieldConfig.autoCapitalize}
-                  autoCorrect={false}
-                />
-                {identifier === '' && (
-                  <Text style={styles.neonPlaceholder} pointerEvents="none">
-                    {fieldConfig.placeholder}
-                  </Text>
-                )}
-              </View>
-              {/* Only shows the error text if there is one */}
+              <TextInput
+                style={[styles.input, identifierError !== '' ? styles.inputError : null]}
+                value={identifier}
+                onChangeText={handleIdentifierChange}
+                onBlur={validateIdentifier}
+                placeholder="Username"
+                placeholderTextColor={AMBER}
+                keyboardType={fieldConfig.keyboardType}
+                autoCapitalize={fieldConfig.autoCapitalize}
+                autoCorrect={false}
+                accessibilityLabel="Username or email"
+              />
               {identifierError !== '' && (
                 <View style={styles.fieldErrorRow}>
                   <Ionicons name="alert-circle-outline" size={14} color={colors.error} />
@@ -372,31 +270,25 @@ export default function LoginScreen() {
               )}
             </View>
 
-            {/* Password input */}
+            {/* Password input — orange placeholder, no label above */}
             <View style={styles.fieldGroup}>
-              {/* We wrap the input in a View so we can position the eye icon on top of it */}
               <View>
                 <TextInput
                   style={[
                     styles.input,
-                    styles.inputPadRight, // extra right padding so text doesn't overlap the eye icon
-                    password !== '' && styles.inputFilled,
+                    styles.inputPadRight,
                     passwordError !== '' ? styles.inputError : null,
                   ]}
                   value={password}
                   onChangeText={handlePasswordChange}
                   onBlur={validatePassword}
-                  placeholder=""
-                  secureTextEntry={!showPassword} // hides/shows the password text
+                  placeholder="Password"
+                  placeholderTextColor={AMBER}
+                  secureTextEntry={!showPassword}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  accessibilityLabel="Password"
                 />
-                {password === '' && (
-                  <Text style={styles.neonPlaceholder} pointerEvents="none">
-                    Password
-                  </Text>
-                )}
-                {/* Eye icon button — toggles between showing and hiding the password */}
                 <TouchableOpacity
                   style={styles.eyeBtn}
                   onPress={() => setShowPassword(!showPassword)}
@@ -416,12 +308,15 @@ export default function LoginScreen() {
               )}
             </View>
 
-            {/* Login button — appears grayed out when the form isn't ready or submitting */}
+            {/* Login button — amber when ready, gray when not */}
             <TouchableOpacity
-              style={[styles.loginBtn, (!formLooksReady || isSubmitting) && styles.btnDisabled]}
+              style={[
+                styles.loginBtn,
+                formLooksReady && !isSubmitting ? styles.loginBtnActive : styles.loginBtnDisabled,
+              ]}
               onPress={handleLogin}
               activeOpacity={0.85}
-              disabled={isSubmitting}
+              disabled={!formLooksReady || isSubmitting}
             >
               {isSubmitting ? (
                 <ActivityIndicator color={colors.textWhite} />
@@ -430,14 +325,12 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Visual separator between Login and Forgot Password */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>OR</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Takes user to the password reset screen */}
             <TouchableOpacity
               style={styles.secondaryBtn}
               onPress={() => navigation.navigate('PasswordReset')}
@@ -455,14 +348,10 @@ export default function LoginScreen() {
   );
 }
 
-// All the styles for this screen live here.
-// We keep styles at the bottom so the component logic above is easier to read.
-const AMBER = '#f59e0b'; // Login button + "Restricted Access" — matches Troy's approved mockup
-
 const styles = StyleSheet.create({
   kav:   { flex: 1, width: '100%' },
   scroll: {
-    flexGrow:          1,       // lets the ScrollView expand to fill available space
+    flexGrow:          1,
     alignItems:        'center',
     paddingHorizontal: spacing.lg,
     paddingBottom:     spacing.xl,
@@ -474,82 +363,60 @@ const styles = StyleSheet.create({
     marginTop:     spacing.lg,
     marginBottom:  spacing.md,
   },
-  statusText: { fontFamily: fonts.bold, fontSize: fontSize.sm },
+  statusText:   { fontFamily: fonts.bold, fontSize: fontSize.sm },
   avatarCircle: {
     width:           100,
     height:          100,
-    borderRadius:    50,        // makes the square a circle
+    borderRadius:    50,
     backgroundColor: '#1e2d45',
     alignItems:      'center',
     justifyContent:  'center',
     marginBottom:    spacing.md,
   },
-  brandBlock:  { alignItems: 'center', marginBottom: spacing.lg },
-  brandTitle: {
-    fontFamily:    fonts.boldItalic,
-    fontSize:      28,
+
+  // Branding — "Contractor Portal" is now the headline
+  brandBlock: { alignItems: 'center', marginBottom: spacing.lg },
+  brandPortal: {
+    fontFamily:    fonts.bold,
+    fontSize:      26,              // larger than before
     color:         colors.textWhite,
-    letterSpacing: 1,
-  },
-  brandLine: {
-    width:           '70%',
-    height:          2,
-    backgroundColor: colors.textWhite,
-    marginVertical:  6,
-  },
-  brandSub: {
-    fontFamily:   fonts.regular,
-    fontSize:     fontSize.base,
-    color:        colors.textLight,
-    marginBottom: 4,
+    letterSpacing: 0.5,
+    marginBottom:  spacing.xs,
   },
   brandRestricted: {
     fontFamily: fonts.bold,
     fontSize:   fontSize.sm,
-    color:      AMBER,           // amber — draws attention to "Restricted Access"
+    color:      '#f59e0b',
   },
+
   form:       { width: '100%', maxWidth: 380, gap: spacing.md },
   fieldGroup: { gap: 6 },
-  label:      { fontFamily: fonts.regular, fontSize: fontSize.sm, color: colors.textLight },
+
+  // Darker input background, orange border and placeholder
   input: {
     width:             '100%',
-    backgroundColor:   colors.card,
+    backgroundColor:   '#0d1520',
     borderRadius:      radius.md,
     borderWidth:       1,
-    borderColor:       colors.border,
+    borderColor:       '#f59e0b',
     paddingHorizontal: spacing.md,
     paddingVertical:   14,
     fontFamily:        fonts.regular,
     color:             colors.textWhite,
     fontSize:          fontSize.base,
   },
-  inputFilled:   { backgroundColor: 'rgba(10,14,26,0.8)' }, // darkens when user starts typing
-  neonPlaceholder: {
-    position:          'absolute',
-    left:              16,
-    top:               14,
-    fontFamily:        fonts.regular,
-    fontSize:          fontSize.base,
-    color:             '#ff8c00',
-    textShadowColor:   'rgba(255,140,0,0.9)',
-    textShadowOffset:  { width: 0, height: 0 },
-    textShadowRadius:  10,
-  },
-  inputError:    { borderColor: colors.error }, // overrides the default border with red
-  inputPadRight: { paddingRight: 48 },           // keeps text from going under the eye button
+  inputError:    { borderColor: colors.error },
+  inputPadRight: { paddingRight: 48 },
   eyeBtn:        { position: 'absolute', right: 14, top: 14 },
-  fieldErrorRow: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           5,
-    marginTop:     2,
-  },
+
+  fieldErrorRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   fieldErrorText: {
     fontFamily: fonts.regular,
     fontSize:   fontSize.xs,
     color:      colors.error,
     flex:       1,
   },
+
   errorBanner: {
     flexDirection:   'row',
     alignItems:      'flex-start',
@@ -567,23 +434,21 @@ const styles = StyleSheet.create({
     flex:       1,
     lineHeight: 20,
   },
-  loginBtn: {
-    backgroundColor: AMBER,     // amber fill — matches Troy's approved mockup
-    borderRadius:    radius.md,
-    paddingVertical: 15,
-    alignItems:      'center',
-    marginTop:       spacing.sm,
-  },
-  btnDisabled:  { backgroundColor: colors.cardAlt }, // grayed out state
+
+  loginBtn:         { borderRadius: radius.md, paddingVertical: 15, alignItems: 'center', marginTop: spacing.sm },
+  loginBtnActive:   { backgroundColor: '#f59e0b' },
+  loginBtnDisabled: { backgroundColor: colors.cardAlt },
   loginBtnText: {
     fontFamily:    fonts.bold,
     color:         colors.textWhite,
     fontSize:      fontSize.base,
     letterSpacing: 0.5,
   },
+
   dividerRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
   dividerText: { fontFamily: fonts.regular, color: colors.textMuted, fontSize: fontSize.sm },
+
   secondaryBtn: {
     backgroundColor: colors.card,
     borderRadius:    radius.md,
