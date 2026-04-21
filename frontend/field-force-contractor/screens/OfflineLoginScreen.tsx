@@ -80,7 +80,11 @@ export default function OfflineLoginScreen() {
       setPinError('Incorrect PIN. Please try again.');
       return;
     }
-    navigation.replace('Home');
+    // TODO (Troy): when offline auth is implemented, complete the auth flow
+    // here (e.g. restore stored token/user and call useAuth().login(...)) so
+    // the Protected stack mounts naturally. Until then redirect to a route
+    // that exists in the unauthenticated stack.
+    navigation.replace('Login' as any);
   };
 
   // ── Reset PIN modal handlers ──────────────────────────────

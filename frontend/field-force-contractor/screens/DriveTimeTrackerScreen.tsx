@@ -231,15 +231,11 @@ export default function DriveTimeTrackerScreen() {
   const logs = session?.logs ?? [];
 
   return (
-    <MainFrame>
+    <MainFrame headerMenu={["Menu2", ["Drive Time Tracker"]]}>
 
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <View style={styles.headerBlock}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Drive Time Tracker</Text>
-      </View>
+      {/* Header is rendered by the Menu2 bar in MainFrame above
+          (back arrow + "Drive Time Tracker" title). Removed the
+          duplicate custom headerBlock that used to live here. */}
 
       {/* ── Status buttons ─────────────────────────────────────── */}
       <View style={styles.statusRow}>
