@@ -108,15 +108,17 @@ function RootNavigator() {
   }
 
   return (
-    <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="SplashScreen">
-      {/* SplashScreen is the universal entry point — its own logic uses nav.replace()
-          to route to Home (if authenticated) or Login (if not). Always available. */}
-      <StackNavigator.Screen name="SplashScreen" component={SplashScreen} />
-
+    <StackNavigator.Navigator
+      screenOptions={screenConfig.window}
+      initialRouteName={isAuthenticated ? 'Inspection' : 'SplashScreen'}
+    >
       {isAuthenticated ? (
         // ── Protected App screens ─────────────────────────────────────────
-        // First screen is Inspection — the daily gate. After passing (or skipping)
-        // it navigates to Dashboard. All other app screens follow.
+        // No SplashScreen here: once auth flips true the Auth stack unmounts
+        // and this stack mounts with Inspection as its initial route. Keeping
+        // Splash registered across both stacks caused React Navigation to
+        // fall back to it after the swap, where a stale closure in its
+        // useEffect would navigate the user back to Login.
         <>
           <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
           <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
@@ -139,6 +141,7 @@ function RootNavigator() {
         // call the auth state flips and React Navigation auto-routes to
         // Inspection above.
         <>
+          <StackNavigator.Screen name="SplashScreen"    component={SplashScreen}          />
           <StackNavigator.Screen name="Login"           component={LoginScreen}           />
           <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
           <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />

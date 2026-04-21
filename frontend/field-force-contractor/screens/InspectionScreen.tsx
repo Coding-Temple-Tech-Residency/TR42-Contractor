@@ -207,7 +207,7 @@ export default function InspectionScreen() {
   // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <MainFrame header="default" headerMenu={["none"]} footerMenu={["none"]}>
+      <MainFrame header="default" headerMenu={["none", []]} footerMenu={["none"]}>
         <View style={styles.center}>
           <ActivityIndicator size="large" color={BLUE} />
           <Text style={styles.loadingText}>Loading checklist...</Text>
@@ -220,7 +220,7 @@ export default function InspectionScreen() {
   // ── Error state ───────────────────────────────────────────────────────────
   if (error || !template) {
     return (
-      <MainFrame header="default" headerMenu={["none"]} footerMenu={["none"]}>
+      <MainFrame header="default" headerMenu={["none", []]} footerMenu={["none"]}>
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={48} color={RED} />
           <Text style={styles.errorText}>{error || 'No inspection template found.'}</Text>
@@ -231,9 +231,12 @@ export default function InspectionScreen() {
 
   // ── Main content ──────────────────────────────────────────────────────────
   return (
-    <MainFrame>
+    <MainFrame headerMenu={["none", []]} footerMenu={["none"]}>
 
-      {/* ── Header ─────────────────────────────────────────────────── */}
+      {/* ── Header ──────────────────────────────────────────────────
+          Styled to match the Menu2 navy bar visually but with no back
+          arrow — this screen is the daily inspection gate, navigating
+          back out of it doesn't make sense. */}
       <View style={styles.headerBlock}>
         <Text style={styles.headerTitle}>Inspection Required</Text>
       </View>
@@ -379,16 +382,23 @@ const styles = StyleSheet.create({
   errorText:   { color: RED, fontSize: 14, fontFamily: 'poppins-regular', textAlign: 'center' },
 
   // ── Header ──────────────────────────────────────────────────────────────
+  // Matches the Menu2 SubHeader bar visually (navy background, centered
+  // bold title) but with no back arrow — this is the inspection gate and
+  // navigating back out of it is intentionally disallowed.
   headerBlock: {
-    width: '90%',
+    width: '100%',
     alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 8,
+    justifyContent: 'center',
+    backgroundColor: '#142040',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 12,
   },
   headerTitle: {
     fontSize: 18,
     fontFamily: 'poppins-bold',
     color: 'white',
+    letterSpacing: 0.3,
   },
 
   // ── Truck card ──────────────────────────────────────────────────────────
