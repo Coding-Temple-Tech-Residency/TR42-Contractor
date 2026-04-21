@@ -4,6 +4,6 @@ export class InitID{
 
     static getId(){
        
-        return(uuid())
+        return(uuid().toString())
     }
 }

@@ -7,6 +7,10 @@
     "icon": "./assets/images/icon.png",
     "scheme": "fieldforcecontractor",
     "userInterfaceStyle": "automatic",
+    "updates": {
+      "enabled": false,
+      "checkAutomatically": "NEVER"
+    },
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
