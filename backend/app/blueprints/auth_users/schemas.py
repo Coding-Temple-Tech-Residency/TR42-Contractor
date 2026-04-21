@@ -21,6 +21,8 @@ class LoginSchema(Schema):
 
 class AuthUserUpdateSchema(Schema):
     email = fields.Email(required=False)
+    contact_number = fields.Str(required=False)
+    alternative_contact_number = fields.Str(required=False)
 #ex. use in contractor update routes
 
 class AuthUserCreateSchema(AuthUserSchema):

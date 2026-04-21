@@ -74,7 +74,7 @@ def register_contractor():
 
     return jsonify({
         'message': 'Contractor registered successfully',
-        'auth_user': auth_user_update_schema.dump(new_user),
+        'user': auth_user_update_schema.dump(new_user),
         'contractor': contractor_schema.dump(new_contractor)
     }), 201
 
@@ -83,73 +83,76 @@ def register_contractor():
 @token_required
 def get_contractor():
     user_id= request.user_id
-    user = db.session.get(Contractor, user_id)
-    if user:
-        return contractor_schema.jsonify(user), 200
+    user = db.session.get(User, user_id)
+    contractor = db.session.query(Contractor).filter(Contractor.user_id == user_id).first()
+    if contractor and user:
+        return jsonify({
+            'user': auth_user_update_schema.dump(user),
+            'contractor': contractor_schema.dump(contractor)
+        }), 200
     return jsonify ({'error': 'Invalid user id'}), 400
 
-
+# ------------------> CONTINUE HERE
 #Vendor viewing contractor profile (for testing, delete later)
-@field_contractors_bp.route('/<int:contractor_id>', methods=['GET'])
-@vendor_required
-def get_contractor_as_vendor(contractor_id):
-    user = db.session.get(Contractor, contractor_id)
-    if user:
-        return contractor_schema.jsonify(user), 200
-    return jsonify ({'error': 'Invalid user id'}), 400
+# @field_contractors_bp.route('/<int:contractor_id>', methods=['GET'])
+# @vendor_required
+# def get_contractor_as_vendor(contractor_id):
+#     contractor = db.session.get(Contractor, contractor_id)
+#     if contractor:
+#         return contractor_schema.jsonify(contractor), 200
+#     return jsonify ({'error': 'Invalid user id'}), 400
 
 #Vendor updating contractor profile (for testing, delete later)
-@field_contractors_bp.route('/<int:contractor_id>', methods=['PUT'])
-@vendor_required
-def update_contractor_as_vendor(contractor_id):
-    json_data = request.get_json()
+# @field_contractors_bp.route('/<int:contractor_id>', methods=['PUT'])
+# @vendor_required
+# def update_contractor_as_vendor(contractor_id):
+#     json_data = request.get_json()
 
-    if not json_data:
-         return jsonify({'error': 'No input data provided'}), 400
+#     if not json_data:
+#          return jsonify({'error': 'No input data provided'}), 400
 
-    # Validate and deserialize new updated input
-    try:
-        auth_user_data = auth_user_update_schema.load(json_data.get('auth_user', {})) 
-        contractor_data = vendor_update_contractor_schema.load(json_data.get('contractor', {}))
-    except ValidationError as e:
-        return jsonify(e.messages), 400
-    if not auth_user_data and not contractor_data:
-        return jsonify({'error': 'No data to update'}), 400
+#     # Validate and deserialize new updated input
+#     try:
+#         auth_user_data = auth_user_update_schema.load(json_data.get('auth_user', {})) 
+#         contractor_data = vendor_update_contractor_schema.load(json_data.get('contractor', {}))
+#     except ValidationError as e:
+#         return jsonify(e.messages), 400
+#     if not auth_user_data and not contractor_data:
+#         return jsonify({'error': 'No data to update'}), 400
     
-    contractor = db.session.get(Contractor, contractor_id)
+#     contractor = db.session.get(Contractor, contractor_id)
 
     
-    if not contractor or not contractor.auth_user:
-            return jsonify({'error': 'Invalid User Id'}), 404
+    # if not contractor or not contractor.auth_user:
+    #         return jsonify({'error': 'Invalid User Id'}), 404
     
-    auth_user = contractor.auth_user
+    # auth_user = contractor.auth_user
 
-    vendor_id = request.user_id
-    auth_user["updated_by"] = vendor_id
-    auth_user["updated_at"] = datetime.now(timezone.utc)
+    # vendor_id = request.user_id
+    # auth_user["updated_by"] = vendor_id
+    # auth_user["updated_at"] = datetime.now(timezone.utc)
 
-    try: 
-        for key, value in auth_user_data.items():
-            setattr(auth_user, key, value)
-        for key, value in contractor_data.items():
-            setattr(contractor, key, value)
+    # try: 
+    #     for key, value in auth_user_data.items():
+    #         setattr(auth_user, key, value)
+    #     for key, value in contractor_data.items():
+    #         setattr(contractor, key, value)
 
-        db.session.commit()    
+    #     db.session.commit()    
     
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': 'Updating failed'}), 500
+    # except Exception as e:
+    #     db.session.rollback()
+    #     return jsonify({'error': 'Updating failed'}), 500
 
 
-    return jsonify({
-        'message': 'Profile updated successfully',
-        'auth_user': auth_user_update_schema.dump(auth_user),
-        'contractor': contractor_update_schema.dump(contractor)
-    }), 200
+    # return jsonify({
+    #     'message': 'Profile updated successfully',
+    #     'auth_user': auth_user_update_schema.dump(auth_user),
+    #     'contractor': contractor_update_schema.dump(contractor)
+    # }), 200
 
 
-#--------->user profile can change in 152, the contractor profile is only offline pin.
-# Update Profile (need to be able to update email, contact number, address - anything else will be through vendor)
+# Update Profile (limited to: contact number, alternative contact number)
 @field_contractors_bp.route('/profile', methods=['PUT'])
 @token_required
 def update_contractor():
@@ -158,29 +161,28 @@ def update_contractor():
     if not json_data:
          return jsonify({'error': 'No input data provided'}), 400
 
+
     # Validate and deserialize new updated input
     try:
-        user_data = auth_user_update_schema.load(json_data.get('auth_user', {})) 
-        contractor_data = contractor_update_schema.load(json_data.get('contractor', {}))
+        user_data = auth_user_update_schema.load(json_data.get('user', {})) 
+        # contractor_data = contractor_update_schema.load(json_data.get('contractor', {}))
     except ValidationError as e:
         return jsonify(e.messages), 400
-    if not user_data and not contractor_data:
+    if not user_data:  #and not contractor_data
         return jsonify({'error': 'No data to update'}), 400
     
     #user_id from token
     user_id = request.user_id
-    contractor = db.session.get(Contractor, user_id)
+    contractor = db.session.query(Contractor).filter(Contractor.user_id == user_id).first()
 
-    if not contractor or not contractor.auth_user:
+    if not contractor or not contractor.user:
             return jsonify({'error': 'Invalid User Id'}), 404
     
-    auth_user = contractor.auth_user
+    user = contractor.user
 
     try: 
         for key, value in user_data.items():
-            setattr(auth_user, key, value)
-        for key, value in contractor_data.items():
-            setattr(contractor, key, value)
+            setattr(user, key, value)
 
         db.session.commit()    
     
@@ -191,14 +193,8 @@ def update_contractor():
 
     return jsonify({
         'message': 'Profile updated successfully',
-        'auth_user': auth_user_update_schema.dump(auth_user),
-        'contractor': contractor_update_schema.dump(contractor)
+        'user': auth_user_update_schema.dump(user),
     }), 200
-
-
-#Update password route exists is in user
-
-#Update offline pin route
 
 
 
@@ -213,26 +209,30 @@ def get_assigned_tickets():
     user_id = request.user_id
 
     try:
-        tickets = db.session.query(Ticket).filter(Ticket.assigned_contractor == user_id).all()
+        contractor = db.session.query(Contractor).filter(Contractor.user_id == user_id).first()
+
+        tickets = db.session.query(Ticket).filter(Ticket.assigned_contractor == contractor.id).all()
         return tickets_schema.jsonify(tickets), 200
     except Exception as e:
         return jsonify({'error': 'Failed to retrieve tickets'}), 500
 
 
 # View all tickets assigned to contractor's vendor, but not assigned to contractor (get by vendor id)
-@field_contractors_bp.route('/unassigned-tickets-by-vendor', methods=['GET'])
-@token_required
-def get_vendor_unassigned_tickets():
-    user_id = request.user_id
+# @field_contractors_bp.route('/unassigned-tickets-by-vendor', methods=['GET'])
+# @token_required
+# def get_vendor_unassigned_tickets():
+#     user_id = request.user_id
     
-    try:
-        user = db.session.get(Contractor, user_id)
-        if not user:
-            return jsonify ({'error': 'Invalid user id'}), 400
-        
-        vendor_id = user.vendor_id
+#     try:
+#         contractor = db.session.query(Contractor).filter(Contractor.user_id == user_id).first()
 
-        tickets = db.session.query(Ticket).filter(Ticket.vendor_id == vendor_id).all()
-        return tickets_schema.jsonify(tickets), 200
-    except Exception as e:
-        return jsonify({'error': 'Failed to retrieve tickets'}), 500
+#         user = db.session.get(Contractor, user_id)
+#         if not user:
+#             return jsonify ({'error': 'Invalid user id'}), 400
+        
+#         vendor_id = user.vendor_id
+
+#         tickets = db.session.query(Ticket).filter(Ticket.vendor_id == vendor_id).all()
+#         return tickets_schema.jsonify(tickets), 200
+#     except Exception as e:
+#         return jsonify({'error': 'Failed to retrieve tickets'}), 500
