@@ -1,30 +1,44 @@
-// PasswordResetScreen.tsx
+// PasswordResetScreen.tsx  —  Troy
 // This screen has two steps:
 //   Step 1 — The user enters their email + new password
 //   Step 2 — They verify their identity with Face ID or fingerprint
 //            before the password is actually saved
 //
-// There's no bottom navigation bar here because the user
-// shouldn't be navigating elsewhere mid-reset.
+// Uses MainFrame header="default" with no footer nav since the user
+// should not be navigating elsewhere mid-reset.
+//
+// Menu2 provides the back arrow and title via headerMenu prop.
+// onBack steps back to the form on step 2 rather than leaving the
+// screen — Menu2's back arrow only calls navigation.goBack().
+//
+// ── BIOMETRIC DEFAULT ─────────────────────────────────────────────────────────
+// The biometric method is loaded from AsyncStorage on mount using the same
+// key that ProfileScreen writes to, so the user's saved preference is always
+// respected when step 2 opens.
+// ──────────────────────────────────────────────────────────────────────────────
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  StatusBar,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons }      from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../App';
-import { MainFrame } from '../components/MainFrame';
+
+import { RootStackParamList }     from '../App';
+import { MainFrame }              from '../components/MainFrame';
+import { SETTINGS_BIOMETRIC_KEY } from './ProfileScreen';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'PasswordReset'>;
@@ -39,65 +53,64 @@ export default function PasswordResetScreen() {
   const [showNew,         setShowNew]         = useState(false);
   const [showConfirm,     setShowConfirm]     = useState(false);
 
-  // Which step we're on — 'form' or 'biometric'
+  // Which step we're on
   const [currentStep, setCurrentStep] = useState('form');
 
   // Biometric state for step 2
   const [biometricMethod, setBiometricMethod] = useState('fingerprint');
   const [scanState,       setScanState]       = useState('idle');
 
-  // The Continue button should only be enabled when all fields are filled
-  // and the passwords match each other
+  // Load the user's saved biometric preference from AsyncStorage on mount
+  // so step 2 opens with the correct method pre-selected
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(SETTINGS_BIOMETRIC_KEY);
+        if (saved === 'face' || saved === 'fingerprint') {
+          setBiometricMethod(saved);
+        }
+      } catch {
+        // Fall back to fingerprint default
+      }
+    };
+    load();
+  }, []);
+
   const formIsReady =
     email.length > 0 &&
     newPassword.length >= 6 &&
     newPassword === confirmPassword;
 
-  // Runs when the user taps "Continue to Verification"
   const handleContinue = () => {
     if (!formIsReady) return;
     setCurrentStep('biometric');
-  }
+  };
 
-  // Switches biometric method and resets the scan state
   const switchBiometricMethod = (method: string) => {
     setBiometricMethod(method);
     setScanState('idle');
-  }
+  };
 
-  // Runs when the user taps the biometric scan button
   const handleBiometricScan = () => {
     if (scanState === 'scanning') return;
-
     setScanState('scanning');
 
-    // TODO: Replace with real biometric call using expo-local-authentication:
-    //   const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Verify identity' });
-    //   if (result.success) { save the password, then navigate to Login }
-    //   else { setScanState('failed'); }
+    // TODO: Replace with real expo-local-authentication call
     setTimeout(() => {
-      const success = Math.random() > 0.3; // 70% success rate while testing
-
+      const success = Math.random() > 0.3;
       if (success) {
-        // TODO: Call your password-reset API here with email + newPassword before navigating
         Alert.alert(
           'Password Reset',
           'Your password has been updated successfully.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.navigate('Login'),
-            },
-          ],
+          [{ text: 'OK', onPress: () => navigation.navigate('Login') }],
         );
       } else {
         setScanState('failed');
       }
     }, 1500);
-  }
+  };
 
-  // When the back arrow is pressed on step 2, go back to the form
-  // instead of leaving the screen entirely
+  // On step 2, back arrow returns to the form rather than leaving the screen
   const handleBackPress = () => {
     if (currentStep === 'biometric') {
       setCurrentStep('form');
@@ -105,15 +118,20 @@ export default function PasswordResetScreen() {
     } else {
       navigation.goBack();
     }
-  }
+  };
 
   return (
-    <MainFrame header="default" headerMenu={['none']} footerMenu={['none']}>
+    <MainFrame
+      header="default"
+      headerMenu={['Menu2', ['Reset Password']]}
+      footerMenu={['none', []]}
+    >
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
-      {/* ── STEP 1: The password reset form ─────────────────── */}
+      {/* ── STEP 1: Password reset form ───────────────────────── */}
       {currentStep === 'form' && (
         <KeyboardAvoidingView
-          style={styles.flex}
+          style={styles.kav}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <ScrollView
@@ -121,7 +139,7 @@ export default function PasswordResetScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Lock icon with a refresh badge to represent "reset" */}
+            {/* Lock + refresh badge illustration */}
             <View style={styles.illustrationWrap}>
               <View style={styles.illustrationCircle}>
                 <Ionicons name="lock-closed" size={48} color={colors.textWhite} />
@@ -133,21 +151,22 @@ export default function PasswordResetScreen() {
 
             <View style={styles.form}>
 
-              {/* Email field */}
+              {/* Email — label above, no placeholder text inside the box */}
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Email Address</Text>
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="Username"
+                  placeholder=""
                   placeholderTextColor={colors.textMuted}
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  accessibilityLabel="Email Address"
                 />
               </View>
 
-              {/* New password field */}
+              {/* New Password — label above, no placeholder text */}
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>New Password</Text>
                 <View>
@@ -155,10 +174,11 @@ export default function PasswordResetScreen() {
                     style={[styles.input, styles.inputPadRight]}
                     value={newPassword}
                     onChangeText={setNewPassword}
-                    placeholder="Password"
+                    placeholder=""
                     placeholderTextColor={colors.textMuted}
                     secureTextEntry={!showNew}
                     autoCapitalize="none"
+                    accessibilityLabel="New Password"
                   />
                   <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowNew(!showNew)}>
                     <Ionicons
@@ -170,7 +190,7 @@ export default function PasswordResetScreen() {
                 </View>
               </View>
 
-              {/* Confirm password field */}
+              {/* Confirm Password — label above, no placeholder text */}
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Confirm Password</Text>
                 <View>
@@ -178,10 +198,11 @@ export default function PasswordResetScreen() {
                     style={[styles.input, styles.inputPadRight]}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    placeholder="Confirm Password"
+                    placeholder=""
                     placeholderTextColor={colors.textMuted}
                     secureTextEntry={!showConfirm}
                     autoCapitalize="none"
+                    accessibilityLabel="Confirm Password"
                   />
                   <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowConfirm(!showConfirm)}>
                     <Ionicons
@@ -191,13 +212,11 @@ export default function PasswordResetScreen() {
                     />
                   </TouchableOpacity>
                 </View>
-                {/* Only show the mismatch message if they've started typing in confirm */}
                 {confirmPassword.length > 0 && newPassword !== confirmPassword && (
                   <Text style={styles.mismatchText}>Passwords do not match</Text>
                 )}
               </View>
 
-              {/* Continue button — grayed out until form is valid */}
               <TouchableOpacity
                 style={[styles.primaryBtn, !formIsReady && styles.btnDisabled]}
                 onPress={handleContinue}
@@ -212,7 +231,8 @@ export default function PasswordResetScreen() {
         </KeyboardAvoidingView>
       )}
 
-      {/* ── STEP 2: Biometric verification ──────────────────── */}
+      {/* ── STEP 2: Biometric verification ──────────────────────
+          Opens with the method the user saved in Profile settings */}
       {currentStep === 'biometric' && (
         <View style={styles.bioContainer}>
 
@@ -221,7 +241,7 @@ export default function PasswordResetScreen() {
             Confirm who you are before saving your new password.
           </Text>
 
-          {/* Face ID / Fingerprint toggle */}
+          {/* Method toggle — pre-selected from saved AsyncStorage preference */}
           <View style={styles.methodRow}>
             <TouchableOpacity
               style={[styles.methodBtn, biometricMethod === 'face' && styles.methodBtnActive]}
@@ -254,7 +274,7 @@ export default function PasswordResetScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* The big scan button */}
+          {/* Scan button */}
           <TouchableOpacity
             style={[
               styles.scanBtn,
@@ -276,7 +296,6 @@ export default function PasswordResetScreen() {
             )}
           </TouchableOpacity>
 
-          {/* State-based status messages */}
           {scanState === 'idle' && (
             <Text style={styles.hintText}>
               {biometricMethod === 'face' ? 'Tap to scan your face' : 'Tap to scan fingerprint'}
@@ -285,28 +304,15 @@ export default function PasswordResetScreen() {
           {scanState === 'scanning' && (
             <Text style={styles.hintText}>Scanning…</Text>
           )}
+
+          {/* Failed state — retry only, no PIN option (this is a password reset, not login) */}
           {scanState === 'failed' && (
             <View style={styles.failedSection}>
               <Text style={styles.errorText}>Scan failed — please try again.</Text>
-              <TouchableOpacity
-                style={styles.retryBtn}
-                onPress={() => setScanState('idle')}
-              >
+              <TouchableOpacity style={styles.retryBtn} onPress={() => setScanState('idle')}>
                 <Text style={styles.retryBtnText}>Retry</Text>
               </TouchableOpacity>
             </View>
-          )}
-
-          {/* Quick switch between Face ID and fingerprint */}
-          {scanState === 'idle' && (
-            <TouchableOpacity
-              onPress={() => switchBiometricMethod(biometricMethod === 'face' ? 'fingerprint' : 'face')}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.switchLinkText}>
-                Use {biometricMethod === 'face' ? 'fingerprint' : 'Face ID'} instead
-              </Text>
-            </TouchableOpacity>
           )}
 
         </View>
@@ -316,7 +322,7 @@ export default function PasswordResetScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex:       { flex: 1 },
+  kav:        { flex: 1, width: '100%' },
   scroll: {
     flexGrow:          1,
     alignItems:        'center',
@@ -324,7 +330,6 @@ const styles = StyleSheet.create({
     paddingBottom:     spacing.xl,
   },
 
-  // Illustration
   illustrationWrap: {
     alignItems:     'center',
     justifyContent: 'center',
@@ -355,7 +360,6 @@ const styles = StyleSheet.create({
     justifyContent:  'center',
   },
 
-  // Form (step 1)
   form:       { width: '100%', maxWidth: 380, gap: spacing.md },
   fieldGroup: { gap: 6 },
   label:      { fontFamily: fonts.regular, fontSize: fontSize.sm, color: colors.textLight },
@@ -394,7 +398,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Biometric (step 2)
   bioContainer: {
     flex:              1,
     alignItems:        'center',
@@ -466,10 +469,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
   },
   retryBtnText:   { fontFamily: fonts.bold, color: colors.textWhite, fontSize: fontSize.base },
-  switchLinkText: {
-    fontFamily:         fonts.regular,
-    fontSize:           fontSize.sm,
-    color:              colors.textMuted,
-    textDecorationLine: 'underline',
-  },
 });

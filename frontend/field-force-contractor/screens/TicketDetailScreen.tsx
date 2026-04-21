@@ -1,15 +1,17 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MainFrame } from '../components/MainFrame';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SETTINGS_BIOMETRIC_KEY } from './ProfileScreen';
 
 const DEV_MODE = true;
 
 export default function TicketDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { taskId, assigned } = route.params;
+  const { taskId } = route.params;
 
   const [taskStatus, setTaskStatus] = useState<'not_started' | 'in_progress' | 'ready_to_submit'>('not_started');
   const [notes, setNotes] = useState('');
@@ -22,6 +24,23 @@ export default function TicketDetailScreen() {
 
   const pinRefs = useRef<(TextInput | null)[]>([null, null, null, null, null, null]);
 
+  // ── Load saved biometric preference ────────────────────────────────────────
+  // Reads the preference the user set in ProfileScreen → Settings so the
+  // correct method is pre-selected when the verification modal opens.
+  useEffect(() => {
+    const loadPreference = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(SETTINGS_BIOMETRIC_KEY);
+        if (saved === 'face' || saved === 'fingerprint') {
+          setSelectedMethod(saved);
+        }
+      } catch {
+        // Fall back to fingerprint default if read fails
+      }
+    };
+    loadPreference();
+  }, []);
+
   const task = {
     id: taskId,
     title: 'Install Gas Pump at Station #42',
@@ -31,7 +50,6 @@ export default function TicketDetailScreen() {
     description: 'Install new gas pump model XR-500 at station #42. Ensure proper connection to underground tank and test all safety mechanisms before completion.',
     photosRequired: 3,
     photosSubmitted: taskStatus === 'ready_to_submit' ? 3 : 0,
-    pointOfContact: { name: 'John Martinez', phone: '+1 (555) 012-3456' },
   };
 
   const toggleListening = () => {
@@ -122,18 +140,19 @@ export default function TicketDetailScreen() {
     }, 1500);
   };
 
-  const handleAcceptTask = () => {
-    // TODO: API call to accept task
-    navigation.goBack();
-  };
-
-  const handleDeclineTask = () => {
-    // TODO: API call to decline task
-    navigation.goBack();
-  };
-
   return (
     <MainFrame header='home'>
+
+      {/* ── Back Header ── */}
+      <View style={styles.backHeader}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={20} color="white" />
+        </TouchableOpacity>
+        <View style={styles.backHeaderText}>
+          <Text style={styles.backTitle}>Task Details</Text>
+          <Text style={styles.backSubtitle}>ID: #{task.id}</Text>
+        </View>
+      </View>
 
       {/* ── Task Title + Status ── */}
       <View style={styles.section}>
@@ -150,20 +169,6 @@ export default function TicketDetailScreen() {
           </Text>
         </View>
       </View>
-
-      {/* ── Accept and Decline Buttons ── */}
-      {!assigned && (
-        <View style={styles.assignRow}>
-          <TouchableOpacity style={styles.acceptBtn} onPress={handleAcceptTask}>
-            <Ionicons name="checkmark" size={12} color="white" />
-            <Text style={styles.btnText}>Accept</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.declineBtn} onPress={handleDeclineTask}>
-            <Ionicons name="close" size={12} color="white" />
-            <Text style={styles.btnText}>Decline</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* ── Location ── */}
       <View style={styles.infoCard}>
@@ -184,18 +189,6 @@ export default function TicketDetailScreen() {
         <View style={styles.infoText}>
           <Text style={styles.infoLabel}>Deadline</Text>
           <Text style={styles.infoValue}>{task.deadline}</Text>
-        </View>
-      </View>
-
-      {/* ── Point of Contact ── */}
-      <View style={styles.infoCard}>
-        <View style={styles.infoIcon}>
-          <Ionicons name="person" size={18} color="#ff8c00" />
-        </View>
-        <View style={styles.infoText}>
-          <Text style={styles.infoLabel}>Point of Contact</Text>
-          <Text style={styles.infoValue}>{task.pointOfContact.name}</Text>
-          <Text style={styles.taskDetail}>{task.pointOfContact.phone}</Text>
         </View>
       </View>
 
@@ -227,76 +220,71 @@ export default function TicketDetailScreen() {
         </View>
       )}
 
-      {/* ── Photos — only when in progress ── */}
+      {/* ── Photos ── */}
       {taskStatus !== 'not_started' && (
         <View style={styles.card}>
           <View style={styles.cardRow}>
-            <Text style={styles.cardTitle}>Photo Submissions</Text>
+            <Text style={styles.cardTitle}>Photos</Text>
             <Text style={styles.photoCount}>{task.photosSubmitted}/{task.photosRequired}</Text>
           </View>
           <View style={styles.photoRow}>
-            {[...Array(task.photosRequired)].map((_, index) => (
-              <View key={index} style={[
-                styles.photoSlot,
-                index < task.photosSubmitted && styles.photoSlotDone
-              ]}>
+            {[...Array(task.photosRequired)].map((_, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.photoSlot, i < task.photosSubmitted && styles.photoSlotDone]}
+                onPress={handleTakePhoto}
+              >
                 <Ionicons
-                  name={index < task.photosSubmitted ? 'checkmark-circle' : 'camera'}
+                  name={i < task.photosSubmitted ? 'checkmark-circle' : 'camera'}
                   size={24}
-                  color={index < task.photosSubmitted ? '#22c55e' : '#6b7280'}
+                  color={i < task.photosSubmitted ? '#22c55e' : '#6b7280'}
                 />
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
       )}
 
-      {/* ── Action Buttons ── */}
+      {/* ── Actions ── */}
       <View style={styles.actions}>
-        {taskStatus === 'not_started' && assigned && (
+        {taskStatus === 'not_started' && (
           <TouchableOpacity style={styles.btnPrimary} onPress={handleStartTask}>
-            <Ionicons name="play" size={20} color="white" />
+            <Ionicons name="play-circle" size={20} color="white" />
             <Text style={styles.btnText}>Start Task</Text>
           </TouchableOpacity>
         )}
-
         {taskStatus === 'in_progress' && (
           <>
-            <TouchableOpacity style={styles.btnPrimary} onPress={handleTakePhoto}>
-              <Ionicons name="camera" size={20} color="white" />
-              <Text style={styles.btnText}>Take Photo</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.btnOutline} onPress={() => navigation.navigate('UploadPhoto' as never, { taskId } as never)}>
-              <Ionicons name="cloud-upload-outline" size={20} color="#ff8c00" />
-              <Text style={styles.btnOutlineText}>Upload Photo</Text>
+            <TouchableOpacity
+              style={task.photosSubmitted >= task.photosRequired ? styles.btnSuccess : styles.btnOutline}
+              onPress={handleCompleteTask}
+              disabled={task.photosSubmitted < task.photosRequired}
+            >
+              <Ionicons name="checkmark-circle" size={20} color={task.photosSubmitted >= task.photosRequired ? 'white' : '#ff8c00'} />
+              <Text style={task.photosSubmitted >= task.photosRequired ? styles.btnText : styles.btnOutlineText}>
+                {task.photosSubmitted >= task.photosRequired ? 'Complete Task' : `Need ${task.photosRequired - task.photosSubmitted} more photo(s)`}
+              </Text>
             </TouchableOpacity>
           </>
-        )}
-
-        {taskStatus === 'ready_to_submit' && (
-          <TouchableOpacity style={styles.btnSuccess} onPress={handleCompleteTask}>
-            <Ionicons name="checkmark-circle" size={20} color="white" />
-            <Text style={styles.btnText}>Complete Task</Text>
-          </TouchableOpacity>
         )}
       </View>
 
       {/* ── Verification Modal ── */}
-      <Modal visible={showVerificationModal} transparent animationType="fade">
+      <Modal
+        visible={showVerificationModal}
+        transparent
+        animationType="fade"
+        onRequestClose={closeModal}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-
-            <View style={styles.cardRow}>
-              <Text style={styles.modalTitle}>Task Verification</Text>
-              <TouchableOpacity onPress={closeModal}>
-                <Ionicons name="close" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.modalTitle}>Identity Verification</Text>
 
             {(verificationStep === 'initial' || verificationStep === 'biometric') && (
               <View style={styles.modalBody}>
                 <Text style={styles.modalText}>Verify your identity to start this task.</Text>
 
+                {/* Face ID / Fingerprint toggle */}
                 <View style={styles.methodRow}>
                   <TouchableOpacity
                     style={[styles.methodBtn, selectedMethod === 'face' && styles.methodBtnActive]}
@@ -314,6 +302,7 @@ export default function TicketDetailScreen() {
                   </TouchableOpacity>
                 </View>
 
+                {/* Scan button */}
                 <TouchableOpacity
                   style={[
                     styles.scanButton,
@@ -337,19 +326,23 @@ export default function TicketDetailScreen() {
                 {scanState === 'idle'     && <Text style={styles.hintText}>{selectedMethod === 'face' ? 'Tap to scan your face' : 'Tap to scan fingerprint'}</Text>}
                 {scanState === 'scanning' && <Text style={styles.hintText}>Scanning…</Text>}
 
+                {/* ── Failed state: retry + PIN fallback ──────────────────────
+                    "Use PIN instead" only appears after a scan fails — it is a
+                    fallback, not a first option. This matches the login biometric
+                    screen behaviour and prevents contractors bypassing biometrics. */}
                 {scanState === 'failed' && (
                   <>
                     <Text style={styles.errorText}>Scan failed — please try again.</Text>
                     <TouchableOpacity style={styles.btnPrimary} onPress={() => setScanState('idle')}>
                       <Text style={styles.btnText}>Retry</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.pinLink} onPress={() => setVerificationStep('pin')}>
+                      <Ionicons name="keypad-outline" size={16} color="#ff8c00" />
+                      <Text style={styles.pinLinkText}>Use PIN instead</Text>
+                    </TouchableOpacity>
                   </>
                 )}
 
-                <TouchableOpacity style={styles.pinLink} onPress={() => setVerificationStep('pin')}>
-                  <Ionicons name="keypad-outline" size={16} color="#ff8c00" />
-                  <Text style={styles.pinLinkText}>Use PIN instead</Text>
-                </TouchableOpacity>
               </View>
             )}
 
@@ -424,6 +417,24 @@ const CARD_BG = 'rgba(255,255,255,0.1)';
 const BORDER  = 'rgba(255,255,255,0.15)';
 
 const styles = StyleSheet.create({
+  backHeader: {
+    width: '90%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  backBtn: {
+    width: 40, height: 40,
+    borderRadius: 8,
+    backgroundColor: CARD_BG,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backHeaderText: { flex: 1 },
+  backTitle: { fontSize: 17, fontFamily: 'poppins-bold', color: 'white' },
+  backSubtitle: { fontSize: 11, color: '#9ca3af' },
 
   section: { width: '90%', marginBottom: 12 },
   taskTitle: { fontSize: 20, fontFamily: 'poppins-bold', color: 'white', marginBottom: 8 },
@@ -572,28 +583,4 @@ const styles = StyleSheet.create({
   hintText:    { fontSize: 12, color: '#9ca3af', textAlign: 'center' },
   pinLink:     { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' },
   pinLinkText: { fontSize: 13, fontFamily: 'poppins-bold', color: '#ff8c00', textDecorationLine: 'underline' },
-
-  taskDetail: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
-
-  assignRow: {
-    width: '90%',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginBottom: 8,
-  },
-  acceptBtn: {
-    backgroundColor: '#ff8c00',
-    borderRadius: 8, paddingVertical: 8,
-    paddingHorizontal: 14,
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: 6,
-  },
-  declineBtn: {
-    backgroundColor: '#dc2626',
-    borderRadius: 8, paddingVertical: 8,
-    paddingHorizontal: 14,
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: 6,
-  },
 });
