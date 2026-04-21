@@ -1,25 +1,44 @@
 import {View,TextInput,Pressable,Text,Image} from 'react-native';
 import {Styles} from '@/constants/Styles';
-import {Children, FC, ReactNode} from "react";
+import {FC, useState} from "react";
 import { Assets } from "@/constants/Assets";
-import {useState} from "react";
-import { Background } from '@react-navigation/elements';
-import {TextToSpeech} from "@/utils/SpeechRecognition"
+
 
 type props = {
 
     placeHolder?:string,
     buttonText?: string
+    multiline?: boolean
     onClick:Function
+    resetOnSubmit?:Boolean
 }
 export const SearchBar:FC<props> = (props) => {
- const [searchPlaceHolder, setSearchPlaceHolder] = useState(props.placeHolder || "Search...");
- const [buttonText, setButtonText] = useState(props.buttonText || "Submit");
+ const searchPlaceHolder = props.placeHolder || "Search...";
+ const buttonText = props.buttonText || "Submit";
  const[message,setMessage] = useState<string>("");
+ const [inputHeight,setInputHeight] = useState<number>(37);
+ const maxInputHeight = 110;
     return(<>
     <View style={Styles.SearchBar.Bar}>
-        <TextInput value={message} onChangeText={setMessage} style={Styles.SearchBar.SearchInput} placeholder={searchPlaceHolder} keyboardAppearance="dark" />
-        <Pressable onPress = {() =>{props.onClick(message); setMessage("");}} style={({pressed}) => 
+        <TextInput
+          value={message}
+          onChangeText={setMessage}
+          multiline={props.multiline}
+          onContentSizeChange={(event) => {
+            if (props.multiline) {
+              setInputHeight(Math.min(maxInputHeight, Math.max(37, event.nativeEvent.contentSize.height)));
+            }
+          }}
+          scrollEnabled={props.multiline && inputHeight >= maxInputHeight}
+          textAlignVertical={props.multiline ? "top" : "center"}
+          style={[
+            Styles.SearchBar.SearchInput,
+            props.multiline && Styles.SearchBar.MessageInput,
+            props.multiline && {height: inputHeight}
+          ]}
+          placeholder={searchPlaceHolder}
+        />
+        <Pressable onPress = {() =>{props.onClick(message); (props.resetOnSubmit)&& setMessage(""); setInputHeight(37);}} style={({pressed}) => 
             [Styles.SearchBar.SearchButton,
               {backgroundColor: (pressed) ? Styles.SearchBar.SearchButtonPressed.backgroundColor : Styles.SearchBar.SearchButton.backgroundColor}
             ]}>
@@ -35,18 +54,7 @@ export const SearchBar:FC<props> = (props) => {
                   }
               }
          </Pressable>
-          <Pressable  style={({pressed}) =>[
-            
-            Styles.SearchBar.TextToSpeechButton,
-            {
-              backgroundColor: (pressed) ? Styles.SearchBar.TextToSpeechButtonPressed.backgroundColor : Styles.SearchBar.TextToSpeechButton.backgroundColor
-            }]}>
-
-            <View style={Styles.SearchBar.TextToSpeechInset}>
-              <Image source={Assets.icons.TextToSpeech} style={Styles.SearchBar.TextToSpeechIcon}/>
-            </View>
-            
-          </Pressable>
+         
     </View>
     
     </>

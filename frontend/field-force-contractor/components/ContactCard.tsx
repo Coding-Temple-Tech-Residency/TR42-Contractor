@@ -4,6 +4,7 @@ import {View,Text,Image,Pressable,Linking} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import{RootStackParamList} from "@/App"
+import { ProfileIcon } from "./ProfileIcon";
 
 import {FC} from "react"
 
@@ -12,7 +13,7 @@ type Props = {
     profileIcon?: string
     name?:string
     phoneNumber?: string
-    contactId?: number
+    contactId?: string
 }
 export const ContactCard:FC<Props> = (props) =>{
 const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -25,7 +26,8 @@ const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   <View style={Styles.Contacts.container}>
     
     <View style={Styles.Contacts.IconContainer}>
-        <Image source={props.profileIcon || Assets.icons.ProfileIcon} style={Styles.Contacts.ProfileIcon}/>
+        
+        <ProfileIcon width={Styles.Contacts.ProfileIcon.width} height={Styles.Contacts.ProfileIcon.height} name={props.name}/> 
     </View>
     <View style={Styles.Contacts.InfoContainer}>
        <Text style={Styles.Contacts.contactText}>{props.name}</Text>
@@ -46,7 +48,7 @@ const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
         
     </View>
     <View style={Styles.Contacts.buttonContainer}>
-         <Pressable onPress={() =>{nav.navigate("Chat",{name:props.name || ""})}}>
+         <Pressable onPress={() =>{nav.navigate("Chat" as any,{name:props.name || "",contactId:props.contactId})}}>
             {
                 ({pressed}) => {
                 return(<>

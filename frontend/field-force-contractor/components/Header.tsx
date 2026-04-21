@@ -5,6 +5,7 @@ import {View,Image, Pressable} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"
+import { ProfileIcon } from "./ProfileIcon"
 export type HeaderVariant = 'default' | 'home' | "none"
 
 type Props ={
@@ -29,7 +30,8 @@ const HeaderHome: FC = () => (
     <View style={Styles.HeaderVariants.row}>
       <Image source={Assets.logos.ffLogoName} style={Styles.HeaderVariants.logo} resizeMode="contain" />
       <Pressable onPress={() => {nav.navigate("Profile")}}>
-      <Image source={Assets.icons.ProfileIcon} style={Styles.Menu.headMenuStyle2Icon} resizeMode="contain" />
+     
+      <ProfileIcon width={Styles.Menu.headMenuStyle2Icon.width} height={Styles.Menu.headMenuStyle2Icon.height} name="John Doe"/>
       </Pressable>
       
     </View>

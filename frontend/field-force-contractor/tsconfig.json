@@ -11,5 +11,5 @@
   "include": [
     "**/*.ts",
     "**/*.tsx"
-  ]
+, "utils/SpeechRecognition.ts", "utils/LoadFonts.js"  ]
 }
