@@ -50,9 +50,10 @@ export const SplashScreen: FC = () => {
 
       if (isAuthenticated) {
         // Valid unexpired token — skip login entirely
+        // Go to Inspection (the daily safety gate + designed entry point).
         // replace() removes SplashScreen from the stack so it can never
-        // fire navigation again after the user is in the app
-        nav.replace('Home' as any);
+        // fire navigation again after the user is in the app.
+        nav.replace('Inspection' as any);
       } else {
         // No token or expired — go to Login
         nav.replace('Login' as any);

@@ -80,7 +80,11 @@ export default function OfflineLoginScreen() {
       setPinError('Incorrect PIN. Please try again.');
       return;
     }
-    navigation.replace('Home');
+    // TODO (Troy): this needs to call useAuth().login(storedToken, storedUser)
+    // so isAuthenticated flips and RootNavigator swaps to the Protected stack.
+    // Right now replace('Home') targets the Auth navigator which has no Home,
+    // so it will throw "Home not handled by any navigator".
+    navigation.replace('Home' as any);
   };
 
   // ── Reset PIN modal handlers ──────────────────────────────
