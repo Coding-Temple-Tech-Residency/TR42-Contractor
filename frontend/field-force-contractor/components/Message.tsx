@@ -2,16 +2,20 @@ import{Assets} from "@/constants/Assets"
 import{Styles} from "@/constants/Styles"
 import{FC} from "react"
 import {Text,View,Image} from "react-native"
-
+import { ProfileIcon } from "./ProfileIcon"
+import { TimeFormater } from "@/utils/timeFormater"
 
 export type MessageType = "sent" | "received"
 type Props = {
     message?:string
-    messageId?:number
+    messageId?:string
     profileIcon?:string
     contactId?:string
+    contactName?:string
+    senderId?:string
     messageType?:string
     timeStamp?:string
+    utcTimeStamp?:string
 }
 export const Message:FC<Props> =(props) =>{
    
@@ -22,9 +26,11 @@ export const Message:FC<Props> =(props) =>{
             <View style={Styles.Chat.messageBoxSent}>
                     <Text style={Styles.Chat.timeText}>{props.timeStamp}</Text>
                 <View style={Styles.Chat.messageSent}>
+                    <Text style={Styles.Chat.dateText}>{TimeFormater.getTimeStamp("LOCAL-DATE",props.utcTimeStamp)}</Text>
                     <Text style={Styles.Chat.messageText}>{props.message}</Text>
                 </View>
-                  <Image source={Assets.icons.ProfileIcon} style={Styles.Chat.chatIcon} />
+            
+                  <ProfileIcon width={Styles.Chat.chatIcon.width} height={Styles.Chat.chatIcon.height} name={props.contactName}/>
             </View>
 
         )
@@ -34,8 +40,10 @@ export const Message:FC<Props> =(props) =>{
 
            return(
             <View style={Styles.Chat.messageBoxReceived}>   
-                <Image source={Assets.icons.ProfileIcon} style={Styles.Chat.chatIcon} />  
+                 <ProfileIcon width={Styles.Chat.chatIcon.width} height={Styles.Chat.chatIcon.height} name={props.contactName}/>
+
                 <View style={Styles.Chat.messageReceived}>
+                     <Text style={Styles.Chat.dateText}>{TimeFormater.getTimeStamp("LOCAL-DATE",props.utcTimeStamp)}</Text>
                     <Text style={Styles.Chat.messageText}>{props.message}</Text>
                 </View>
                 <Text style={Styles.Chat.timeText}>{props.timeStamp}</Text>

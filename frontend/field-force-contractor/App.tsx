@@ -48,7 +48,7 @@ export type RootStackParamList = {
   Blank:         undefined;
   // ── Charlie — App screens ───────────────────────────────────
   Contacts:      undefined;
-  Chat:          { name: string };
+  Chat:          { name: string; contactId?: string };
   Tickets:       undefined;
   TicketDetail:  { taskId: number };
 
@@ -108,7 +108,11 @@ function RootNavigator() {
   }
 
   return (
-    <StackNavigator.Navigator screenOptions={screenConfig.window}>
+    <StackNavigator.Navigator screenOptions={screenConfig.window} initialRouteName="SplashScreen">
+      {/* SplashScreen is the universal entry point — its own logic uses nav.replace()
+          to route to Home (if authenticated) or Login (if not). Always available. */}
+      <StackNavigator.Screen name="SplashScreen" component={SplashScreen} />
+
       {isAuthenticated ? (
         // ── Protected App screens ─────────────────────────────────────────
         // First screen is Inspection — the daily gate. After passing (or skipping)
@@ -117,24 +121,23 @@ function RootNavigator() {
           <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
           <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
           <StackNavigator.Screen name="Home"             component={HomeScreen}              />
-          <StackNavigator.Screen name="Blank"            component={Blank}                  />
-          <StackNavigator.Screen name="Contacts"         component={Contacts}               />
-          <StackNavigator.Screen name="Chat"             component={Chat}                   />
-          <StackNavigator.Screen name="Tickets"          component={TicketsScreen}          />
-          <StackNavigator.Screen name="TicketDetail"     component={TicketDetailScreen}     />
-          <StackNavigator.Screen name="Profile"          component={ProfileScreen}          />
-          <StackNavigator.Screen name="LicenseDetails"   component={LicenseScreen}          />
-          <StackNavigator.Screen name="TaskHistory"      component={TaskHistoryScreen}      />
-          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen} />
-          <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen} />
-          <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}     />
-          {/* SplashScreen kept for Jonathan's direct nav references */}
-          <StackNavigator.Screen name="SplashScreen"     component={SplashScreen}           />
+          <StackNavigator.Screen name="Blank"            component={Blank}                   />
+          <StackNavigator.Screen name="Contacts"         component={Contacts}                />
+          <StackNavigator.Screen name="Chat"             component={Chat}                    />
+          <StackNavigator.Screen name="Tickets"          component={TicketsScreen}           />
+          <StackNavigator.Screen name="TicketDetail"     component={TicketDetailScreen}      />
+          <StackNavigator.Screen name="Profile"          component={ProfileScreen}           />
+          <StackNavigator.Screen name="LicenseDetails"   component={LicenseScreen}           />
+          <StackNavigator.Screen name="TaskHistory"      component={TaskHistoryScreen}       />
+          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen}  />
+          <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}  />
+          <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}      />
         </>
       ) : (
         // ── Public Auth screens ───────────────────────────────────────────
-        // Login is the entry point. After a successful login() call the auth
-        // state flips and React Navigation auto-routes to Inspection above.
+        // Login is the entry point after Splash. After a successful login()
+        // call the auth state flips and React Navigation auto-routes to
+        // Inspection above.
         <>
           <StackNavigator.Screen name="Login"           component={LoginScreen}           />
           <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />

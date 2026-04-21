@@ -59,8 +59,10 @@ export const Styles = {
   // TextToSpeechInset is used in SearchBar as the inner bordered wrapper around the speech icon.
   // TextToSpeechIcon is used in SearchBar for the speech icon image sizing.
   SearchBar: StyleSheet.create({
-    Bar: { flexDirection: "row", backgroundColor: "#007CFF", width: "100%", height: 54, justifyContent: "flex-start", alignItems: "center", },
-    SearchInput: { flex: 1, height: 37, backgroundColor: "white", marginLeft: 15, paddingLeft: 15, borderRadius: 5, }, SearchButton: { width: 81, height: 37, backgroundColor: "black", justifyContent: "center", alignItems: "center", marginLeft: 10, borderRadius: 8, },
+    Bar: { flexDirection: "row", backgroundColor: "#007CFF", width: "100%", minHeight: 54, justifyContent: "flex-start", alignItems: "flex-end", paddingVertical: 8, },
+    SearchInput: { flex: 1, height: 37, backgroundColor: "white", marginLeft: 15, paddingLeft: 15, borderRadius: 5, },
+    MessageInput: { minHeight: 37, maxHeight: 110, paddingTop: 8, paddingBottom: 8, paddingRight: 10 },
+    SearchButton: { width: 81, height: 37, backgroundColor: "black", justifyContent: "center", alignItems: "center", marginLeft: 10, marginRight:10, borderRadius: 8, },
     SearchButtonPressed: { backgroundColor: DefaultPressedColor, color: "black" },
     SearchButtonText: { fontFamily: DefaultFont, fontSize: 15, color: "white" },
     TextToSpeechButton: { width: 40, height: 37, borderRadius: 8, backgroundColor: "#17FE81", marginLeft: 10, justifyContent: "center", alignItems: "center", marginRight: 10, },
@@ -131,15 +133,23 @@ export const Styles = {
  //──────Jonathan───────Chat ────────────────────────────────────────────
   Chat: StyleSheet.create({
 
-   container:{ width:"100%", padding: 10, paddingBottom: 6 },
-   sendBar:{ marginTop:"auto", width:"100%" },
-   messageBoxReceived:{ flexDirection:"row", justifyContent:"flex-start", width:"100%", alignItems:"flex-end", marginVertical: 2 },
-   messageBoxSent:{ flexDirection:"row", justifyContent:"flex-end", width:"100%", alignItems:"flex-end", marginVertical: 2 },
-   messageSent:{ maxWidth:"72%", borderRadius:20, borderBottomRightRadius:5, backgroundColor:"#0A84FF", paddingVertical:10, paddingHorizontal:14, marginRight:8, marginLeft:6 },
-   messageReceived:{ maxWidth:"72%", borderRadius:20, borderBottomLeftRadius:5, backgroundColor:"#2C2C2E", paddingVertical:10, paddingHorizontal:14, marginRight:6, marginLeft:8 },
-   messageText:{ fontFamily:"poppins-regular", color:"white", fontSize:15, lineHeight:22 },
-   timeText:{ fontFamily:"poppins-regular", color:"rgba(255,255,255,0.4)", fontSize:11 },
-   chatIcon:{ width:28, height:28, marginRight:4, marginLeft:4, marginBottom:2 }
+   screen:{flex:1},
+   container:{width:"100%",height:"100%", padding:10},
+   sendBar:{position:"absolute",left:0,right:0,width:"100%",zIndex:10,elevation:10},
+   messageBoxReceived:{flexDirection:"row", justifyContent:"flex-start",width:"100%", alignItems:"center"},
+   messageBoxSent:{flexDirection:"row", justifyContent:"flex-end",width:"100%",alignItems:"center"},
+   messageSent:{justifyContent:"center", minHeight:65,maxWidth:"65%",borderRadius:11,backgroundColor:"#007CFF",marginTop:5,marginRight:10,marginLeft:10},
+   messageReceived:{justifyContent:"center",minHeight:65,maxWidth:"65%",borderRadius:11, backgroundColor:"#30E852",marginTop:5,marginRight:10,marginLeft:10},
+   messageText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:16,marginLeft:15,marginRight:15, justifyContent:"center",textAlign:"center"},
+   timeText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:12},
+   dateText:{fontFamily:DefaultFont,color:DefaultColor,fontSize:12, marginLeft:15, marginRight:15,textAlign:"center"},
+   chatIcon:{width:35,height:35,marginRight:5,marginLeft:5}
+
+  }),
+  ProfileIcon: StyleSheet.create({
+  icon:{width:"100%", height:"100%", backgroundColor:"#007bff49", borderRadius:100, borderColor:"#828282",borderStyle:"solid", borderWidth:1, justifyContent:"center", alignItems:"center"},
+  iconText:{color:DefaultColor, fontFamily:DefaultFont, fontSize:16, fontWeight:"bold"},
+  Default:{width:"100%",height:"100%"}
 
   })
 };
