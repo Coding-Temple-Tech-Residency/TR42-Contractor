@@ -37,7 +37,6 @@
     "plugins": [
       "expo-splash-screen",
       "expo-font",
-      "expo-speech-recognition",
       "expo-secure-store"
     ],
     "experiments": {
