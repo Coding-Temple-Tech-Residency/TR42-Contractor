@@ -17,7 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { MainFrame } from '@/components/MainFrame'
 import { SearchBar } from '@/components/SearchBar'
-import { InitMessage } from '@/utils/InitMessage'
+import { InitID } from '@/utils/InitID'
 import { TimeFormater } from '@/utils/timeFormater'
 import { api } from '@/utils/api'
 
@@ -181,7 +181,7 @@ export const InspectionAssistScreen: FC = () => {
 
     const addMessage = (text: string, type: MessageType, reportData?: InspectionReport) => {
         setMessages(prev => [...prev, {
-            id:          InitMessage.getMessageId(),
+            id:          InitID.getId(),
             message:     text,
             messageType: type,
             timeStamp:   TimeFormater.getTimeStamp(),
