@@ -54,7 +54,15 @@ export default function HomeScreen() {
     };
 
     return (
-        <MainFrame header='home'>
+        <MainFrame header='home' headerMenu={["none", []]}>
+
+            {/* ── Title bar ──────────────────────────────────────────
+                Styled to match the Menu2 navy bar visually but with no
+                back arrow — Dashboard is the root of the authenticated
+                stack, so there's nothing meaningful to go back to. */}
+            <View style={styles.titleBar}>
+                <Text style={styles.titleBarText}>Dashboard</Text>
+            </View>
 
             {/* ── Header ── */}
             <View style={styles.header}>
@@ -183,6 +191,26 @@ const CARD_BG = 'rgba(255,255,255,0.1)';
 const BORDER  = 'rgba(255,255,255,0.15)';
 
 const styles = StyleSheet.create({
+
+    // ── Title bar (no back arrow) ─────────────────────────────
+    // Matches the Menu2 SubHeader bar visually (navy background,
+    // centered bold title) so Dashboard still has a clear section
+    // header without a misleading "back" affordance.
+    titleBar: {
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#142040',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginBottom: 12,
+    },
+    titleBarText: {
+        fontSize: 18,
+        fontFamily: 'poppins-bold',
+        color: 'white',
+        letterSpacing: 0.3,
+    },
 
     header: {
         width: '90%',
