@@ -1,5 +1,42 @@
 # TR42-Contractor — Database Schema Reference
 
+## Supabase Security — Row Level Security (RLS)
+
+All application tables have **Row Level Security enabled**. Policies are defined
+in [`analytics/rls_policies.sql`](./rls_policies.sql). Run that script in the
+Supabase SQL Editor after applying the main schema.
+
+### Identity bridge
+
+Supabase Auth uses UUIDs (`auth.users.id`). This schema uses integer primary
+keys. The column `auth_users.supabase_uid UUID` links the two systems. It is
+populated when a user is created through the sign-up flow and is used by the
+helper functions `current_app_user_id()` and `current_app_user_role()` that
+every RLS policy calls.
+
+### Access matrix (summary)
+
+| Table | contractor | vendor | client |
+|-------|-----------|--------|--------|
+| auth_users | own row | own row + their contractors | own row |
+| contractors | own row | their contractors | — |
+| vendors | their vendor | own row | — |
+| clients | — | clients on their work orders | own row |
+| work_orders | via assigned tickets | own | own |
+| tickets | assigned to them | own | via work orders |
+| inspections | own | their contractors | — |
+| inspection_results | own | their contractors | — |
+| ai_inspection_reports | own | their contractors | — |
+| duty_sessions / duty_logs | own | their contractors | — |
+| invoices / lineitems | — | own | own |
+| messages / chat | participant | participant | participant |
+| notifications | own | own | own |
+
+> **Backend service-role key** bypasses RLS entirely — use it only in the
+> trusted backend process, never in client-side code.
+
+---
+
 Source of truth: `backend/app/models.py`. Table names are snake_case. All FKs use the format `table.id`.
 
 ## Auth & People
