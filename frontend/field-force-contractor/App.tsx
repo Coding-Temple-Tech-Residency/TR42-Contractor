@@ -1,92 +1,102 @@
-import { useEffect, useState } from "react";
-import { TextInput, View, ActivityIndicator } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  AppState,
+  AppStateStatus,
+  TextInput,
+  View,
+} from "react-native";
 import { LoadFonts } from "./utils/LoadFonts";
 
 // Dark translucent keyboard on iOS for every TextInput in the app
 (TextInput as any).defaultProps = {
   ...((TextInput as any).defaultProps ?? {}),
-  keyboardAppearance: 'dark',
+  keyboardAppearance: "dark",
 };
 
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ThemeProvider } from './contexts/ThemeContext';
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 // ── Jonathan ──────────────────────────────────────
-import {Blank} from "./screens/Blank";
-import HomeScreen from "./screens/HomeScreen"
-import {screenConfig} from "./constants/ScreenConfig";
+import { screenConfig } from "./constants/ScreenConfig";
+import { Blank } from "./screens/Blank";
+import { Chat } from "./screens/ChatScreen";
 import { Contacts } from "./screens/ContactScreen";
-import { SplashScreen } from "./screens/SplashScreen";
-import {Chat} from "./screens/ChatScreen";
-import TicketsScreen from "./screens/TicketsScreen";
-import TicketDetailScreen from "./screens/TicketDetailScreen";
-import InspectionScreen from "./screens/InspectionScreen";
-import { InspectionAssistScreen } from "./screens/InspectionAssistScreen";
 import DriveTimeTrackerScreen from "./screens/DriveTimeTrackerScreen";
+import HomeScreen from "./screens/HomeScreen";
+import { InspectionAssistScreen } from "./screens/InspectionAssistScreen";
+import InspectionScreen from "./screens/InspectionScreen";
 import { SavedReportsScreen } from "./screens/SavedReportsScreen";
+import SessionLockScreen from "./screens/SessionLockScreen";
+import { SplashScreen } from "./screens/SplashScreen";
+import TicketDetailScreen from "./screens/TicketDetailScreen";
+import TicketsScreen from "./screens/TicketsScreen";
 
 // ── TROY — Auth screens ──────────────────────────────────────
-import LoginScreen           from "./screens/LoginScreen";
-import OfflineLoginScreen    from "./screens/OfflineLoginScreen";
-import BiometricScreen       from "./screens/BiometricScreen";
-import PasswordResetScreen   from "./screens/PasswordResetScreen";
+import BiometricScreen from "./screens/BiometricScreen";
+import LoginScreen from "./screens/LoginScreen";
+import OfflineLoginScreen from "./screens/OfflineLoginScreen";
 import OfflinePinResetScreen from "./screens/OfflinePinResetScreen";
+import PasswordResetScreen from "./screens/PasswordResetScreen";
 
 // ── TROY — Profile screens ───────────────────────────────────
-import ProfileScreen     from "./screens/ProfileScreen";
-import LicenseScreen     from "./screens/LicenseScreen";
+import LicenseScreen from "./screens/LicenseScreen";
+import ProfileScreen from "./screens/ProfileScreen";
 import TaskHistoryScreen from "./screens/TaskHistoryScreen";
 
 export type RootStackParamList = {
   // ── Always visible ───────────────────────────────────────────
-  SplashScreen:  undefined;
+  SplashScreen: undefined;
 
   // ── Jonathan — App screens ───────────────────────────────────
-  Home:          undefined;
-  Blank:         undefined;
+  Home: undefined;
+  Blank: undefined;
   // ── Charlie — App screens ───────────────────────────────────
-  Contacts:      undefined;
-  Chat:          { name: string; contactId?: string };
-  Tickets:       undefined;
-  TicketDetail:  { taskId: number };
+  Contacts: undefined;
+  Chat: { name: string; contactId?: string };
+  Tickets: undefined;
+  TicketDetail: { taskId: number };
 
   // ── Jonathan — Work Orders (placeholder until real screen built) ──
-  JobDetail:     { jobId: string; workOrderId: string };
+  JobDetail: { jobId: string; workOrderId: string };
   // ── Charlie — Work Orders (placeholder until real screen built) ──
-  WorkOrders:    undefined;
+  WorkOrders: undefined;
 
   // ── Troy — Auth screens ──────────────────────────────────────
-  Login:           undefined;
-  OfflineLogin:    undefined;
+  Login: undefined;
+  OfflineLogin: undefined;
 
   // BiometricCheck receives the pending token and user from LoginScreen.
   // login() is NOT called until the biometric scan succeeds here, ensuring
   // isAuthenticated never becomes true before identity is verified.
   BiometricCheck: {
     pendingToken: string;
-    pendingUser:  { id: number; username: string; role: string };
+    pendingUser: { id: number; username: string; role: string };
   };
 
-  PasswordReset:   undefined;
+  PasswordReset: undefined;
   OfflinePinReset: undefined;
 
   // ── Troy — Profile screens ───────────────────────────────────
-  Profile:         undefined;
-  LicenseDetails:  undefined;
-  TaskHistory:     undefined;
+  Profile: undefined;
+  LicenseDetails: undefined;
+  TaskHistory: undefined;
 
   // ── Aldo — Inspection screen + AI assist + Drive Time ────────
-  Inspection:        { bypassGate?: boolean } | undefined;
-  InspectionAssist:  undefined;
-  DriveTimeTracker:  undefined;
+  Inspection: { bypassGate?: boolean } | undefined;
+  InspectionAssist: undefined;
+  DriveTimeTracker: undefined;
 
   // ── Aldo — Saved Reports ─────────────────────────────────────
   SavedReports: undefined;
 
+  // ── Session lock ─────────────────────────────────────────────
+  SessionLock: undefined;
+
   // ── Charlie — Dashboard (placeholder until real screen is built) ──
-  Dashboard:       undefined;
+  Dashboard: undefined;
 };
 
 const StackNavigator = createNativeStackNavigator();
@@ -97,11 +107,49 @@ const StackNavigator = createNativeStackNavigator();
 // React Navigation automatically transitions between stacks when isAuthenticated changes.
 function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [isSessionLocked, setIsSessionLocked] = useState(false);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsSessionLocked(false);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      const prevAppState = appStateRef.current;
+
+      // Soft-lock authenticated sessions when app leaves the foreground.
+      if (
+        isAuthenticated &&
+        prevAppState === "active" &&
+        (nextAppState === "inactive" || nextAppState === "background")
+      ) {
+        setIsSessionLocked(true);
+      }
+
+      appStateRef.current = nextAppState;
+    });
+
+    return () => subscription.remove();
+  }, [isAuthenticated]);
+
+  const handleSessionUnlock = useCallback(() => {
+    setIsSessionLocked(false);
+  }, []);
 
   // Still reading token from SecureStore — show a branded loading screen
   if (isLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0a0a0a', alignItems: 'center', justifyContent: 'center' }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#0a0a0a",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <ActivityIndicator size="large" color="#3b82f6" />
       </View>
     );
@@ -110,7 +158,7 @@ function RootNavigator() {
   return (
     <StackNavigator.Navigator
       screenOptions={screenConfig.window}
-      initialRouteName={isAuthenticated ? 'Inspection' : 'SplashScreen'}
+      initialRouteName={isAuthenticated ? "Inspection" : "SplashScreen"}
     >
       {isAuthenticated ? (
         // ── Protected App screens ─────────────────────────────────────────
@@ -119,34 +167,73 @@ function RootNavigator() {
         // Splash registered across both stacks caused React Navigation to
         // fall back to it after the swap, where a stale closure in its
         // useEffect would navigate the user back to Login.
-        <>
-          <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
-          <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
-          <StackNavigator.Screen name="Home"             component={HomeScreen}              />
-          <StackNavigator.Screen name="Blank"            component={Blank}                   />
-          <StackNavigator.Screen name="Contacts"         component={Contacts}                />
-          <StackNavigator.Screen name="Chat"             component={Chat}                    />
-          <StackNavigator.Screen name="Tickets"          component={TicketsScreen}           />
-          <StackNavigator.Screen name="TicketDetail"     component={TicketDetailScreen}      />
-          <StackNavigator.Screen name="Profile"          component={ProfileScreen}           />
-          <StackNavigator.Screen name="LicenseDetails"   component={LicenseScreen}           />
-          <StackNavigator.Screen name="TaskHistory"      component={TaskHistoryScreen}       />
-          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen}  />
-          <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}  />
-          <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}      />
-        </>
+        isSessionLocked ? (
+          <StackNavigator.Screen name="SessionLock">
+            {() => <SessionLockScreen onUnlock={handleSessionUnlock} />}
+          </StackNavigator.Screen>
+        ) : (
+          <>
+            <StackNavigator.Screen
+              name="Inspection"
+              component={InspectionScreen}
+            />
+            <StackNavigator.Screen name="Dashboard" component={HomeScreen} />
+            <StackNavigator.Screen name="Home" component={HomeScreen} />
+            <StackNavigator.Screen name="Blank" component={Blank} />
+            <StackNavigator.Screen name="Contacts" component={Contacts} />
+            <StackNavigator.Screen name="Chat" component={Chat} />
+            <StackNavigator.Screen name="Tickets" component={TicketsScreen} />
+            <StackNavigator.Screen
+              name="TicketDetail"
+              component={TicketDetailScreen}
+            />
+            <StackNavigator.Screen name="Profile" component={ProfileScreen} />
+            <StackNavigator.Screen
+              name="LicenseDetails"
+              component={LicenseScreen}
+            />
+            <StackNavigator.Screen
+              name="TaskHistory"
+              component={TaskHistoryScreen}
+            />
+            <StackNavigator.Screen
+              name="InspectionAssist"
+              component={InspectionAssistScreen}
+            />
+            <StackNavigator.Screen
+              name="DriveTimeTracker"
+              component={DriveTimeTrackerScreen}
+            />
+            <StackNavigator.Screen
+              name="SavedReports"
+              component={SavedReportsScreen}
+            />
+          </>
+        )
       ) : (
         // ── Public Auth screens ───────────────────────────────────────────
         // Login is the entry point after Splash. After a successful login()
         // call the auth state flips and React Navigation auto-routes to
         // Inspection above.
         <>
-          <StackNavigator.Screen name="SplashScreen"    component={SplashScreen}          />
-          <StackNavigator.Screen name="Login"           component={LoginScreen}           />
-          <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
-          <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
-          <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
-          <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
+          <StackNavigator.Screen name="SplashScreen" component={SplashScreen} />
+          <StackNavigator.Screen name="Login" component={LoginScreen} />
+          <StackNavigator.Screen
+            name="OfflineLogin"
+            component={OfflineLoginScreen}
+          />
+          <StackNavigator.Screen
+            name="BiometricCheck"
+            component={BiometricScreen}
+          />
+          <StackNavigator.Screen
+            name="PasswordReset"
+            component={PasswordResetScreen}
+          />
+          <StackNavigator.Screen
+            name="OfflinePinReset"
+            component={OfflinePinResetScreen}
+          />
         </>
       )}
     </StackNavigator.Navigator>
