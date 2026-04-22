@@ -41,7 +41,7 @@ export const SplashScreen: FC = () => {
   const timer = setTimeout(() => {
     hasNavigated.current = true;
     if (isAuthenticated) {
-      nav.replace('Home');
+      nav.replace('Inspection');
     } else {
       nav.replace('Login');
     }
