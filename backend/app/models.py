@@ -285,7 +285,7 @@ class AiInspectionReports(Base):
     __tablename__ = 'ai_inspection_reports'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    contractor_id: Mapped[int] = mapped_column(ForeignKey('contractors.id'), nullable=False, index=True)
+    contractor_id: Mapped[int] = mapped_column(ForeignKey('contractor.id'), nullable=False, index=True)
     inspection_id: Mapped[int] = mapped_column(ForeignKey('inspections.id'), nullable=True, index=True)
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     priority: Mapped[str] = mapped_column(String(20), nullable=False)   # low | medium | high
