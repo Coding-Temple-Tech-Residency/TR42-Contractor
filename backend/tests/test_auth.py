@@ -12,7 +12,7 @@ class TestLogin:
         data = resp.get_json()
         assert 'token' in data
         assert data['message'] == 'Successfully Logged in'
-        assert data['authuser']['username'] == 'testuser'
+        assert data['user']['username'] == 'testuser'
 
     def test_login_wrong_password(self, client, seed_user):
         resp = client.post('/auth/login', json={

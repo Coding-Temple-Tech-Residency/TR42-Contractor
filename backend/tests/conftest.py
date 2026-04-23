@@ -141,7 +141,7 @@ def seed_ticket(db, seed_contractor):
         anomaly_flag=False,
          
         created_at=datetime.now(),
-        created_by=seed_contractor.authuser_id,
+        created_by=seed_contractor.user_id,
         
 
     )
@@ -174,8 +174,8 @@ def seed_ticket_inProgress(db, seed_contractor):
 
         created_at=datetime.now(),
         updated_at=datetime.now(),
-        created_by=seed_contractor.authuser_id,
-        updated_by=seed_contractor.authuser_id
+        created_by=seed_contractor.user_id,
+        updated_by=seed_contractor.user_id
 
 
     )
