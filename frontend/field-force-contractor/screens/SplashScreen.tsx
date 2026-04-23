@@ -34,28 +34,25 @@ export const SplashScreen: FC = () => {
   // Prevents multiple navigations if the effect fires more than once
   const hasNavigated = useRef(false);
 
-  const SPLASH_TIME:number = 3000; // 3 seconds to show the logo
+  const SPLASH_TIME:number = 2500; // 3 seconds to show the logo
 
   useEffect(() => {
-    // Don't start the timer until AuthContext has finished reading SecureStore
-    if (isLoading) return;
-    // Don't navigate again if we already have
-    if (hasNavigated.current) return;
+  if (isLoading || hasNavigated.current) return;
 
   const timer = setTimeout(() => {
     hasNavigated.current = true;
-      if(isLoading === false){
-          setMounted(true);
-      if (isAuthenticated) {
-        nav.replace('Home');
-      } else {
-        nav.replace('Login');
-      }
+
+    setMounted(true);
+
+    if (isAuthenticated) {
+      nav.replace('Home');
+    } else {
+      nav.replace('Login');
     }
   }, SPLASH_TIME);
 
-    return () => clearTimeout(timer);
-  }, [isLoading]);
+  return () => clearTimeout(timer);
+}, [isLoading, isAuthenticated]);
 
   return (
     <MainFrame header="none" headerMenu={["none"]} footerMenu={["none"]}>

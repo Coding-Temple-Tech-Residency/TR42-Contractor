@@ -47,6 +47,7 @@ import { Header, HeaderVariant } from '@/components/Header';
 import { Menu, MenuOptions }   from '@/components/Menu';
 import { Menus }               from '@/constants/Menus';
 import { AppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 // ── SubHeader ─────────────────────────────────────────────────────────────────
@@ -116,16 +117,31 @@ export const MainFrame: FC<Props> = (props) => {
   const route    = useRoute();
   const pageName = route.name;
   const [mount] = useContext(AppContext);
+  const {isAuthenticated,isLoading} = useAuth();
  type Nav = NativeStackNavigationProp<RootStackParamList>;
+ const publicPages = [
 
-  const navigator = useNavigation<Nav>();
-
- useEffect(() =>{
+   {name:"Login"},
+   {name:"OfflineLogin"},
+   {name:"BiometricCheck"},
+   {name:"OfflineReset"},
+   {name:"SplashScreen"}
   
-   (!mount) && navigator.navigate("SplashScreen")
+ ]
+  const navigator = useNavigation<Nav>();
+  useEffect(() => {
+  
+    if(!isLoading){
+      const noAuthRequired = publicPages.some(item => item.name === pageName)
+      if(noAuthRequired){
+          
+         if(!isAuthenticated && !noAuthRequired) navigator.replace("Login")
+      }
+  }
 
 
- },[])
+  },[isLoading,isAuthenticated,pageName])
+
   const renderHeaderMenu: MenuOptions =
     props.strip === 'menus' || props.strip === 'all'
       ? ['none', []]

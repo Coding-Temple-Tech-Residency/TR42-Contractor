@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useContext} from "react";
 import { TextInput, View, ActivityIndicator } from "react-native";
 import { LoadFonts } from "./utils/LoadFonts";
 
@@ -19,7 +19,7 @@ import HomeScreen from "./screens/HomeScreen"
 import {screenConfig} from "./constants/ScreenConfig";
 import { Contacts } from "./screens/ContactScreen";
 import { SplashScreen } from "./screens/SplashScreen";
-import { AppContext } from "./contexts/AppContext";
+import { AppContext} from "./contexts/AppContext";
 import {Chat} from "./screens/ChatScreen";
 import TicketsScreen from "./screens/TicketsScreen";
 import TicketDetailScreen from "./screens/TicketDetailScreen";
@@ -98,7 +98,6 @@ const StackNavigator = createNativeStackNavigator();
 // React Navigation automatically transitions between stacks when isAuthenticated changes.
 function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
-
   // Still reading token from SecureStore — show a branded loading screen
   if (isLoading) {
     return (
@@ -110,18 +109,11 @@ function RootNavigator() {
 
   return (
     <StackNavigator.Navigator
-      screenOptions={screenConfig.window}
+      screenOptions={screenConfig.window} initialRouteName="SplashScreen"
       
     >
-       <StackNavigator.Screen name="SplashScreen"    component={SplashScreen}          />
-      {isAuthenticated ? (
-        // ── Protected App screens ─────────────────────────────────────────
-        // No SplashScreen here: once auth flips true the Auth stack unmounts
-        // and this stack mounts with Inspection as its initial route. Keeping
-        // Splash registered across both stacks caused React Navigation to
-        // fall back to it after the swap, where a stale closure in its
-        // useEffect would navigate the user back to Login.
-        <>
+          <StackNavigator.Screen name="SplashScreen"    component={SplashScreen}          />
+   
           <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
           <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
           <StackNavigator.Screen name="Home"             component={HomeScreen}              />
@@ -136,21 +128,18 @@ function RootNavigator() {
           <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen}  />
           <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}  />
           <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}      />
-        </>
-      ) : (
-        // ── Public Auth screens ───────────────────────────────────────────
-        // Login is the entry point after Splash. After a successful login()
-        // call the auth state flips and React Navigation auto-routes to
-        // Inspection above.
-        <>
+       
+          
+    
          
-          <StackNavigator.Screen name="Login"           component={LoginScreen}           />
+         <StackNavigator.Screen name="Login"           component={LoginScreen}           />
           <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
           <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
           <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
           <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
-        </>
-      )}
+        
+     
+
     </StackNavigator.Navigator>
   );
 }
