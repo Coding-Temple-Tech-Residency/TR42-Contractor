@@ -27,7 +27,7 @@
 // inside MainFrame's centered ScrollView.
 // ──────────────────────────────────────────────────────────────────────────────
 
-import { FC, ReactNode,useEffect,useContext }  from 'react';
+import { FC, ReactNode,useEffect,useContext, useRef }  from 'react';
 import {
   View,
   Text,
@@ -128,19 +128,25 @@ export const MainFrame: FC<Props> = (props) => {
    {name:"SplashScreen"}
   
  ]
+ const hasRedirected = useRef(false);
   const navigator = useNavigation<Nav>();
   useEffect(() => {
-  
-    if(!isLoading){
+    if(isLoading || hasRedirected.current) return
+   
+     
       const noAuthRequired = publicPages.some(item => item.name === pageName)
      
           
-         if(!isAuthenticated && !noAuthRequired) navigator.replace("Login")
+         if(!isAuthenticated && !noAuthRequired && pageName !== "Login") {
+          hasRedirected.current = true
+          navigator.replace("Login")
+         }
       
-  }
+  
 
 
   },[isLoading,isAuthenticated,pageName])
+ 
 
   const renderHeaderMenu: MenuOptions =
     props.strip === 'menus' || props.strip === 'all'
