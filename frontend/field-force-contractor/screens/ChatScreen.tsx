@@ -1,6 +1,6 @@
 import {Styles} from "@/constants/Styles"
-import {FC, ReactNode,useEffect,useRef,useState} from "react"
-import {Keyboard,Platform,ScrollView,useWindowDimensions,View} from "react-native"
+import React, {FC, ReactNode,useEffect,useRef,useState} from "react"
+import {Keyboard,Platform,ScrollView,useWindowDimensions,View,Text} from "react-native"
 import { MainFrame } from "@/components/MainFrame"
 import { useRoute } from '@react-navigation/native'
 import { SearchBar } from "@/components/SearchBar"
@@ -48,11 +48,13 @@ export const Chat:FC = (props) =>{
     let CONTACTNAME = USERSNAME
 
     const demoMessages:TypeMessage[] = [ // Demo data real data will be replaced by backend
-    {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")}, 
+    {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
     {id:InitID.getId(),message:"Hi",contactName:name, contactId:USERID?.toString(),messageType:"received",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:CONTACTID,utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")},
     {id:InitID.getId(),message:"How are you doing?",contactName:USERSNAME, contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")}, 
     ]
-    console.log(TimeFormater.getTimeStamp("LOCAL-DATE",TimeFormater.getTimeStamp("UTC-DATE")))
+   
     const [messages,setMessage] = useState(demoMessages);
     const scrollRef = useRef<ScrollView>(null);
 
@@ -111,6 +113,39 @@ export const Chat:FC = (props) =>{
         }]);
         Keyboard.dismiss()
     }
+    const Trim = (txt:string) => {
+       let str:string = txt.replace(/\s+/g,'')
+        return(str)
+    }
+    const returnMessages = () =>{
+        const currentDate = Trim(TimeFormater.getTimeStamp("LOCAL-DATE",TimeFormater.getTimeStamp("UTC-DATE")))
+        const dateLabels = new Set<string>()
+        let setLabel = "";
+      const msgs = messages.map((item) => {
+               
+                const messageDate:string = Trim(TimeFormater.getTimeStamp("LOCAL-DATE",item.utcTimeStamp))
+                
+                if(!dateLabels.has(messageDate)){
+
+                    dateLabels.add(messageDate);
+                   setLabel = (messageDate === currentDate) ? "Today" : messageDate
+                }
+                else{
+                    setLabel = "";
+                }
+                    
+                return(
+                <React.Fragment key={item.id}>
+                    
+                { (setLabel !== "" && <Text style={Styles.Chat.dateMarker}>{setLabel}</Text>)}
+                    
+                <Message messageId={item.id} message={item.message} contactName={item.contactName} contactId={item.contactId} senderId={item.senderId} messageType={item.messageType} timeStamp={item.timeStamp} utcTimeStamp={item.utcTimeStamp}></Message>
+                </React.Fragment>
+      )})
+
+                return(msgs);
+
+    }
     return(<>
     <View style={Styles.Chat.screen}>
     <MainFrame headerMenu={["Menu2",[name]]}>
@@ -120,9 +155,7 @@ export const Chat:FC = (props) =>{
             onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
           >
             {
-                messages.map((item) => {
-                return(<Message key={item.id} messageId={item.id} message={item.message} contactName={item.contactName} contactId={item.contactId} senderId={item.senderId} messageType={item.messageType} timeStamp={item.timeStamp} utcTimeStamp={item.utcTimeStamp}></Message>)
-                })
+               returnMessages()
             }
           </ScrollView>
     </MainFrame>
