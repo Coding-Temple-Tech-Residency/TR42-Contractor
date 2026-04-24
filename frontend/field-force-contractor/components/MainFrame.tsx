@@ -142,7 +142,7 @@ export const MainFrame: FC<Props> = (props) => {
          
       if(!isAuthenticated && notLogin){
 
-         if( requireAuth === true || !noAuthRequired) {
+         if( requireAuth === true || !noAuthRequired && requireAuth == undefined) {
           hasRedirected.current = true
           navigator.replace("Login")
          }
