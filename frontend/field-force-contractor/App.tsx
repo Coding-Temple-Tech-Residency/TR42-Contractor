@@ -27,6 +27,7 @@ import { SavedReportsScreen } from "./screens/SavedReportsScreen";
 import SessionLockScreen from "./screens/SessionLockScreen";
 import TicketDetailScreen from "./screens/TicketDetailScreen";
 import TicketsScreen from "./screens/TicketsScreen";
+import { Blank } from "./screens/Blank";
 
 // ── TROY — Auth screens ──────────────────────────────────────
 import BiometricScreen from "./screens/BiometricScreen";
@@ -123,6 +124,7 @@ function RootNavigator() {
       
     >
           <StackNavigator.Screen name="SplashScreen"    component={SplashScreen}          />
+           <StackNavigator.Screen name="Blank"          component={Blank}          />
    
           <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
           <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
