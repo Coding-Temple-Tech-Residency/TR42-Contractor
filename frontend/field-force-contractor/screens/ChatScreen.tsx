@@ -117,11 +117,14 @@ export const Chat:FC = (props) =>{
        let str:string = txt.replace(/\s+/g,'')
         return(str)
     }
-    const returnMessages = () =>{
+    const returnMessages = (reverseOrder?:boolean) =>{
         const currentDate = Trim(TimeFormater.getTimeStamp("LOCAL-DATE",TimeFormater.getTimeStamp("UTC-DATE")))
         const dateLabels = new Set<string>()
         let setLabel = "";
-      const msgs = messages.map((item) => {
+      const orderedMessages = [...messages].sort(
+        (a, b) => new Date(b.utcTimeStamp).getTime() - new Date(a.utcTimeStamp).getTime()
+      );
+      const msgs =  ((reverseOrder) ? orderedMessages: messages).map((item) => {
                
                 const messageDate:string = Trim(TimeFormater.getTimeStamp("LOCAL-DATE",item.utcTimeStamp))
                 
@@ -152,10 +155,10 @@ export const Chat:FC = (props) =>{
           <ScrollView
             ref={scrollRef}
             style={Styles.Chat.container}
-            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+            onContentSizeChange={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
           >
             {
-               returnMessages()
+               returnMessages(false)
             }
           </ScrollView>
     </MainFrame>
