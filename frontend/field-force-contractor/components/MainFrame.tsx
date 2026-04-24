@@ -111,6 +111,7 @@ type Props = {
   strip?:        'menus' | 'all' | 'header';
   injectHeader?: ReactNode;
   injectFooter?: ReactNode;
+  requireAuth?:boolean;
 };
 
 export const MainFrame: FC<Props> = (props) => {
@@ -131,22 +132,27 @@ export const MainFrame: FC<Props> = (props) => {
  ]
  const hasRedirected = useRef(false);
   const navigator = useNavigation<Nav>();
+  const requireAuth = props.requireAuth;
   useEffect(() => {
     if(isLoading || hasRedirected.current) return
    
      
-      const noAuthRequired = publicPages.some(item => item.name === pageName)
-     
-          
-         if(!isAuthenticated && !noAuthRequired && pageName !== "Login") {
+      const noAuthRequired =  publicPages.some(item => item.name === pageName)
+      const notLogin = pageName !== "Login"
+         
+      if(!isAuthenticated && notLogin){
+
+         if( requireAuth === true || !noAuthRequired) {
           hasRedirected.current = true
           navigator.replace("Login")
          }
+
+        }
       
   
 
 
-  },[isLoading,isAuthenticated,pageName])
+  },[isLoading,isAuthenticated,pageName,requireAuth])
  
 
   const renderHeaderMenu: MenuOptions =
