@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Modal, Alert, ActivityIndicator, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MainFrame } from '../components/MainFrame';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SETTINGS_BIOMETRIC_KEY } from './ProfileScreen';
+import * as Location from 'expo-location';
 
 const DEV_MODE = true;
 
@@ -21,6 +22,7 @@ export default function TicketDetailScreen() {
   const [selectedMethod, setSelectedMethod] = useState<'face' | 'fingerprint'>('fingerprint');
   const [scanState, setScanState] = useState<'idle' | 'scanning' | 'failed'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [startLocation, setStartLocation] = useState<Location.LocationObject | null>(null);
 
   const pinRefs = useRef<(TextInput | null)[]>([null, null, null, null, null, null]);
 
@@ -41,6 +43,34 @@ export default function TicketDetailScreen() {
     loadPreference();
   }, []);
 
+  // Capture GPS when verification reaches location step
+  useEffect(() => {
+    if (verificationStep !== 'location') return;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setErrorMessage('Location permission is required to start a task.');
+        setVerificationStep('error');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setStartLocation(loc);
+      setVerificationStep('success');
+    })();
+  }, [verificationStep]);
+
+  // Auto-close modal after success
+  useEffect(() => {
+    if (verificationStep !== 'success') return;
+    const t = setTimeout(() => {
+      setShowVerificationModal(false);
+      setTaskStatus('in_progress');
+      setScanState('idle');
+      setPin(['', '', '', '', '', '']);
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [verificationStep]);
+
   const task = {
     id: taskId,
     title: 'Install Gas Pump at Station #42',
@@ -54,6 +84,12 @@ export default function TicketDetailScreen() {
 
   const toggleListening = () => {
     Alert.alert('Coming Soon', 'Voice input will be available in a future update.');
+  };
+
+  const handleOpenMaps = () => {
+    const encoded = encodeURIComponent(task.location);
+    const url = `https://maps.google.com/?q=${encoded}`;
+    Linking.openURL(url);
   };
 
   const handlePinInput = (index: number, value: string) => {
@@ -77,11 +113,38 @@ export default function TicketDetailScreen() {
     setVerificationStep('initial');
   };
 
-  const handleTakePhoto = () => {
-    navigation.navigate('TakePhoto' as never, { taskId } as never);
+  const handleTakePhoto = async () => {
+    let geoTag = null;
+    try {
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      geoTag = { lat: loc.coords.latitude, lng: loc.coords.longitude, timestamp: loc.timestamp };
+
+      const existing = await AsyncStorage.getItem(`photo_log_${task.id}`) ?? '[]';
+      const log = JSON.parse(existing);
+      log.push(geoTag);
+      await AsyncStorage.setItem(`photo_log_${task.id}`, JSON.stringify(log));
+    } catch {
+      // Non-blocking — don't prevent photo if GPS fails
+    }
+    navigation.navigate('TakePhoto' as never, { taskId, geoTag } as never);
   };
 
-  const handleCompleteTask = () => {
+  const handleCompleteTask = async () => {
+    try {
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      await AsyncStorage.setItem(
+        `location_log_${task.id}`,
+        JSON.stringify({
+          taskId: task.id,
+          startLocation: startLocation?.coords ?? null,
+          endLocation: loc.coords,
+          startedAt: startLocation?.timestamp ?? null,
+          completedAt: loc.timestamp,
+        })
+      );
+    } catch {
+      // Non-blocking — don't prevent completion if GPS fails
+    }
     navigation.navigate('TaskConfirmation' as never, { taskId } as never);
   };
 
@@ -101,14 +164,6 @@ export default function TicketDetailScreen() {
     setTimeout(() => {
       if (DEV_MODE) {
         setVerificationStep('location');
-        setTimeout(() => {
-          setVerificationStep('success');
-          setTimeout(() => {
-            setShowVerificationModal(false);
-            setTaskStatus('in_progress');
-            setScanState('idle');
-          }, 2000);
-        }, 1500);
         return;
       }
       // PRODUCTION: real LocalAuthentication
@@ -121,23 +176,14 @@ export default function TicketDetailScreen() {
       setErrorMessage('Please enter a complete 6-digit PIN');
       return;
     }
-    setVerificationStep('location');
+    if (pinString !== '123456') {
+      setVerificationStep('error');
+      setErrorMessage('Invalid PIN. Please try again.');
+      setPin(['', '', '', '', '', '']);
+      return;
+    }
     setErrorMessage('');
-    setTimeout(() => {
-      const pinValid = pinString === '123456';
-      if (pinValid) {
-        setVerificationStep('success');
-        setTimeout(() => {
-          setShowVerificationModal(false);
-          setTaskStatus('in_progress');
-          setPin(['', '', '', '', '', '']);
-        }, 2000);
-      } else {
-        setVerificationStep('error');
-        setErrorMessage('Invalid PIN. Please try again.');
-        setPin(['', '', '', '', '', '']);
-      }
-    }, 1500);
+    setVerificationStep('location');
   };
 
   return (
@@ -171,7 +217,7 @@ export default function TicketDetailScreen() {
       </View>
 
       {/* ── Location ── */}
-      <View style={styles.infoCard}>
+      <TouchableOpacity style={styles.infoCard} onPress={handleOpenMaps}>
         <View style={styles.infoIcon}>
           <Ionicons name="location" size={18} color="#ff8c00" />
         </View>
@@ -179,7 +225,8 @@ export default function TicketDetailScreen() {
           <Text style={styles.infoLabel}>Location</Text>
           <Text style={styles.infoValue}>{task.location}</Text>
         </View>
-      </View>
+        <Ionicons name="chevron-forward" size={16} color="#9ca3af" />
+      </TouchableOpacity>
 
       {/* ── Deadline ── */}
       <View style={styles.infoCard}>
