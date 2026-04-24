@@ -30,7 +30,9 @@ import { AppContext }             from "@/contexts/AppContext";
 export const SplashScreen: FC = () => {
   const nav  = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isLoading,isAuthenticated } = useAuth();
-  const [mount,setMounted] = useContext(AppContext);
+  const {mount,setMounted} = useContext(AppContext);
+
+
   // Prevents multiple navigations if the effect fires more than once
   const hasNavigated = useRef(false);
 
@@ -41,8 +43,9 @@ export const SplashScreen: FC = () => {
 
   const timer = setTimeout(() => {
     hasNavigated.current = true;
-
+    if(!mount){
     setMounted(true);
+    }
 
     if (isAuthenticated) {
       nav.replace('Home');
@@ -52,7 +55,7 @@ export const SplashScreen: FC = () => {
   }, SPLASH_TIME);
 
   return () => clearTimeout(timer);
-}, [isLoading, isAuthenticated]);
+}, [isLoading, isAuthenticated,mount]);
 
   return (
     <MainFrame header="none" headerMenu={["none"]} footerMenu={["none"]}>

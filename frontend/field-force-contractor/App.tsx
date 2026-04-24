@@ -15,11 +15,10 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 
 // ── Jonathan ──────────────────────────────────────
 import { screenConfig } from "./constants/ScreenConfig";
-import { Blank } from "./screens/Blank";
 import { Chat } from "./screens/ChatScreen";
 import { Contacts } from "./screens/ContactScreen";
 import { SplashScreen} from "./screens/SplashScreen";
-import { AppContext} from "./contexts/AppContext";
+import { AppProvider} from "./contexts/AppContext";
 import DriveTimeTrackerScreen from "./screens/DriveTimeTrackerScreen";
 import HomeScreen from "./screens/HomeScreen";
 import { InspectionAssistScreen } from "./screens/InspectionAssistScreen";
@@ -128,7 +127,6 @@ function RootNavigator() {
           <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
           <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
           <StackNavigator.Screen name="Home"             component={HomeScreen}              />
-          <StackNavigator.Screen name="Blank"            component={Blank}                   />
           <StackNavigator.Screen name="Contacts"         component={Contacts}                />
           <StackNavigator.Screen name="Chat"             component={Chat}                    />
           <StackNavigator.Screen name="Tickets"          component={TicketsScreen}           />
@@ -140,9 +138,6 @@ function RootNavigator() {
           <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}  />
           <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}      />
        
-          
-    
-         
          <StackNavigator.Screen name="Login"           component={LoginScreen}           />
           <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
           <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
@@ -158,7 +153,6 @@ function RootNavigator() {
 // ── App root ───────────────────────────────────────────────────────────────
 export default function App() {
   const [externalFontsLoaded, setExternalFontsLoaded] = useState(false);
-  const [mount,setMounted] = useState(false);
   useEffect(() => {
     const load = async () => {
       const isLoaded = await LoadFonts();
@@ -170,7 +164,7 @@ export default function App() {
   if (!externalFontsLoaded) return null;
 
   return (
-    <AppContext.Provider value={[mount,setMounted]}>
+    <AppProvider>
       <ThemeProvider>
         <AuthProvider>
           <NavigationContainer>
@@ -178,6 +172,6 @@ export default function App() {
           </NavigationContainer>
         </AuthProvider>
       </ThemeProvider>
-    </AppContext.Provider>
+    </AppProvider>
   );
 }

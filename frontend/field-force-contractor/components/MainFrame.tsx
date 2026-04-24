@@ -124,8 +124,9 @@ export const MainFrame: FC<Props> = (props) => {
    {name:"Login"},
    {name:"OfflineLogin"},
    {name:"BiometricCheck"},
-   {name:"OfflineReset"},
-   {name:"SplashScreen"}
+   {name:"OfflinePinReset"},
+   {name:"SplashScreen"},
+   {name:"PasswordReset"}
   
  ]
  const hasRedirected = useRef(false);

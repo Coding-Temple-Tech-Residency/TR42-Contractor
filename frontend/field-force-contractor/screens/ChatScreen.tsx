@@ -1,5 +1,5 @@
 import {Styles} from "@/constants/Styles"
-import React, {FC, ReactNode,useEffect,useRef,useState} from "react"
+import React, {FC, ReactNode,useContext,useEffect,useRef,useState} from "react"
 import {Keyboard,Platform,ScrollView,useWindowDimensions,View,Text} from "react-native"
 import { MainFrame } from "@/components/MainFrame"
 import { useRoute } from '@react-navigation/native'
@@ -11,6 +11,7 @@ import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"
 import { useAuth } from "@/contexts/AuthContext"
+import { AppContext } from "@/contexts/AppContext"
 
 type Props = {
 
@@ -46,7 +47,7 @@ export const Chat:FC = (props) =>{
     const USERID = (user?.id || "").toString();
     let USERSNAME = "John Doe" //Name should be replaced with users first + last name from the sql database
     let CONTACTNAME = USERSNAME
-
+    const {reverseStack} = useContext(AppContext);
     const demoMessages:TypeMessage[] = [ // Demo data real data will be replaced by backend
     {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
     {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
@@ -149,6 +150,7 @@ export const Chat:FC = (props) =>{
                 return(msgs);
 
     }
+    console.log(reverseStack);
     return(<>
     <View style={Styles.Chat.screen}>
     <MainFrame headerMenu={["Menu2",[name]]}>
@@ -158,7 +160,7 @@ export const Chat:FC = (props) =>{
             onContentSizeChange={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
           >
             {
-               returnMessages(false)
+               returnMessages(reverseStack)
             }
           </ScrollView>
     </MainFrame>
