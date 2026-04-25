@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from app.models import Auth_users, Contractors, db
+from app.models import AuthUser, Contractor, db
 from .schemas import auth_user_schema, login_schema, auth_user_update_password_schema, offline_pin_schema
 from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -33,12 +33,12 @@ def login():
     # Presence of '@' is a strong enough signal that the contractor typed an
     # email. Both columns are unique so only one lookup is needed per request.
     if '@' in identifier:
-        user = db.session.query(Auth_users).where(Auth_users.email == identifier).first()
+        user = db.session.query(AuthUser).where(AuthUser.email == identifier).first()
     else:
-        user = db.session.query(Auth_users).where(Auth_users.username == identifier).first()
+        user = db.session.query(AuthUser).where(AuthUser.username == identifier).first()
 
-    if user and check_password_hash(user.password, data['password']):
-        token = encode_token(user.id, user.role)
+    if user and check_password_hash(user.password_hash, data['password']):
+        token = encode_token(user.id, user.user_type)
         return jsonify({
             'message': 'Successfully Logged in',
             'token': token,
@@ -52,27 +52,7 @@ def login():
     }), 401
 
 
-# Register/Create Users - for testing
-@auth_users_bp.route('', methods=['POST'])
-def create_user():
-
-    try:
-        data = auth_user_schema.load(request.json)
-    except ValidationError as e:
-        return jsonify(e.messages), 400
-    
-    data['password']= generate_password_hash(data['password'])
-
-    user = db.session.query(Auth_users).where(Auth_users.username == data['username']).first()
-
-    if user: 
-        return jsonify({'error': 'Username already taken'}), 400
-    
-    new_user = Auth_users(**data)
-    db.session.add(new_user)
-    db.session.commit()
-
-    return auth_user_schema.jsonify(new_user), 201
+# Register/Create AuthUser for new contractor is in contractor routes - for testing
 
 
 #Update password route (this one is if they already know existing password)
@@ -90,10 +70,10 @@ def update_password():
     try: 
         #user_id from token
         user_id = request.user_id
-        auth_user = db.session.get(Auth_users, user_id)
+        user = db.session.get(AuthUser, user_id)
 
-        if auth_user and check_password_hash(auth_user.password, current_password):
-            auth_user.password = generate_password_hash(new_password)
+        if user and check_password_hash(user.password_hash, current_password):
+            user.password_hash = generate_password_hash(new_password)
 
             db.session.commit()    
     
@@ -105,7 +85,6 @@ def update_password():
     return jsonify({ 'message': 'Password updated successfully'}), 200
 
 
-#Forgot password route (send email with reset link - will be handled on mobile app side for now, will need to integrate email service later)
 
 
 # Set offline PIN for contractor (stored for offline login use on-device)
@@ -121,7 +100,7 @@ def set_offline_pin():
     if not pin.isdigit() or len(pin) < 6 or len(pin) > 10:
         return jsonify({'error': 'pin must be 6-10 digits'}), 400
 
-    contractor = db.session.query(Contractors).where(Contractors.id == request.user_id).first()
+    contractor = db.session.query(Contractor).where(Contractor.user_id == request.user_id).first()
     if not contractor:
         return jsonify({'error': 'contractor not found for current user'}), 404
 

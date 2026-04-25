@@ -12,7 +12,10 @@ config = 'ProductionConfig' if os.environ.get('RENDER') else 'DevelopmentConfig'
 app = create_app(config)
 
 with app.app_context():
+    # Tables need to be dropped once for initial setup
+    db.drop_all()
     db.create_all()
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

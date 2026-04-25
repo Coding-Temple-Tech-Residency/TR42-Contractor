@@ -4,7 +4,7 @@ import pytest
 os.environ.setdefault('SECRET_KEY', 'test-secret-key-for-pytest')
 
 from app import create_app
-from app.models import db as _db, Auth_users, Contractors, Tickets
+from app.models import db as _db, AuthUser, Contractor, Ticket
 from werkzeug.security import generate_password_hash
 from datetime import date, datetime
 
@@ -33,34 +33,71 @@ def client(app):
 
 @pytest.fixture
 def seed_user(db):
-    user = Auth_users(
+    authuser = AuthUser(
         username='testuser',
         email='test@test.com',
-        password=generate_password_hash('123456'),
-        role='contractor',
+        password_hash=generate_password_hash('123456'),
+        user_type='contractor',
+        token_version=0,
+        is_active=True,
+        is_admin=False,
+        created_at=datetime.now(),
         created_by=1,
+        first_name='Test',
+        last_name='User',
+        contact_number='555-555-5555',
+        date_of_birth=date(1990, 1, 1),
+        address_id='1',
     )
-    db.session.add(user)
+    db.session.add(authuser)
     db.session.commit()
-    return user
+    return authuser
+
+@pytest.fixture
+def seed_vendor_user(db):
+    authuser = AuthUser(
+        username='testvendor',
+        email='vendor@test.com',
+        password_hash=generate_password_hash('123456'),
+        user_type='vendor',
+        token_version=0,
+        is_active=True,
+        is_admin=False,
+        created_at=datetime.now(),
+        created_by=1,
+        first_name='Test',
+        last_name='User',
+        contact_number='555-555-5555',
+        date_of_birth=date(1990, 1, 1),
+        address_id='1',
+    )
+    db.session.add(authuser)
+    db.session.commit()
+    return authuser
 
 
 @pytest.fixture
 def seed_contractor(db, seed_user):
-    contractor = Contractors(
-        id=seed_user.id,
-        vendor_id=1,
-        manager_id=1,
-        first_name='Test',
-        last_name='User',
-        license_number='TEST001',
-        expiration_date=date(2027, 1, 1),
-        contractor_type='general',
+    contractor = Contractor(
+        employee_number='EMP001',
+        user_id=seed_user.id,
+        role='general',
         status='active',
-        tax_classification='W9',
-        contact_number='555-555-5555',
-        date_of_birth=date(1990, 1, 1),
-        address='123 Test St',
+        tickets_completed=5,
+        tickets_open=2,
+        biometric_enrolled=False,
+        is_onboarded=True,
+        is_subcontractor=False,
+        is_fte=True,
+        is_licensed=True,
+        is_insured=True,
+        is_certified=True,
+        average_rating=4.5,
+        years_experience=5,
+        preferred_job_types='plumbing,electrical',
+        created_at=datetime.now(),
+        created_by=seed_user.id,
+        
     )
     db.session.add(contractor)
     db.session.commit()
@@ -75,25 +112,37 @@ def auth_token(client, seed_user):
     })
     return resp.get_json()['token']
 
+@pytest.fixture
+def auth_token_vendor(client, seed_vendor_user):
+    resp = client.post('/auth/login', json={
+        'username': 'testvendor',
+        'password': '123456',
+    })
+    return resp.get_json()['token']
+
 
 
 @pytest.fixture
 def seed_ticket(db, seed_contractor):
-    ticket = Tickets(
+    ticket = Ticket(
         work_order_id=1,
+        invoice_id=1,
         vendor_id=1,
         description='Test ticket',
         priority='medium',
         status='to_do',
         assigned_contractor=seed_contractor.id,
-        contractor_assigned_at=datetime.now(),
-        created_at=datetime.now(),
-
+        assigned_at=datetime.now(),
+       
         estimated_quantity=10,
         unit='tons',
         special_requirements='None',
         
         anomaly_flag=False,
+         
+        created_at=datetime.now(),
+        created_by=seed_contractor.user_id,
+        
 
     )
     db.session.add(ticket)
@@ -104,23 +153,30 @@ def seed_ticket(db, seed_contractor):
 
 @pytest.fixture
 def seed_ticket_inProgress(db, seed_contractor):
-    ticket = Tickets(
+    ticket = Ticket(
         work_order_id=1,
+        invoice_id=1,
         vendor_id=1,
         description='Test ticket in progress',
         priority='medium',
         status='in_progress',
         assigned_contractor=seed_contractor.id,
-        contractor_assigned_at=datetime.now(),
-        created_at=datetime.now(),
+        assigned_at=datetime.now(),
+        
         start_time=datetime.now(),
-        start_location='456 Test Ave',
+        contractor_start_location='456 Test Ave',
 
         estimated_quantity=5,
         unit='tons',
         special_requirements='None',
         
         anomaly_flag=False,
+
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        created_by=seed_contractor.user_id,
+        updated_by=seed_contractor.user_id
+
 
     )
     db.session.add(ticket)

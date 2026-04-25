@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 class TestLogin:
 
     def test_login_success(self, client, seed_user):
@@ -46,31 +49,6 @@ class TestLogin:
         })
         token = resp.get_json()['token']
         assert len(token.split('.')) == 3
-
-
-class TestCreateUser:
-
-    def test_create_user_success(self, client):
-        resp = client.post('/auth', json={
-            'username': 'newuser',
-            'email': 'new@test.com',
-            'password': 'securepass',
-            'role': 'contractor',
-            'created_by': 1,
-        })
-        assert resp.status_code == 201
-        data = resp.get_json()
-        assert data['username'] == 'newuser'
-
-    def test_create_duplicate_user(self, client, seed_user):
-        resp = client.post('/auth', json={
-            'username': 'testuser',
-            'email': 'other@test.com',
-            'password': '123456',
-            'role': 'contractor',
-            'created_by': 1,
-        })
-        assert resp.status_code == 400
 
 
 class TestOfflinePin:

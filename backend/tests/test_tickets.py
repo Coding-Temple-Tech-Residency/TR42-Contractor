@@ -6,15 +6,15 @@ class TestTickets:
         ticket_id = seed_ticket.id
         response = client.put(f'/tickets/{ticket_id}', json={
             'status': 'in_progress',
-            'contractor_notes': 'Started work on the ticket.',
+            'notes': 'Started work on the ticket.',
             'start_time': '2026-01-01T08:00:00Z',
-            'start_location': '123 Test St',
+            'contractor_start_location': '123 Test St',
         }, headers={'Authorization': f'Bearer {auth_token}'})
         assert response.status_code == 200
         data = response.get_json()
         assert data['status'] == 'in_progress'
-        assert data['contractor_notes'] == 'Started work on the ticket.'
-        assert data['start_location'] == '123 Test St'
+        assert data['notes'] == 'Started work on the ticket.'
+        assert data['contractor_start_location'] == '123 Test St'
 
     def test_updateTicket_invalidStatus(self, client, auth_token, seed_ticket):
         ticket_id = seed_ticket.id
@@ -27,7 +27,7 @@ class TestTickets:
         ticket_id = seed_ticket.id
         response = client.put(f'/tickets/{ticket_id}', json={
             'status': 'in_progress',
-            'start_location': '123 Test St',
+            'contractor_start_location': '123 Test St',
         }, headers={'Authorization': f'Bearer {auth_token}'})   
         assert response.status_code == 400
 
@@ -44,15 +44,15 @@ class TestTickets:
         end_time = seed_ticket_inProgress.start_time + timedelta(hours=4)
         response = client.put(f'/tickets/{ticket_id}', json={
             'status': 'completed',
-            'contractor_notes': 'Completed the ticket.',
+            'notes': 'Completed the ticket.',
             'end_time': end_time.isoformat() + 'Z',
-            'end_location': '123 Test St',
+            'contractor_end_location': '123 Test St',
         }, headers={'Authorization': f'Bearer {auth_token}'})
         assert response.status_code == 200
         data = response.get_json()
         assert data['status'] == 'completed'
-        assert data['contractor_notes'] == 'Completed the ticket.'
-        assert data['end_location'] == '123 Test St'
+        assert data['notes'] == 'Completed the ticket.'
+        assert data['contractor_end_location'] == '123 Test St'
         assert data['anomaly_flag'] == False
 
     def test_updateTicket_completeWithAnomaly(self, client, auth_token, seed_ticket_inProgress):
@@ -60,13 +60,13 @@ class TestTickets:
         end_time = seed_ticket_inProgress.start_time - timedelta(hours=1)
         response = client.put(f'/tickets/{ticket_id}', json={
             'status': 'completed',
-            'contractor_notes': 'Completed the ticket with anomaly.',
+            'notes': 'Completed the ticket with anomaly.',
             'end_time': end_time.isoformat() + 'Z',
-            'end_location': '123 Test St',
+            'contractor_end_location': '123 Test St',
         }, headers={'Authorization': f'Bearer {auth_token}'})
         assert response.status_code == 200
         data = response.get_json()
         assert data['status'] == 'completed'
-        assert data['contractor_notes'] == 'Completed the ticket with anomaly.'
-        assert data['end_location'] == '123 Test St'
+        assert data['notes'] == 'Completed the ticket with anomaly.'
+        assert data['contractor_end_location'] == '123 Test St'
         assert data['anomaly_flag'] == True

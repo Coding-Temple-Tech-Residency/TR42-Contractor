@@ -26,7 +26,7 @@ export const Message:FC<Props> =(props) =>{
             <View style={Styles.Chat.messageBoxSent}>
                     <Text style={Styles.Chat.timeText}>{props.timeStamp}</Text>
                 <View style={Styles.Chat.messageSent}>
-                    <Text style={Styles.Chat.dateText}>{TimeFormater.getTimeStamp("LOCAL-DATE",props.utcTimeStamp)}</Text>
+                   
                     <Text style={Styles.Chat.messageText}>{props.message}</Text>
                 </View>
             
@@ -43,7 +43,7 @@ export const Message:FC<Props> =(props) =>{
                  <ProfileIcon width={Styles.Chat.chatIcon.width} height={Styles.Chat.chatIcon.height} name={props.contactName}/>
 
                 <View style={Styles.Chat.messageReceived}>
-                     <Text style={Styles.Chat.dateText}>{TimeFormater.getTimeStamp("LOCAL-DATE",props.utcTimeStamp)}</Text>
+                    
                     <Text style={Styles.Chat.messageText}>{props.message}</Text>
                 </View>
                 <Text style={Styles.Chat.timeText}>{props.timeStamp}</Text>

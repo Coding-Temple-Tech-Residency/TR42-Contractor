@@ -25,6 +25,7 @@ export const Menus = {
     {label:"Dashboard",icon:Assets.icons.HomeIcon,component:"Home"},
     {label:"Tickets",icon:Assets.icons.TaskIcon,component:"Tickets"},
     {label:"Contacts",icon:Assets.icons.ContactIcon,component:"Contacts"},
+    {label:"AI",icon:Assets.icons.AiIcon,component:"InspectionAssist"}
 
 
  ],

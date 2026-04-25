@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from app.models import Tickets, db
+from app.models import Ticket, Contractor, db
 from .schemas import tickets_schema, ticket_schema, ticket_update_schema
 from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -28,7 +28,14 @@ def update_ticket(ticket_id):
     if not json_data:
         return jsonify({'error': 'No input data provided'}), 400
     
-    ticket = db.session.query(Tickets).filter(Tickets.id == ticket_id, Tickets.assigned_contractor == request.user_id).first()
+    user_id = request.user_id
+    
+    try: 
+        contractor = db.session.query(Contractor).filter(Contractor.user_id == user_id).first()
+        ticket = db.session.query(Ticket).filter(Ticket.id == ticket_id, Ticket.assigned_contractor == contractor.user_id).first()
+    except Exception as e:
+        return jsonify({'error': 'Error occurred while fetching data'}), 500
+
     if not ticket:
         return jsonify({'error': 'Ticket not found'}), 404
     
@@ -51,8 +58,8 @@ def update_ticket(ticket_id):
                 
                 if "start_time" not in ticket_update_data:
                     return jsonify({'error': 'start_time required when starting'}), 400
-                if "start_location" not in ticket_update_data:
-                    return jsonify({'error': 'start_location required when starting'}), 400
+                if "contractor_start_location" not in ticket_update_data:
+                    return jsonify({'error': 'contractor_start_location required when starting'}), 400
 
             elif value == "completed":
                 if not ticket.start_time:
@@ -63,8 +70,8 @@ def update_ticket(ticket_id):
 
                 if "end_time" not in ticket_update_data:
                     return jsonify({'error': 'end_time required when completing'}), 400
-                if "end_location" not in ticket_update_data:
-                    return jsonify({'error': 'end_location required when completing'}), 400
+                if "contractor_end_location" not in ticket_update_data:
+                    return jsonify({'error': 'contractor_end_location required when completing'}), 400
                 
                 #ANOMALY CHECKS:
                 
@@ -72,14 +79,19 @@ def update_ticket(ticket_id):
                 start_time_utc = ensure_utc(ticket.start_time)
                 if end_time_utc < start_time_utc:
                     ticket.anomaly_flag = True
-                    ticket.anomaly_reason = "Logged end time is before logged start time."
+                    new_reason = "Logged end time is before logged start time."
+                    if ticket.anomaly_reason:
+                        ticket.anomaly_reason += " | " + new_reason
+                    else:
+                        ticket.anomaly_reason = new_reason
 
-                if ticket_update_data["end_location"] == ticket.start_location and ticket.designated_route is not None:
+                if ticket_update_data["contractor_end_location"] == ticket.contractor_start_location and ticket.route is not None:
                     ticket.anomaly_flag = True
-                    ticket.anomaly_reason = "There is a designated route. Logged end location should show as different from start location."
-                
-                #Check for time anomaly (look into how to check against estimated_duration. How long before anomaly time throws up a flag?)
-                #Consider an hour difference to be significant in the meantime
+                    new_reason = "There is a designated route. Logged end location should show as different from start location."
+                    if ticket.anomaly_reason:
+                        ticket.anomaly_reason += " | " + new_reason
+                    else:
+                        ticket.anomaly_reason = new_reason                
 
             
 

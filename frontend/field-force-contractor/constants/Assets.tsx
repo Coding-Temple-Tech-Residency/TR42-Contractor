@@ -35,6 +35,7 @@ export const Assets = {
     TaskIcon: require("../assets/images/Jobs.png"),
     ContactIcon: require("../assets/images/contacts.png"),
     BackArrow: require("../assets/images/BackArrow.png"),
-    PhoneIcon: require("../assets/images/phone.png")
+    PhoneIcon: require("../assets/images/phone.png"),
+    AiIcon:require("@/assets/images/AIIcon.png")
   },
 };
