@@ -16,7 +16,7 @@
 // multiple times before navigation completes, only one navigation happens.
 // ──────────────────────────────────────────────────────────────────────────────
 
-import { FC, useEffect, useRef } from "react"
+import { FC, useEffect, useRef,useContext } from "react"
 import { useNavigation }          from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList }     from "@/App"
@@ -25,34 +25,37 @@ import { View, Image }            from "react-native"
 import { Styles }                 from "@/constants/Styles";
 import { Assets }                 from "@/constants/Assets";
 import { useAuth }                from "@/contexts/AuthContext";
+import { AppContext }             from "@/contexts/AppContext";
 
 export const SplashScreen: FC = () => {
   const nav  = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { isLoading } = useAuth();
+  const { isLoading,isAuthenticated } = useAuth();
+  const {mount,setMounted} = useContext(AppContext);
+
 
   // Prevents multiple navigations if the effect fires more than once
   const hasNavigated = useRef(false);
 
-  const SPLASH_TIME = 3000; // 3 seconds to show the logo
+  const SPLASH_TIME:number = 2500; // 3 seconds to show the logo
 
   useEffect(() => {
-    // Don't start the timer until AuthContext has finished reading SecureStore
-    if (isLoading) return;
-    // Don't navigate again if we already have
-    if (hasNavigated.current) return;
+  if (isLoading || hasNavigated.current) return;
 
-    const timer = setTimeout(() => {
-      if (hasNavigated.current) return;
-      hasNavigated.current = true;
+  const timer = setTimeout(() => {
+    hasNavigated.current = true;
+    if(!mount){
+    setMounted(true);
+    }
 
-      // SplashScreen is only in the unauthenticated stack — always go to Login.
-      // Authenticated users skip Splash entirely: the protected stack mounts
-      // with Inspection as its initialRouteName (see App.tsx RootNavigator).
-      nav.replace('Login' as any);
-    }, SPLASH_TIME);
+    if (isAuthenticated) {
+      nav.replace('Home');
+    } else {
+      nav.replace('Login');
+    }
+  }, SPLASH_TIME);
 
-    return () => clearTimeout(timer);
-  }, [isLoading]);
+  return () => clearTimeout(timer);
+}, [isLoading, isAuthenticated,mount]);
 
   return (
     <MainFrame header="none" headerMenu={["none"]} footerMenu={["none"]}>

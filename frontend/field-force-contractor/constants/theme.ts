@@ -23,6 +23,7 @@ export const darkColors = {
   primaryDark:  '#ff6b00',
   primaryLight: '#ffa000',
   primaryFaint: 'rgba(255, 140, 0, 0.1)',
+  accent:       '#ff8c00',
 
   textWhite:    '#ffffff',
   textLight:    '#d1d5db',
@@ -54,6 +55,7 @@ export const lightColors = {
   primaryDark:  '#b45309',
   primaryLight: '#f59e0b',
   primaryFaint: 'rgba(217, 119, 6, 0.08)',
+  accent:       '#d97706',
 
   textWhite:    '#0f172a',          // near-black — main text on light bg
   textLight:    '#334155',          // dark slate — labels, secondary text

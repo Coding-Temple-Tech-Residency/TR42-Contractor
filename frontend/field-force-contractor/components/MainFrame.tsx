@@ -27,7 +27,7 @@
 // inside MainFrame's centered ScrollView.
 // ──────────────────────────────────────────────────────────────────────────────
 
-import { FC, ReactNode }  from 'react';
+import { FC, ReactNode,useEffect,useContext, useRef }  from 'react';
 import {
   View,
   Text,
@@ -38,13 +38,17 @@ import {
 } from 'react-native';
 import { Ionicons }       from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
-
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList }     from "@/App"
 import { Styles }              from '@/constants/Styles';
 import { Assets }              from '@/constants/Assets';
 import { colors, spacing, fontSize, fonts } from '@/constants/theme';
 import { Header, HeaderVariant } from '@/components/Header';
 import { Menu, MenuOptions }   from '@/components/Menu';
 import { Menus }               from '@/constants/Menus';
+import { AppContext } from '@/contexts/AppContext';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 // ── SubHeader ─────────────────────────────────────────────────────────────────
 
@@ -107,11 +111,49 @@ type Props = {
   strip?:        'menus' | 'all' | 'header';
   injectHeader?: ReactNode;
   injectFooter?: ReactNode;
+  requireAuth?:boolean;
 };
 
 export const MainFrame: FC<Props> = (props) => {
   const route    = useRoute();
   const pageName = route.name;
+  const [mount] = useContext(AppContext);
+  const {isAuthenticated,isLoading} = useAuth();
+ type Nav = NativeStackNavigationProp<RootStackParamList>;
+ const publicPages = [
+
+   {name:"Login"},
+   {name:"OfflineLogin"},
+   {name:"BiometricCheck"},
+   {name:"OfflinePinReset"},
+   {name:"SplashScreen"},
+   {name:"PasswordReset"}
+  
+ ]
+ const hasRedirected = useRef(false);
+  const navigator = useNavigation<Nav>();
+  const requireAuth = props.requireAuth;
+  useEffect(() => {
+    if(isLoading || hasRedirected.current) return
+   
+     
+      const noAuthRequired =  publicPages.some(item => item.name === pageName)
+      const notLogin = pageName !== "Login"
+         
+      if(!isAuthenticated && notLogin){
+
+         if( requireAuth === true || !noAuthRequired && requireAuth == undefined) {
+          hasRedirected.current = true
+          navigator.replace("Login")
+         }
+
+        }
+      
+  
+
+
+  },[isLoading,isAuthenticated,pageName,requireAuth])
+ 
 
   const renderHeaderMenu: MenuOptions =
     props.strip === 'menus' || props.strip === 'all'

@@ -1,11 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  AppState,
-  AppStateStatus,
-  TextInput,
-  View,
-} from "react-native";
+import { useEffect, useState,useContext} from "react";
+import { TextInput, View, ActivityIndicator } from "react-native";
 import { LoadFonts } from "./utils/LoadFonts";
 
 // Dark translucent keyboard on iOS for every TextInput in the app
@@ -21,18 +15,19 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 
 // ── Jonathan ──────────────────────────────────────
 import { screenConfig } from "./constants/ScreenConfig";
-import { Blank } from "./screens/Blank";
 import { Chat } from "./screens/ChatScreen";
 import { Contacts } from "./screens/ContactScreen";
+import { SplashScreen} from "./screens/SplashScreen";
+import { AppProvider} from "./contexts/AppContext";
 import DriveTimeTrackerScreen from "./screens/DriveTimeTrackerScreen";
 import HomeScreen from "./screens/HomeScreen";
 import { InspectionAssistScreen } from "./screens/InspectionAssistScreen";
 import InspectionScreen from "./screens/InspectionScreen";
 import { SavedReportsScreen } from "./screens/SavedReportsScreen";
 import SessionLockScreen from "./screens/SessionLockScreen";
-import { SplashScreen } from "./screens/SplashScreen";
 import TicketDetailScreen from "./screens/TicketDetailScreen";
 import TicketsScreen from "./screens/TicketsScreen";
+import { Blank } from "./screens/Blank";
 
 // ── TROY — Auth screens ──────────────────────────────────────
 import BiometricScreen from "./screens/BiometricScreen";
@@ -107,38 +102,6 @@ const StackNavigator = createNativeStackNavigator();
 // React Navigation automatically transitions between stacks when isAuthenticated changes.
 function RootNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
-  const [isSessionLocked, setIsSessionLocked] = useState(false);
-  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setIsSessionLocked(false);
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      const prevAppState = appStateRef.current;
-
-      // Soft-lock authenticated sessions when app leaves the foreground.
-      if (
-        isAuthenticated &&
-        prevAppState === "active" &&
-        (nextAppState === "inactive" || nextAppState === "background")
-      ) {
-        setIsSessionLocked(true);
-      }
-
-      appStateRef.current = nextAppState;
-    });
-
-    return () => subscription.remove();
-  }, [isAuthenticated]);
-
-  const handleSessionUnlock = useCallback(() => {
-    setIsSessionLocked(false);
-  }, []);
-
   // Still reading token from SecureStore — show a branded loading screen
   if (isLoading) {
     return (
@@ -157,85 +120,34 @@ function RootNavigator() {
 
   return (
     <StackNavigator.Navigator
-      screenOptions={screenConfig.window}
-      initialRouteName={isAuthenticated ? "Inspection" : "SplashScreen"}
+      screenOptions={screenConfig.window} initialRouteName="SplashScreen"
+      
     >
-      {isAuthenticated ? (
-        // ── Protected App screens ─────────────────────────────────────────
-        // No SplashScreen here: once auth flips true the Auth stack unmounts
-        // and this stack mounts with Inspection as its initial route. Keeping
-        // Splash registered across both stacks caused React Navigation to
-        // fall back to it after the swap, where a stale closure in its
-        // useEffect would navigate the user back to Login.
-        isSessionLocked ? (
-          <StackNavigator.Screen name="SessionLock">
-            {() => <SessionLockScreen onUnlock={handleSessionUnlock} />}
-          </StackNavigator.Screen>
-        ) : (
-          <>
-            <StackNavigator.Screen
-              name="Inspection"
-              component={InspectionScreen}
-            />
-            <StackNavigator.Screen name="Dashboard" component={HomeScreen} />
-            <StackNavigator.Screen name="Home" component={HomeScreen} />
-            <StackNavigator.Screen name="Blank" component={Blank} />
-            <StackNavigator.Screen name="Contacts" component={Contacts} />
-            <StackNavigator.Screen name="Chat" component={Chat} />
-            <StackNavigator.Screen name="Tickets" component={TicketsScreen} />
-            <StackNavigator.Screen
-              name="TicketDetail"
-              component={TicketDetailScreen}
-            />
-            <StackNavigator.Screen name="Profile" component={ProfileScreen} />
-            <StackNavigator.Screen
-              name="LicenseDetails"
-              component={LicenseScreen}
-            />
-            <StackNavigator.Screen
-              name="TaskHistory"
-              component={TaskHistoryScreen}
-            />
-            <StackNavigator.Screen
-              name="InspectionAssist"
-              component={InspectionAssistScreen}
-            />
-            <StackNavigator.Screen
-              name="DriveTimeTracker"
-              component={DriveTimeTrackerScreen}
-            />
-            <StackNavigator.Screen
-              name="SavedReports"
-              component={SavedReportsScreen}
-            />
-          </>
-        )
-      ) : (
-        // ── Public Auth screens ───────────────────────────────────────────
-        // Login is the entry point after Splash. After a successful login()
-        // call the auth state flips and React Navigation auto-routes to
-        // Inspection above.
-        <>
-          <StackNavigator.Screen name="SplashScreen" component={SplashScreen} />
-          <StackNavigator.Screen name="Login" component={LoginScreen} />
-          <StackNavigator.Screen
-            name="OfflineLogin"
-            component={OfflineLoginScreen}
-          />
-          <StackNavigator.Screen
-            name="BiometricCheck"
-            component={BiometricScreen}
-          />
-          <StackNavigator.Screen
-            name="PasswordReset"
-            component={PasswordResetScreen}
-          />
-          <StackNavigator.Screen
-            name="OfflinePinReset"
-            component={OfflinePinResetScreen}
-          />
-        </>
-      )}
+          <StackNavigator.Screen name="SplashScreen"    component={SplashScreen}          />
+           <StackNavigator.Screen name="Blank"          component={Blank}          />
+   
+          <StackNavigator.Screen name="Inspection"       component={InspectionScreen}       />
+          <StackNavigator.Screen name="Dashboard"        component={HomeScreen}              />
+          <StackNavigator.Screen name="Home"             component={HomeScreen}              />
+          <StackNavigator.Screen name="Contacts"         component={Contacts}                />
+          <StackNavigator.Screen name="Chat"             component={Chat}                    />
+          <StackNavigator.Screen name="Tickets"          component={TicketsScreen}           />
+          <StackNavigator.Screen name="TicketDetail"     component={TicketDetailScreen}      />
+          <StackNavigator.Screen name="Profile"          component={ProfileScreen}           />
+          <StackNavigator.Screen name="LicenseDetails"   component={LicenseScreen}           />
+          <StackNavigator.Screen name="TaskHistory"      component={TaskHistoryScreen}       />
+          <StackNavigator.Screen name="InspectionAssist" component={InspectionAssistScreen}  />
+          <StackNavigator.Screen name="DriveTimeTracker" component={DriveTimeTrackerScreen}  />
+          <StackNavigator.Screen name="SavedReports"     component={SavedReportsScreen}      />
+       
+         <StackNavigator.Screen name="Login"           component={LoginScreen}           />
+          <StackNavigator.Screen name="OfflineLogin"    component={OfflineLoginScreen}    />
+          <StackNavigator.Screen name="BiometricCheck"  component={BiometricScreen}       />
+          <StackNavigator.Screen name="PasswordReset"   component={PasswordResetScreen}   />
+          <StackNavigator.Screen name="OfflinePinReset" component={OfflinePinResetScreen} />
+        
+     
+
     </StackNavigator.Navigator>
   );
 }
@@ -243,7 +155,6 @@ function RootNavigator() {
 // ── App root ───────────────────────────────────────────────────────────────
 export default function App() {
   const [externalFontsLoaded, setExternalFontsLoaded] = useState(false);
-
   useEffect(() => {
     const load = async () => {
       const isLoaded = await LoadFonts();
@@ -255,12 +166,14 @@ export default function App() {
   if (!externalFontsLoaded) return null;
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <NavigationContainer>
-          <RootNavigator />
-        </NavigationContainer>
-      </AuthProvider>
-    </ThemeProvider>
+    <AppProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <NavigationContainer>
+            <RootNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+      </ThemeProvider>
+    </AppProvider>
   );
 }
