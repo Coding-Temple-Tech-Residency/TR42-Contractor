@@ -117,7 +117,7 @@ type Props = {
 export const MainFrame: FC<Props> = (props) => {
   const route    = useRoute();
   const pageName = route.name;
-  const [mount] = useContext(AppContext);
+  const {mount,devMode} = useContext(AppContext);
   const {isAuthenticated,isLoading} = useAuth();
  type Nav = NativeStackNavigationProp<RootStackParamList>;
  const publicPages = [
@@ -139,15 +139,17 @@ export const MainFrame: FC<Props> = (props) => {
      
       const noAuthRequired =  publicPages.some(item => item.name === pageName)
       const notLogin = pageName !== "Login"
-         
-      if(!isAuthenticated && notLogin){
+      if(devMode === false){
+        if(!isAuthenticated && notLogin){
 
-         if( requireAuth === true || !noAuthRequired && requireAuth == undefined) {
-          hasRedirected.current = true
-          navigator.replace("Login")
-         }
+          if( requireAuth === true || !noAuthRequired && requireAuth == undefined) {
+            hasRedirected.current = true
+            navigator.replace("Login")
+          }
 
-        }
+          }
+      }
+      
       
   
 
