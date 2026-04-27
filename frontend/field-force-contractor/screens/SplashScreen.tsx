@@ -29,7 +29,7 @@ import { AppContext }             from "@/contexts/AppContext";
 
 export const SplashScreen: FC = () => {
   const nav  = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { isLoading,isAuthenticated } = useAuth();
+  const { isLoading,isAuthenticated,token,user } = useAuth();
   const {mount,setMounted,devMode} = useContext(AppContext);
 
 
@@ -50,8 +50,8 @@ export const SplashScreen: FC = () => {
       if (isAuthenticated) {
         
         nav.replace('BiometricCheck',{
-          pendingToken: 'dev-token',
-          pendingUser:  { id: 0, username: "DevMode", role: 'contractor' },
+          pendingToken: (token)? token : "",
+          pendingUser: { id: user?.id || 0, username: user?.username || "", role: user?.role || ""},
           onSuccess:{screen:"Home"}
         });
       } else {
@@ -60,8 +60,8 @@ export const SplashScreen: FC = () => {
     }
     else{
        nav.replace('BiometricCheck',{
-          pendingToken: 'dev-token',
-          pendingUser:  { id: 0, username: "DevMode", role: 'contractor' },
+          pendingToken:"dev-mode",
+          pendingUser: { id: 0, username:"Test", role:"vendor"},
           onSuccess:{screen:"Home"}
         });
      
