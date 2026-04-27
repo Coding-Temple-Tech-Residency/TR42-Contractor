@@ -50,7 +50,7 @@ export const SplashScreen: FC = () => {
       if (isAuthenticated) {
         
         nav.replace('BiometricCheck',{
-          pendingToken: (token)? token : "",
+          pendingToken: token || "",
           pendingUser: { id: user?.id || 0, username: user?.username || "", role: user?.role || ""},
           onSuccess:{screen:"Home"}
         });
