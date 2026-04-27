@@ -35,7 +35,7 @@ import { Ionicons }  from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp }          from '@react-navigation/native-stack';
 
-import { RootStackParamList }     from '../App';
+import { RootStackParamList,OnSuccessRoute }     from '../App';
 import { MainFrame } from '../components/MainFrame';
 import { SETTINGS_BIOMETRIC_KEY } from './ProfileScreen';
 import { useAuth }                from '../contexts/AuthContext';
@@ -53,7 +53,7 @@ export default function BiometricScreen() {
   const { login }            = useAuth();
 
   // Pending credentials passed from LoginScreen — not yet committed to AuthContext
-  const { pendingToken, pendingUser } = route.params;
+  const { pendingToken, pendingUser,onSuccess } = route.params;
 
   const [isOffline,      setIsOffline]      = useState(false);
   const [scanState,      setScanState]      = useState('idle');
@@ -79,7 +79,13 @@ export default function BiometricScreen() {
     setSelectedMethod(method);
     setScanState('idle');
   };
-
+  const go = (route: OnSuccessRoute) => {
+            if ("params" in route) {
+              navigation.replace(route.screen as any, route.params as any);
+            } else {
+              navigation.replace(route.screen as any);
+            }
+          };
   const handleScan = async () => {
     if (scanState === 'scanning') return;
     setScanState('scanning');
@@ -92,12 +98,22 @@ export default function BiometricScreen() {
         // stack. The Protected stack opens directly at its initialRouteName
         // (Inspection). Calling replace() on the now-unmounted Auth navigator
         // would throw "Home not handled by any navigator".
-        return;
+        if(onSuccess){
+          go(onSuccess);
+        }else{
+          return;
+        }
+        
       }
       const scanWorked = Math.random() > 0.3;
       if (scanWorked) {
         await login(pendingToken, pendingUser);
         // See comment above — let RootNavigator handle the stack swap.
+       if(onSuccess){
+        go(onSuccess);
+       }else{
+        return;
+       }
       } else {
         setScanState('failed');
       }

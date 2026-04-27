@@ -158,6 +158,7 @@ export default function LoginScreen() {
         navigation.navigate('BiometricCheck', {
           pendingToken: 'dev-token',
           pendingUser:  { id: 0, username: identifier.trim(), role: 'contractor' },
+          onSuccess:{screen:"Home"}
         });
         return;
       }
@@ -171,6 +172,7 @@ export default function LoginScreen() {
       navigation.navigate('BiometricCheck', {
         pendingToken: res.token,
         pendingUser:  res.user,
+        onSuccess:{screen:"Home"}
       });
 
     } catch (err) {

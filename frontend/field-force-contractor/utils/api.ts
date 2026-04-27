@@ -90,7 +90,7 @@ export function registerAuthFailureHandler(cb: () => void) { _onAuthFailure = cb
 const USE_DEPLOYED     = true;
 const DEPLOYED_API_URL = 'https://tr42-contractor.onrender.com';
 
-const LAN_IP = '10.0.0.152';            // ← your machine's Wi-Fi LAN IP (local dev only)
+const LAN_IP = '192.168.0.13';            // ← your machine's Wi-Fi LAN IP (local dev only)
 const PORT   = 5000;
 
 export const API_BASE_URL = USE_DEPLOYED
