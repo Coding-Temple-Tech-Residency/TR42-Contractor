@@ -5,19 +5,14 @@ import { ContactCard } from "@/components/ContactCard"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"
-import { InitID } from "@/utils/InitID"
+import { demoUsers } from "@/contexts/AppContext"
 
 
 export const Contacts:FC = (props) => {
     
-    const contactData = [ //PlaceHolder Contact Data  will be provided by backend
-        {id:InitID.getId(),name:"John Doe",phone:"555-555-5555"}, // ids need to be replaced with data from database 
-        {id:InitID.getId(),name:"Jane Doe", phone:"444-444-4444"},
-        {id:InitID.getId(),name:"Taylor Swift",phone:"555-555-5555"}
-
-    ]
+ 
     const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-    const [contacts] = useState(contactData)
+    const [contacts] = useState(demoUsers)
     const  [nameSearch,setNameSearch] = useState("");
     const Search:FC = () =>{
        return(
@@ -28,8 +23,8 @@ export const Contacts:FC = (props) => {
     <MainFrame header="home" headerMenu={["Menu2",["Contacts"]]} injectHeader={<Search/>}>
     
       {
-        contacts.filter(ct => ct.name.toUpperCase().includes(nameSearch.toUpperCase())).map((item) =>{
-          return( <ContactCard key={item.id} contactId={item.id} phoneNumber={item.phone} name={item.name}/>)
+        contacts.filter(ct => (`${ct.firstName.toUpperCase()} ${ct.lastName.toUpperCase()}`).includes(nameSearch.toUpperCase())).map((item) =>{
+          return( <ContactCard key={item.userid} contactId={item.userid} phoneNumber={item.phone} name={`${item.firstName} ${ item.lastName}`}/>)
         })
       }
     

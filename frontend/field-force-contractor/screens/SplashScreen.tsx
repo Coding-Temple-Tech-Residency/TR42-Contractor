@@ -30,7 +30,7 @@ import { AppContext }             from "@/contexts/AppContext";
 export const SplashScreen: FC = () => {
   const nav  = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { isLoading,isAuthenticated,token,user } = useAuth();
-  const {mount,setMounted,devMode} = useContext(AppContext);
+  const {mount,setMounted,devMode,setUserInfo} = useContext(AppContext);
 
 
   // Prevents multiple navigations if the effect fires more than once

@@ -5,18 +5,19 @@ import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import{RootStackParamList} from "@/App"
 import { ProfileIcon } from "./ProfileIcon";
+import { AppContext} from "@/contexts/AppContext";
 
-import {FC} from "react"
+import {FC, useContext} from "react"
 
 type Props = {
 
-    profileIcon?: string
     name?:string
     phoneNumber?: string
     contactId?: string
 }
 export const ContactCard:FC<Props> = (props) =>{
 const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
  const Call = (phone:string) =>{
 
     Linking.openURL(`tel:${phone}`)

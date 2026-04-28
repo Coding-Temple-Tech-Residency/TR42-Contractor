@@ -10,21 +10,16 @@ import { TimeFormater } from "@/utils/timeFormater"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"
-import { useAuth } from "@/contexts/AuthContext"
-import { AppContext } from "@/contexts/AppContext"
+import { AppContext,getUser} from "@/contexts/AppContext"
 
 type Props = {
 
     children:ReactNode
 }
 type TypeMessage = {
-
+    sessionId:string
     id:string
     message:string
-    contactId?:string
-    messageType:MessageType //Indicates if the mssage was sent or recieved so the app knows how to show it
-    timeStamp:string
-    contactName:string
     senderId:string
     utcTimeStamp:string
     
@@ -36,32 +31,68 @@ const FOOTER_MENU_HEIGHT = 110;
 const KEYBOARD_GAP = 8;
 
 
+//Demo Chat sessions database
+const demoSessions = [
+   {sessionid:"123456",
+    members: ["1","2"]
+   },
+   {sessionid:"1234567",
+    members: ["1","3"]
+   },
+   {sessionid:"12345678",
+    members: ["1","4"]
+   }
+]
+
+
+const createSession = (userA:string,userB:string) => {
+  //Checks the demo database to ensure that a message session does not already exist that contains the 2 contacts before creating a new one
+  let session;
+  if(demoSessions.some(p=> p.members.includes(userA) && p.members.includes(userB)) === false){
+    session = InitID.getId();
+    demoSessions.push({sessionid:session,members:[userA,userB]}) // create new session in demo database
+  }
+  else{
+   // if a session already exist for the 2 provided contacts return that message session id
+    session = demoSessions.find(p => p.members.includes(userA) && p.members.includes(userB))?.sessionid || ""
+  }
+ 
+ return(session);
+}
+ 
 export const Chat:FC = (props) =>{
+
 
     const route = useRoute<any>()
     const {name,contactId} = route.params
+
+    const {userInfo} = useContext(AppContext)
+    const sessionId = createSession(userInfo.userid || "",contactId)  
     const {height: windowHeight} = useWindowDimensions();
     const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-    const {user} = useAuth();
-    const CONTACTID = contactId;
-    const USERID = (user?.id || "").toString();
-    let USERSNAME = "John Doe" //Name should be replaced with users first + last name from the sql database
-    let CONTACTNAME = USERSNAME
-    const {reverseStack} = useContext(AppContext);
-    const demoMessages:TypeMessage[] = [ // Demo data real data will be replaced by backend
-    {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
-    {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
-    {id:InitID.getId(),message:"Hello",contactName:USERSNAME,contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
-    {id:InitID.getId(),message:"Hi",contactName:name, contactId:USERID?.toString(),messageType:"received",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:CONTACTID,utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")},
-    {id:InitID.getId(),message:"How are you doing?",contactName:USERSNAME, contactId:CONTACTID,messageType:"sent",timeStamp:TimeFormater.getTimeStamp("LOCAL"),senderId:USERID?.toString(), utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")}, 
+   
+   
+    let contactuser = getUser(contactId);
+    let CONTACTNAME = `${contactuser?.firstName} ${contactuser?.lastName}`
+
+
+      //Demo Messages database 
+    const demoMessages:TypeMessage[] = [
+    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    {sessionId:sessionId,id:InitID.getId(),message:"Hello",senderId:contactId, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
+    {sessionId:sessionId,id:InitID.getId(),message:"Hi",senderId:contactId,utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")},
+    {sessionId:sessionId,id:InitID.getId(),message:"How are you doing?",senderId:userInfo.userid, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")}, 
     ]
    
+    const {reverseStack} = useContext(AppContext);
     const [messages,setMessage] = useState(demoMessages);
     const scrollRef = useRef<ScrollView>(null);
-
     const [send,setSend] = useState<MessageType>("received");
     const [searchBarBottom,setSearchBarBottom] = useState(FOOTER_MENU_HEIGHT);
-    
+
+  
+
     useEffect(() => {
         const showSubscription = Keyboard.addListener(
             Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -84,31 +115,26 @@ export const Chat:FC = (props) =>{
     }, [windowHeight]);
   
    
-    const SendMessage = (mesg:string,contact:string,contactId:string) =>{
+    const SendMessage = (mesg:string) =>{
         let sendersid;
-        let contactsid;
+        
         if(send === "sent"){ //Testing Data will be removed in production 
 
             setSend("received");
-            sendersid = CONTACTID
-            contactsid = USERID
-            CONTACTNAME = USERSNAME
+            sendersid = contactId
+          
         }
         else{
 
             setSend("sent");
-            sendersid = USERID
-            contactsid = CONTACTID
-            CONTACTNAME = name
+            sendersid = userInfo.userid
+          
         }
 
         setMessage(prev => [...prev,{
+            sessionId:sessionId,
             id:InitID.getId(),
             message:mesg,
-            contactid:contactsid, //This should be replaced with the contactId paramater provided in SendMessage()
-            contactName:CONTACTNAME,
-            messageType:send,
-            timeStamp: TimeFormater.getTimeStamp("LOCAL"),
             senderId: sendersid,
             utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")
         }]);
@@ -143,7 +169,7 @@ export const Chat:FC = (props) =>{
                     
                 { (setLabel !== "" && <Text style={Styles.Chat.dateMarker}>{setLabel}</Text>)}
                     
-                <Message messageId={item.id} message={item.message} contactName={item.contactName} contactId={item.contactId} senderId={item.senderId} messageType={item.messageType} timeStamp={item.timeStamp} utcTimeStamp={item.utcTimeStamp}></Message>
+                <Message messageId={item.id} message={item.message} senderId={item.senderId} utcTimeStamp={item.utcTimeStamp} contactName={CONTACTNAME || ""}></Message>
                 </React.Fragment>
       )})
 
@@ -165,7 +191,7 @@ export const Chat:FC = (props) =>{
           </ScrollView>
     </MainFrame>
     <View style={[Styles.Chat.sendBar, {bottom: searchBarBottom}]}>
-        <SearchBar placeHolder="Message..." buttonText="Send" multiline onClick={(msg:string)=>{(msg) && SendMessage(msg,CONTACTNAME,CONTACTID)}} resetOnSubmit={true}/>
+        <SearchBar placeHolder="Message..." buttonText="Send" multiline onClick={(msg:string)=>{(msg) && SendMessage(msg)}} resetOnSubmit={true}/>
     </View>
     </View>
 
