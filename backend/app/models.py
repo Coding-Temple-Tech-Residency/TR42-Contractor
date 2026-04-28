@@ -155,6 +155,28 @@ class Ticket(Base):
     additional_information: Mapped[str] = mapped_column(String(500), nullable=True)
 
 
+class TicketPhoto(Base):
+    __tablename__ = 'ticket_photo'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ticket_id: Mapped[int] = mapped_column(ForeignKey('ticket.id'), index=True, nullable=False)
+    contractor_id: Mapped[int] = mapped_column(ForeignKey('contractor.id'), index=True, nullable=False)
+    file_url: Mapped[str] = mapped_column(String(500), nullable=False)
+    storage_key: Mapped[str] = mapped_column(String(500), nullable=False)
+    original_filename: Mapped[str] = mapped_column(String(255), nullable=True)
+    mime_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    caption: Mapped[str] = mapped_column(String(500), nullable=True)
+    photo_type: Mapped[str] = mapped_column(String(50), nullable=True)
+    taken_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    uploaded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=datetime.now(timezone.utc),
+        nullable=False,
+    )
+    gps_latitude: Mapped[float] = mapped_column(Float, nullable=True)
+    gps_longitude: Mapped[float] = mapped_column(Float, nullable=True)
+
+
 
 
 # ── Inspection models ─────────────────────────────────────────────────────────
