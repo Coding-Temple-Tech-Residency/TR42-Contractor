@@ -58,7 +58,7 @@ export const AppProvider = ({children} : {children:ReactNode}) =>{
    
     return(
 
-        <AppContext.Provider value={{mount,setMounted,reverseStack,setReverseStack,devMode,setDevMode,setUserInfo,userInfo,demoUsers}}>
+        <AppContext.Provider value={{mount,setMounted,reverseStack,setReverseStack,devMode,setDevMode,setUserInfo,userInfo}}>
         {children}
         </AppContext.Provider>
     )
