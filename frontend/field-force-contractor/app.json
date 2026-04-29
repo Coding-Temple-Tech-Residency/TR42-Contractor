@@ -4,7 +4,7 @@
     "slug": "field-force-contractor",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/ForceFiledicon.png",
+    "icon": "./assets/images/FieldForceIconLarge.png",
     "scheme": "fieldforcecontractor",
     "userInterfaceStyle": "automatic",
     "updates": {
@@ -24,7 +24,7 @@
       "package": "com.tr42.fieldforcecontractor",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "foregroundImage": "./assets/images/FieldForceIconLarge.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
