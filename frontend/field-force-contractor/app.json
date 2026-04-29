@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "field-force-contractor",
+    "name": "Field Force",
     "slug": "field-force-contractor",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ForceFiledicon.png",
     "scheme": "fieldforcecontractor",
     "userInterfaceStyle": "automatic",
     "updates": {
@@ -40,8 +40,10 @@
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
+    "splash": {
+       "backgroundColor": "#FFFFFF"
+    },
     "plugins": [
-      "expo-splash-screen",
       "expo-font",
       "expo-secure-store",
       "expo-location"

@@ -53,8 +53,9 @@ export type RootStackParamList = {
   // ── Jonathan — App screens ───────────────────────────────────
   Home: undefined;
   Blank: undefined;
+
   // ── Charlie — App screens ───────────────────────────────────
-  Contacts: undefined;
+  Contacts: {sort:boolean};
   Chat: { name: string; contactId?: string };
   Tickets: undefined;
   TicketDetail: { taskId: number };

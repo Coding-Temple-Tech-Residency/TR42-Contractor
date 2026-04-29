@@ -3,7 +3,6 @@ import { createContext,useState,ReactNode } from "react"
 
 
 export const  AppContext = createContext<any>(null)
-
 export type userTable = {
 
     userid:string,
@@ -51,19 +50,27 @@ export const demoUsers:userTable[] = [
 ]
 export const getUser = (userid:string) =>{
 
-    let user = demoUsers.find(p => p.userid === userid) || null
+    let user = demoUsers.find(p => p.userid === userid) || undefined
   
     return(user);
 }
+export const demoClient = (userid:string) => {
+     let user = getUser(userid);
+     return{...user!,lastName:`${user!.lastName} [CLIENT]`}
+   }
 export const AppProvider = ({children} : {children:ReactNode}) =>{
    const [mount,setMounted] = useState(false);
    const [reverseStack,setReverseStack] = useState(false);
    const [devMode,setDevMode] = useState(false);
-   const [userInfo,setUserInfo] = useState(getUser("1"));
+   const [userInfo,setUserInfo] = useState(getUser("0"));
+   
+   
+ 
+   const [client,setClient] = useState<userTable | undefined>(demoClient("1"));
    
     return(
 
-        <AppContext.Provider value={{mount,setMounted,reverseStack,setReverseStack,devMode,setDevMode,setUserInfo,userInfo}}>
+        <AppContext.Provider value={{mount,setMounted,reverseStack,setReverseStack,devMode,setDevMode,setUserInfo,userInfo,client,setClient}}>
         {children}
         </AppContext.Provider>
     )
