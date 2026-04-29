@@ -1,12 +1,13 @@
 import {Styles} from "@/constants/Styles"
 import {Assets} from "@/constants/Assets"
-import {FC} from "react"
+import {FC, useContext} from "react"
 import {View,Image, Pressable} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"
 import { ProfileIcon } from "./ProfileIcon"
 export type HeaderVariant = 'default' | 'home' | "none"
+import { AppContext } from "@/contexts/AppContext"
 
 type Props ={
   
@@ -14,6 +15,7 @@ type Props ={
 }
 export const Header:FC<Props> = (props) =>{
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+  const {userInfo} = useContext(AppContext);
 
 // Header with just the logo and "Field Force" text
 const HeaderDefault: FC = () => (
@@ -31,7 +33,7 @@ const HeaderHome: FC = () => (
       <Image source={Assets.logos.ffLogoName} style={Styles.HeaderVariants.logo} resizeMode="contain" />
       <Pressable onPress={() => {nav.navigate("Profile")}}>
      
-      <ProfileIcon width={Styles.Menu.headMenuStyle2Icon.width} height={Styles.Menu.headMenuStyle2Icon.height} name="John Doe"/>
+      <ProfileIcon width={Styles.Menu.headMenuStyle2Icon.width} height={Styles.Menu.headMenuStyle2Icon.height} name={`${userInfo.firstName} ${userInfo.lastName}`}/>
       </Pressable>
       
     </View>
