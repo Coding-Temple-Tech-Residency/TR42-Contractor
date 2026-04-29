@@ -41,12 +41,17 @@
       "favicon": "./assets/images/favicon.png"
     },
     "splash": {
-       "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#000000",
+      "image": "./assets/images/SplashScreenBackGround.png",
+      "resizeMode": "contain"
+
     },
     "plugins": [
+      "expo-splash-screen",
       "expo-font",
       "expo-secure-store",
-      "expo-location"
+      "expo-location",
+      "expo-web-browser"
     ],
     "experiments": {
       "reactCompiler": true
