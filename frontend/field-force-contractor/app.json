@@ -41,9 +41,9 @@
       "favicon": "./assets/images/favicon.png"
     },
     "splash": {
-      "backgroundColor": "#000000",
-      "image": "./assets/images/SplashScreenBackGround.png",
-      "resizeMode": "contain"
+      "backgroundColor": "#0E182E",
+      "image": "./assets/images/SplashLogo.png",
+      "resizeMode": "cover"
 
     },
     "plugins": [
