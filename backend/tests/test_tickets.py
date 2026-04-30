@@ -46,16 +46,16 @@ class TestTickets:
         ticket_id = seed_ticket_inProgress.id
         end_time = seed_ticket_inProgress.start_time + timedelta(hours=4)
         response = client.put(f'/tickets/{ticket_id}', json={
-            'status': 'COMPLETED',
-            'notes': 'Completed the ticket.',
+            'status': 'PENDING_APPROVAL',
+            'notes': 'Requested approval for the ticket.',
             'end_time': end_time.isoformat() + 'Z',
             'contractor_end_latitude': 44.7128,
             'contractor_end_longitude': -77.0060
         }, headers={'Authorization': f'Bearer {auth_token}'})
         assert response.status_code == 200
         data = response.get_json()
-        assert data['status'] == 'COMPLETED'
-        assert data['notes'] == 'Completed the ticket.'
+        assert data['status'] == 'PENDING_APPROVAL'
+        assert data['notes'] == 'Requested approval for the ticket.'
         assert data['contractor_end_latitude'] == 44.7128
         assert data['contractor_end_longitude'] == -77.0060
         assert data['anomaly_flag'] == False
@@ -64,16 +64,16 @@ class TestTickets:
         ticket_id = seed_ticket_inProgress.id
         end_time = seed_ticket_inProgress.start_time - timedelta(hours=1)
         response = client.put(f'/tickets/{ticket_id}', json={
-            'status': 'COMPLETED',
-            'notes': 'Completed the ticket with anomaly.',
+            'status': 'PENDING_APPROVAL',
+            'notes': 'Requested approval for the ticket with anomaly.',
             'end_time': end_time.isoformat() + 'Z',
             'contractor_end_latitude': 44.7128,
             'contractor_end_longitude': -77.0060
         }, headers={'Authorization': f'Bearer {auth_token}'})
         assert response.status_code == 200
         data = response.get_json()
-        assert data['status'] == 'COMPLETED'
-        assert data['notes'] == 'Completed the ticket with anomaly.'
+        assert data['status'] == 'PENDING_APPROVAL'
+        assert data['notes'] == 'Requested approval for the ticket with anomaly.'
         assert data['contractor_end_latitude'] == 44.7128
         assert data['contractor_end_longitude'] == -77.0060
         assert data['anomaly_flag'] == True

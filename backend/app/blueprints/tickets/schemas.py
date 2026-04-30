@@ -12,7 +12,7 @@ class TicketSchema(ma.SQLAlchemyAutoSchema):
 
 class TicketUpdateSchema(Schema):
     notes = fields.Str(required=False)
-    status = fields.Str(required=False, validate=validate.OneOf(["UNASSIGNED", "ASSIGNED", "IN_PROGRESS", "COMPLETED", "PENDING_APPROVAL", "APPROVED", "REJECTED"]),)
+    status = fields.Str(required=False, validate=validate.OneOf(["UNASSIGNED", "ASSIGNED", "IN_PROGRESS", "PENDING_APPROVAL", "APPROVED", "COMPLETED", "REJECTED"]),)
     start_time = fields.AwareDateTime(required=False)
     end_time = fields.AwareDateTime(required=False)
     contractor_start_latitude = fields.Float(required=False)

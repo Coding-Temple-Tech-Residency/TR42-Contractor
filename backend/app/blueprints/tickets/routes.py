@@ -63,9 +63,9 @@ def update_ticket(ticket_id):
                 if "contractor_start_longitude" not in ticket_update_data:
                     return jsonify({'error': 'contractor_start_longitude required when starting'}), 400
 
-            elif value == "COMPLETED":
+            elif value == "PENDING_APPROVAL":
                 if not ticket.start_time:
-                    return jsonify({'error': 'Cannot complete before starting'}), 400
+                    return jsonify({'error': 'Cannot request approval before starting'}), 400
 
                 if ticket.end_time:
                     return jsonify({'error': 'Ticket already completed'}), 400
