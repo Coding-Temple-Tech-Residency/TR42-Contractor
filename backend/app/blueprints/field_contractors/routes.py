@@ -10,6 +10,54 @@ from app.util.auth import encode_token, token_required, vendor_required
 from datetime import datetime, timezone
 
 
+@field_contractors_bp.route('/register', methods=['GET'])
+def register_contractor_info():
+    """Return registration format - no auth required for GET"""
+    return jsonify({
+        'message': 'Contractor registration endpoint - Send POST with Authorization header (vendor token)',
+        'authorization': 'Bearer <vendor_token>',
+        'request_body': {
+            'user': {
+                'username': 'string (required)',
+                'email': 'string (required)',
+                'password': 'string (required)',
+                'first_name': 'string (required)',
+                'last_name': 'string (required)',
+                'contact_number': 'string (required)',
+                'date_of_birth': 'YYYY-MM-DD (required)',
+                'ssn_last_four': 'string - last 4 digits (required)',
+                'middle_name': 'string (optional)',
+                'profile_photo': 'string URL (optional)',
+                'alternate_number': 'string (optional)'
+            },
+            'contractor': {
+                'specialty': 'string (required)',
+                'years_experience': 'number (required)',
+                'license_number': 'string (required)',
+                'hourly_rate': 'number (required)'
+            }
+        },
+        'example': {
+            'user': {
+                'username': 'johncontractor',
+                'email': 'john@example.com',
+                'password': 'SecurePass123!',
+                'first_name': 'John',
+                'last_name': 'Smith',
+                'contact_number': '555-123-4567',
+                'date_of_birth': '1985-06-15',
+                'ssn_last_four': '1234'
+            },
+            'contractor': {
+                'specialty': 'Electrical',
+                'years_experience': 10,
+                'license_number': 'LIC-2024-001',
+                'hourly_rate': 75.00
+            }
+        }
+    }), 200
+
+
 #Register contractor (for testing, delete later)
 @field_contractors_bp.route('/register', methods=['POST'])
 @vendor_required
