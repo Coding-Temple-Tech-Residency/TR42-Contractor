@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 
@@ -97,16 +96,13 @@ def save_report():
         priority            = data['priority'],
         category            = data['category'],
         description         = data['description'],
-        recommended_actions = json.dumps(data['recommended_actions']),
+        recommended_actions = data['recommended_actions'],
         raw_notes           = data.get('raw_notes'),
     )
     db.session.add(report)
     db.session.commit()
 
-    # Deserialise recommended_actions back to a list before returning
-    result = ai_report_schema.dump(report)
-    result['recommended_actions'] = json.loads(report.recommended_actions)
-    return jsonify(result), 201
+    return jsonify(ai_report_schema.dump(report)), 201
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -124,8 +120,4 @@ def get_reports():
         .all()
     )
 
-    results = ai_reports_schema.dump(reports)
-    for item, row in zip(results, reports):
-        item['recommended_actions'] = json.loads(row.recommended_actions)
-
-    return jsonify(results), 200
+    return jsonify(ai_reports_schema.dump(reports)), 200
