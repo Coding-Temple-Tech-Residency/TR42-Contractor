@@ -129,7 +129,7 @@ class Ticket(Base):
     vendor_id: Mapped[int] = mapped_column(ForeignKey('vendor.id'), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     priority: Mapped[str] = mapped_column(String(360), nullable=False)
-    status: Mapped[str] = mapped_column(String(360), nullable=False) #ex. UNASSIGNED, ASSIGNED, IN_PROGRESS, COMPLETED, PENDING_APPROVAL, APPROVED, REJECTED
+    status: Mapped[str] = mapped_column(String(360), nullable=False) #ex. UNASSIGNED, ASSIGNED, IN_PROGRESS, PENDING_APPROVAL, APPROVED, COMPLETED, REJECTED
 
     assigned_contractor: Mapped[int] = mapped_column(ForeignKey('contractor.id'))
     assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True)) #change to assigned_at
