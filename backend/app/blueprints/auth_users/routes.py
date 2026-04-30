@@ -7,6 +7,103 @@ from . import auth_users_bp
 from app.util.auth import encode_token, token_required
 
 
+# Bootstrap - Create first admin/vendor (no auth required, one-time use)
+@auth_users_bp.route('/bootstrap', methods=['GET', 'POST'])
+def bootstrap():
+    """Create the first admin/vendor user. Use only once to bootstrap the system."""
+    if request.method == 'GET':
+        return jsonify({
+            'message': 'Bootstrap endpoint - Create first admin/vendor (POST)',
+            'warning': 'Use only once to create the initial admin user',
+            'required_fields': {
+                'username': 'string (required)',
+                'email': 'string (required)',
+                'password': 'string (required)',
+                'first_name': 'string (required)',
+                'last_name': 'string (required)',
+                'contact_number': 'string (required)',
+                'date_of_birth': 'YYYY-MM-DD (required)',
+                'ssn_last_four': 'string - last 4 digits (required)'
+            },
+            'example': {
+                'username': 'admin',
+                'email': 'admin@example.com',
+                'password': 'AdminPass123!',
+                'first_name': 'Admin',
+                'last_name': 'User',
+                'contact_number': '555-000-0000',
+                'date_of_birth': '1990-01-01',
+                'ssn_last_four': '0000'
+            }
+        }), 200
+    
+    # POST - Create admin user
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No input data'}), 400
+    
+    # Check if any users exist
+    existing_user = db.session.query(AuthUser).first()
+    if existing_user:
+        return jsonify({
+            'error': 'Bootstrap already complete. Use /auth/login or /contractors/register with vendor token.'
+        }), 403
+    
+    required = ['username', 'email', 'password', 'first_name', 'last_name', 'contact_number', 'date_of_birth', 'ssn_last_four']
+    for field in required:
+        if not data.get(field):
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    
+    # Create vendor/admin user
+    password_hash = generate_password_hash(data['password'])
+    new_user = AuthUser(
+        username=data['username'],
+        email=data['email'],
+        password_hash=password_hash,
+        user_type='vendor',
+        token_version=0,
+        is_active=True,
+        is_admin=True,
+        first_name=data['first_name'],
+        last_name=data['last_name'],
+        contact_number=data['contact_number'],
+        alternate_number=data.get('alternate_number'),
+        date_of_birth=data['date_of_birth'],
+        ssn_last_four=data['ssn_last_four'],
+        middle_name=data.get('middle_name'),
+        profile_photo=data.get('profile_photo'),
+        address_id=1  # Will be linked later
+    )
+    
+    db.session.add(new_user)
+    db.session.flush()
+    
+    # Create vendor contractor profile
+    contractor = Contractor(
+        user_id=new_user.id,
+        specialty='Admin',
+        years_experience=0,
+        license_number='ADMIN-001',
+        hourly_rate=0.0
+    )
+    
+    db.session.add(contractor)
+    db.session.commit()
+    
+    token = encode_token(new_user.id, new_user.user_type)
+    
+    return jsonify({
+        'message': 'Bootstrap complete! Admin/vendor created successfully.',
+        'token': token,
+        'user': auth_user_schema.dump(new_user),
+        'next_steps': [
+            'Save this token - you will need it to register contractors',
+            'Use this token in Authorization header: Bearer <token>',
+            'POST to /contractors/register to create new contractors'
+        ]
+    }), 201
+
+
 #Login and get token
 @auth_users_bp.route('/login', methods=['GET', 'POST'])
 def login():
