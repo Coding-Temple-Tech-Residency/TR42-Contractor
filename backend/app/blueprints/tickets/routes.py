@@ -52,16 +52,18 @@ def update_ticket(ticket_id):
         #IF UPDATING STATUS: Check for time start/end and location start/end
         if key == "status":
             
-            if value == "in_progress":
+            if value == "IN_PROGRESS":
                 if ticket.start_time:
                     return jsonify({'error': 'Ticket already started'}), 400
                 
                 if "start_time" not in ticket_update_data:
                     return jsonify({'error': 'start_time required when starting'}), 400
-                if "contractor_start_location" not in ticket_update_data:
-                    return jsonify({'error': 'contractor_start_location required when starting'}), 400
+                if "contractor_start_latitude" not in ticket_update_data:
+                    return jsonify({'error': 'contractor_start_latitude required when starting'}), 400
+                if "contractor_start_longitude" not in ticket_update_data:
+                    return jsonify({'error': 'contractor_start_longitude required when starting'}), 400
 
-            elif value == "completed":
+            elif value == "COMPLETED":
                 if not ticket.start_time:
                     return jsonify({'error': 'Cannot complete before starting'}), 400
 
@@ -70,9 +72,11 @@ def update_ticket(ticket_id):
 
                 if "end_time" not in ticket_update_data:
                     return jsonify({'error': 'end_time required when completing'}), 400
-                if "contractor_end_location" not in ticket_update_data:
-                    return jsonify({'error': 'contractor_end_location required when completing'}), 400
-                
+                if "contractor_end_latitude" not in ticket_update_data:
+                    return jsonify({'error': 'contractor_end_latitude required when completing'}), 400
+                if "contractor_end_longitude" not in ticket_update_data:
+                    return jsonify({'error': 'contractor_end_longitude required when completing'}), 400
+
                 #ANOMALY CHECKS:
                 
                 end_time_utc = ensure_utc(ticket_update_data["end_time"])

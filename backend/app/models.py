@@ -17,7 +17,7 @@ class AuthUser(Base):
     password_hash: Mapped[str] = mapped_column(String(500), nullable=False)
     user_type: Mapped[str] = mapped_column(String(360), nullable=False)  # vendor, client, contractor
     
-    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False) #as seen on shared ERD, confirm how this is being used.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     profile_photo: Mapped[str] = mapped_column(String(500), nullable=True)
@@ -129,7 +129,7 @@ class Ticket(Base):
     vendor_id: Mapped[int] = mapped_column(ForeignKey('vendor.id'), index=True, nullable=False)
     description: Mapped[str] = mapped_column(String(500), nullable=False)
     priority: Mapped[str] = mapped_column(String(360), nullable=False)
-    status: Mapped[str] = mapped_column(String(360), nullable=False) #ex. to_do, in_progress, completed
+    status: Mapped[str] = mapped_column(String(360), nullable=False) #ex. UNASSIGNED, ASSIGNED, IN_PROGRESS, COMPLETED, PENDING_APPROVAL, APPROVED, REJECTED
 
     assigned_contractor: Mapped[int] = mapped_column(ForeignKey('contractor.id'))
     assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True)) #change to assigned_at
@@ -138,8 +138,10 @@ class Ticket(Base):
     end_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     approved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     rejected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    contractor_start_location: Mapped[str] = mapped_column(String(500), nullable=True)
-    contractor_end_location: Mapped[str] = mapped_column(String(500), nullable=True)
+    contractor_start_latitude: Mapped[float] = mapped_column(Float, nullable=True)
+    contractor_start_longitude: Mapped[float] = mapped_column(Float, nullable=True)
+    contractor_end_latitude: Mapped[float] = mapped_column(Float, nullable=True)
+    contractor_end_longitude: Mapped[float] = mapped_column(Float, nullable=True)
     route: Mapped[str] = mapped_column(String(500), nullable=True)
     
     due_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
