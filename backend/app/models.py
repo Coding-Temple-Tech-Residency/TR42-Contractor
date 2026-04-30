@@ -9,7 +9,7 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 
 class AuthUser(Base):
-    __tablename__ = 'authuser'
+    __tablename__ = 'auth_user'
 
     id: Mapped[int] = mapped_column(primary_key = True)
     email: Mapped[str] = mapped_column(String(360), nullable=False, unique=True)
@@ -24,8 +24,8 @@ class AuthUser(Base):
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc),   nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)
-    updated_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)
+    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)
 
     first_name: Mapped[str] = mapped_column(String(360), nullable=False)
     last_name: Mapped[str] = mapped_column(String(360), nullable=False)
@@ -37,16 +37,16 @@ class AuthUser(Base):
     address_id: Mapped[int] = mapped_column(ForeignKey('address.id'), nullable=False)
 
 
-    contractor = relationship("Contractor", uselist=False, back_populates="authuser", foreign_keys="Contractor.user_id")
-    # vendor = relationship("Vendor", uselist=False, back_populates="authuser", foreign_keys="Vendor.id")
-    # client = relationship("Client", uselist=False, back_populates="authuser", foreign_keys="Client.id")
+    contractor = relationship("Contractor", uselist=False, back_populates="auth_user", foreign_keys="Contractor.user_id")
+    # vendor = relationship("Vendor", uselist=False, back_populates="auth_user", foreign_keys="Vendor.id")
+    # client = relationship("Client", uselist=False, back_populates="auth_user", foreign_keys="Client.id")
 
 class Contractor(Base):
     __tablename__ = 'contractor'
 
     id: Mapped[int] = mapped_column(primary_key = True)
     employee_number: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('authuser.id'), index=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), index=True, nullable=False)
    
     role: Mapped[str] = mapped_column(String(360), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -68,10 +68,10 @@ class Contractor(Base):
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=False)
-    updated_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
+    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)
 
-    authuser = relationship("AuthUser", back_populates="contractor", foreign_keys=[user_id])
+    auth_user = relationship("AuthUser", back_populates="contractor", foreign_keys=[user_id])
 
 
 
@@ -111,12 +111,12 @@ class Work_order(Base):
     is_recurring: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     recurrence_type: Mapped[str] = mapped_column(String(360), nullable=True)
     cancelled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    cancelled_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)
+    cancelled_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)
     cancellation_reason: Mapped[str] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=False)
-    updated_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
+    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)
 
 
 
@@ -158,8 +158,8 @@ class Ticket(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=False)
-    updated_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
+    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)
     additional_information: Mapped[str] = mapped_column(String(500), nullable=True)
 
 
@@ -321,12 +321,12 @@ class Vendor(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc),   nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=False)
-    updated_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)    
+    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
+    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)    
     address_id: Mapped[int] = mapped_column(ForeignKey('address.id'), nullable=False)
 
 
-    #authuser = relationship("User", back_populates="vendor", foreign_keys=[id])
+    #auth_user = relationship("User", back_populates="vendor", foreign_keys=[id])
 
 class Client(Base):
     __tablename__ = 'client'
@@ -342,11 +342,11 @@ class Client(Base):
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc),   nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=False)
-    updated_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)    
+    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
+    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)    
     address_id: Mapped[int] = mapped_column(ForeignKey('address.id'), nullable=False)
 
-    #authuser = relationship("User", back_populates="client", foreign_keys=[id])
+    #auth_user = relationship("User", back_populates="client", foreign_keys=[id])
 
 
 class Address(Base):
@@ -361,5 +361,5 @@ class Address(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc),   nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=False)
-    updated_by: Mapped[int] = mapped_column(ForeignKey('authuser.id'), nullable=True)    
+    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
+    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)    
