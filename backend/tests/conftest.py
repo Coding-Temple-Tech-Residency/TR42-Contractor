@@ -130,7 +130,7 @@ def seed_ticket(db, seed_contractor):
         vendor_id=1,
         description='Test ticket',
         priority='medium',
-        status='to_do',
+        status='ASSIGNED',
         assigned_contractor=seed_contractor.id,
         assigned_at=datetime.now(),
        
@@ -159,13 +159,13 @@ def seed_ticket_inProgress(db, seed_contractor):
         vendor_id=1,
         description='Test ticket in progress',
         priority='medium',
-        status='in_progress',
+        status='IN_PROGRESS',
         assigned_contractor=seed_contractor.id,
         assigned_at=datetime.now(),
         
         start_time=datetime.now(),
-        contractor_start_location='456 Test Ave',
-
+        contractor_start_latitude=40.7128,
+        contractor_start_longitude=-74.0060,
         estimated_quantity=5,
         unit='tons',
         special_requirements='None',

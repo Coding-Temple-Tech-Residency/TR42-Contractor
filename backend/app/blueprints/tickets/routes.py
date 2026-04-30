@@ -89,7 +89,7 @@ def update_ticket(ticket_id):
                     else:
                         ticket.anomaly_reason = new_reason
 
-                if ticket_update_data["contractor_end_location"] == ticket.contractor_start_location and ticket.route is not None:
+                if ticket_update_data["contractor_end_latitude"] == ticket.contractor_start_latitude and ticket_update_data["contractor_end_longitude"] == ticket.contractor_start_longitude and ticket.route is not None:
                     ticket.anomaly_flag = True
                     new_reason = "There is a designated route. Logged end location should show as different from start location."
                     if ticket.anomaly_reason:

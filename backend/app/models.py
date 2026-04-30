@@ -92,7 +92,7 @@ class Work_order(Base):
     work_order_code: Mapped[int] = mapped_column(Integer, nullable=False)
     estimated_start_date: Mapped[date] = mapped_column(Date, nullable=False)
     estimated_end_date: Mapped[date] = mapped_column(Date, nullable=False)
-    current_status: Mapped[str] = mapped_column(String(360), nullable=False)
+    current_status: Mapped[str] = mapped_column(String(360), nullable=False) #ex.   UNASSIGNED, ASSIGNED, IN_PROGRESS, COMPLETED, HALTED, REJECTED, CANCELLED, CLOSED
 
     location: Mapped[str] = mapped_column(String(500), nullable=False)
     location_type: Mapped[str] = mapped_column(String(360), nullable=False) #there are types
@@ -361,5 +361,5 @@ class Address(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc),   nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
-    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id'), nullable=True)    
+    created_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id', use_alter=True, name='address_created_by_fkey'), nullable=False)
+    updated_by: Mapped[int] = mapped_column(ForeignKey('auth_user.id', use_alter=True, name='address_updated_by_fkey'), nullable=True)    
