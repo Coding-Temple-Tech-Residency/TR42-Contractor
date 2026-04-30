@@ -11,44 +11,42 @@ from app.util.auth import encode_token, token_required
 @auth_users_bp.route('/bootstrap', methods=['GET', 'POST'])
 def bootstrap():
     """Create the first admin/vendor user. Use only once to bootstrap the system."""
-    if request.method == 'GET':
-        return jsonify({
-            'message': 'Bootstrap endpoint - Create first admin/vendor (POST)',
-            'warning': 'Use only once to create the initial admin user',
-            'required_fields': {
-                'username': 'string (required)',
-                'email': 'string (required)',
-                'password': 'string (required)',
-                'first_name': 'string (required)',
-                'last_name': 'string (required)',
-                'contact_number': 'string (required)',
-                'date_of_birth': 'YYYY-MM-DD (required)',
-                'ssn_last_four': 'string - last 4 digits (required)'
-            },
-            'example': {
-                'username': 'admin',
-                'email': 'admin@example.com',
-                'password': 'AdminPass123!',
-                'first_name': 'Admin',
-                'last_name': 'User',
-                'contact_number': '555-000-0000',
-                'date_of_birth': '1990-01-01',
-                'ssn_last_four': '0000'
-            }
-        }), 200
     
-    # POST - Create admin user
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No input data'}), 400
-    
-    # Check if any users exist
+    # Check if already bootstrapped
     existing_user = db.session.query(AuthUser).first()
     if existing_user:
         return jsonify({
-            'error': 'Bootstrap already complete. Use /auth/login or /contractors/register with vendor token.'
-        }), 403
+            'message': 'Bootstrap already complete',
+            'status': 'already_done',
+            'existing_user': {
+                'username': existing_user.username,
+                'email': existing_user.email,
+                'user_type': existing_user.user_type
+            },
+            'login_endpoint': '/auth/login',
+            'note': 'Use /auth/login with your credentials'
+        }), 200
     
+    # GET with no users = auto-create test admin
+    if request.method == 'GET':
+        # Auto-create admin with default values
+        data = {
+            'username': 'admin',
+            'email': 'james.bustamante44@gmail.com',
+            'password': 'AdminPass123!',
+            'first_name': 'James',
+            'last_name': 'Bustamante',
+            'contact_number': '555-123-4567',
+            'date_of_birth': '1985-01-01',
+            'ssn_last_four': '1234'
+        }
+    else:
+        # POST - use provided data
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No input data'}), 400
+    
+    # Validate required fields
     required = ['username', 'email', 'password', 'first_name', 'last_name', 'contact_number', 'date_of_birth', 'ssn_last_four']
     for field in required:
         if not data.get(field):
