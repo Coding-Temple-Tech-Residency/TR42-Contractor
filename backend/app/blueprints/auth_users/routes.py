@@ -93,17 +93,13 @@ def bootstrap():
     new_address.created_by = new_user.id
     
     # Create vendor contractor profile with all required fields
-    import uuid
     contractor = Contractor(
         user_id=new_user.id,
         employee_number='ADMIN-' + str(new_user.id).zfill(4),
         role='Admin',
         status='active',
         created_by=new_user.id,
-        specialty='Admin',
-        years_experience=0,
-        license_number='ADMIN-001',
-        hourly_rate=0.0
+        years_experience=0
     )
     
     db.session.add(contractor)
