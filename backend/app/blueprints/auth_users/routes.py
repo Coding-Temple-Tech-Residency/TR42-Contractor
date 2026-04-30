@@ -8,8 +8,18 @@ from app.util.auth import encode_token, token_required
 
 
 #Login and get token
-@auth_users_bp.route('/login', methods=['POST'])
+@auth_users_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'GET':
+        return jsonify({
+            'message': 'Login endpoint - Send POST request with JSON body',
+            'required_fields': ['identifier (email or username)', 'password'],
+            'example': {
+                'identifier': 'user@example.com',
+                'password': 'yourpassword'
+            }
+        }), 200
+
     try:
         data = login_schema.load(request.json)
     except ValidationError as e:
