@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from .models import db
 from .extensions import ma
@@ -28,5 +28,21 @@ def create_app(config_name):
     app.register_blueprint(inspections_bp, url_prefix='/inspections')
     app.register_blueprint(drive_time_bp, url_prefix='/drive-time')
     app.register_blueprint(ai_bp, url_prefix='/api/ai')
+
+    @app.route('/')
+    def health_check():
+        return jsonify({
+            'status': 'ok',
+            'message': 'TR42 Contractor API is running',
+            'endpoints': [
+                '/auth',
+                '/contractors',
+                '/tickets',
+                '/api/work-orders',
+                '/inspections',
+                '/drive-time',
+                '/api/ai'
+            ]
+        }), 200
 
     return app
