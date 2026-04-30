@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from app.models import AuthUser, Contractor, db
+from app.models import AuthUser, Contractor, Address, db
 from .schemas import auth_user_schema, login_schema, auth_user_update_password_schema, offline_pin_schema
 from marshmallow import ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -54,7 +54,18 @@ def bootstrap():
         if not data.get(field):
             return jsonify({'error': f'Missing required field: {field}'}), 400
     
-    # Create vendor/admin user
+    # Create a placeholder address first (required for AuthUser)
+    new_address = Address(
+        street=data.get('street', '123 Admin St'),
+        city=data.get('city', 'Admin City'),
+        state=data.get('state', 'CA'),
+        zip_code=data.get('zip_code', '12345'),
+        country=data.get('country', 'USA')
+    )
+    db.session.add(new_address)
+    db.session.flush()
+    
+    # Create vendor/admin user with the new address
     password_hash = generate_password_hash(data['password'])
     new_user = AuthUser(
         username=data['username'],
@@ -72,11 +83,14 @@ def bootstrap():
         ssn_last_four=data['ssn_last_four'],
         middle_name=data.get('middle_name'),
         profile_photo=data.get('profile_photo'),
-        address_id=1  # Will be linked later
+        address_id=new_address.id
     )
     
     db.session.add(new_user)
     db.session.flush()
+    
+    # Update address with created_by
+    new_address.created_by = new_user.id
     
     # Create vendor contractor profile
     contractor = Contractor(
