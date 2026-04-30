@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: tr42-contractor-api
+    runtime: python
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && gunicorn flask_app:app
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Set this to your Neon connection string in Render dashboard
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.10.0
