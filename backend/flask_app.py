@@ -12,9 +12,10 @@ config = 'ProductionConfig' if os.environ.get('RENDER') else 'DevelopmentConfig'
 app = create_app(config)
 
 with app.app_context():
-    # Tables need to be dropped once for initial setup
-    db.drop_all()
-    db.create_all()
+    # Tables are already created on Neon via database_schema.sql
+    # Only create tables if they don't exist (for local dev)
+    if not os.environ.get('RENDER'):
+        db.create_all()
 
 
 if __name__ == '__main__':
