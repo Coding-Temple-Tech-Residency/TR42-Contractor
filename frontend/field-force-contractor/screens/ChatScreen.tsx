@@ -1,6 +1,6 @@
 import {Styles} from "@/constants/Styles"
 import React, {FC, ReactNode,useContext,useEffect,useRef,useState} from "react"
-import {Keyboard,Platform,ScrollView,useWindowDimensions,View,Text} from "react-native"
+import {Keyboard,Platform,ScrollView,useWindowDimensions,View,Text, RefreshControl} from "react-native"
 import { MainFrame } from "@/components/MainFrame"
 import { useRoute } from '@react-navigation/native'
 import { SearchBar } from "@/components/SearchBar"
@@ -58,38 +58,59 @@ const createSession = (userA:string,userB:string) => {
  
  return(session);
 }
- 
+
 export const Chat:FC = (props) =>{
 
     const route = useRoute<any>()
-    const maxPerLoad = 50;
+    const maxPerLoad = 2;
+    const initalLoad = 50;
     const {name,contactId} = route.params
     const [Test,setTest] = useState(false);
     const {userInfo} = useContext(AppContext)
     const sessionId = createSession(userInfo.userid || "",contactId)  
     const {height: windowHeight} = useWindowDimensions();
     const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
+    
     const MaxMessage = 10;
     let MessageSent = useRef(0);
     let contactuser = getUser(contactId);
     let CONTACTNAME = `${contactuser?.firstName} ${contactuser?.lastName}`
+     
 
-      //Demo Messages database 
-    const demoMessages:TypeMessage[] = [
-    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    const previousDemoMessages =  useRef<TypeMessage[]> ([
+
+      {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
     {sessionId:sessionId,id:InitID.getId(),message:"Hello",senderId:contactId, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
     {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
     {sessionId:sessionId,id:InitID.getId(),message:"Hi",senderId:contactId,utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")},
     {sessionId:sessionId,id:InitID.getId(),message:"How are you doing?",senderId:userInfo.userid, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")}, 
-    ]
+     {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    {sessionId:sessionId,id:InitID.getId(),message:"Hello",senderId:contactId, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
+    {sessionId:sessionId,id:InitID.getId(),message:"Hi",senderId:contactId,utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")},
+    {sessionId:sessionId,id:InitID.getId(),message:"How are you doing?",senderId:userInfo.userid, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")}, 
+
+
+
+    ])
+      //Demo Messages database 
+    const demoMessages = useRef<TypeMessage[]> ([
+    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    {sessionId:sessionId,id:InitID.getId(),message:"Hello",senderId:contactId, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
+   
+    
+    ])
    
     const {reverseStack} = useContext(AppContext);
-    const [messages,setMessage] = useState(demoMessages.splice((demoMessages.length >= maxPerLoad) ? demoMessages.length - maxPerLoad : 0, demoMessages.length));
+    const [messages,setMessage] = useState(demoMessages.current.splice((demoMessages.current.length >= initalLoad) ? demoMessages.current.length - initalLoad : 0, demoMessages.current.length));
     const scrollRef = useRef<ScrollView>(null);
     const [searchBarBottom,setSearchBarBottom] = useState(FOOTER_MENU_HEIGHT);
     const lastSync = useRef("");
-    const messageIds = useRef(new Set(demoMessages.map(item => item.id)));
-  
+    const messageIds = useRef(new Set(demoMessages.current.map(item => item.id)));
+    const fromSet = useRef((previousDemoMessages.current.length > maxPerLoad) ? previousDemoMessages.current.length - maxPerLoad : 0);
+    const toSet = useRef(previousDemoMessages.current.length);
+    const [refresh,setRefresh] = useState(false);
     useEffect(() => {
         const showSubscription = Keyboard.addListener(
             Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -106,7 +127,7 @@ export const Chat:FC = (props) =>{
         );
            const syncMessages = setInterval(() =>{   
                  
-                  const newMessages = demoMessages.filter(t => t.utcTimeStamp >= lastSync.current).filter(p => {
+                  const newMessages = demoMessages.current.filter(t => t.utcTimeStamp >= lastSync.current).filter(p => {
                     if(!messageIds.current.has(p.id)){
                         messageIds.current.add(p.id)
                         return(true)
@@ -129,6 +150,11 @@ export const Chat:FC = (props) =>{
             clearInterval(syncMessages);
         };
     }, [windowHeight]);
+    useEffect(() => {
+     
+        console.log(refresh)
+
+    },[refresh])
    
    const StartTest = () =>{
 
@@ -137,7 +163,7 @@ export const Chat:FC = (props) =>{
               const tm = setInterval(() =>{
                      if(MaxMessage > MessageSent.current){
                             console.log("Testing" + MessageSent.current);
-                            demoMessages.push( {sessionId:sessionId, id:InitID.getId(),message:"Test Message " + MessageSent.current,senderId:contactId, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")})
+                            demoMessages.current.push( {sessionId:sessionId, id:InitID.getId(),message:"Test Message " + MessageSent.current,senderId:contactId, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")})
                             MessageSent.current++
                      }
                      else{
@@ -165,6 +191,48 @@ export const Chat:FC = (props) =>{
     const Trim = (txt:string) => {
        let str:string = txt.replace(/\s+/g,'')
         return(str)
+    }
+      const awaitUpdate = async (wait:number) => {
+            
+          return(new Promise<void>(resolve => 
+              setTimeout(() => {
+               
+                console.log("Done scanning");
+                 resolve();
+              },wait)
+              
+
+             ));
+            
+         }
+     const loadPrevious = async (wait:number) => {
+             
+         setRefresh(true);
+          
+            console.log(fromSet.current)
+            console.log(toSet.current)
+            if(fromSet.current >= maxPerLoad && fromSet.current !== 0){             
+              toSet.current = fromSet.current;
+              fromSet.current -= maxPerLoad;
+            }
+            else{
+                toSet.current = fromSet.current;
+                fromSet.current = 0;
+            }
+                      
+            const data = previousDemoMessages.current.slice(fromSet.current,toSet.current).filter(p => {
+                        if(!messageIds.current.has(p.id)){
+                            messageIds.current.add(p.id)
+                            return(true)
+                        }    
+                        return(false)          
+                    });
+                    console.log(data)
+                setMessage(prev => [...prev,...data]);
+                         
+             await awaitUpdate(wait);
+                setRefresh(false);
+                
     }
     const returnMessages = (reverseOrder?:boolean) =>{
         const currentDate = Trim(TimeFormater.getTimeStamp("LOCAL-DATE",TimeFormater.getTimeStamp("UTC-DATE")))
@@ -202,16 +270,19 @@ export const Chat:FC = (props) =>{
     return(<>
     <View style={Styles.Chat.screen}>
     <MainFrame headerMenu={["Menu2",[name]]}>
-          <ScrollView
-            ref={scrollRef}
-            onContentSizeChange={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-          >
-            <View style={Styles.Chat.container}>
-                {
-                returnMessages(reverseStack)
-                }
-           </View>
-          </ScrollView>
+        
+            <ScrollView
+                ref={scrollRef}
+                onContentSizeChange={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+                refreshControl={<RefreshControl onRefresh={() => {loadPrevious(2000)}} refreshing={refresh}/>}
+            >
+                <View style={Styles.Chat.container}>
+                    {
+                    returnMessages(reverseStack)
+                    }
+            </View>
+            </ScrollView>
+          
     </MainFrame>
     <View style={[Styles.Chat.sendBar, {bottom: searchBarBottom}]}>
         <SearchBar placeHolder="Message..." buttonText="Send" multiline onClick={(msg:string)=>{(msg) && SendMessage(msg)}} resetOnSubmit={true}/>
