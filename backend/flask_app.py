@@ -13,7 +13,7 @@ app = create_app(config)
 
 with app.app_context():
     # Tables need to be dropped once for initial setup
-    db.drop_all()
+    # db.drop_all()
     db.create_all()
 
 
