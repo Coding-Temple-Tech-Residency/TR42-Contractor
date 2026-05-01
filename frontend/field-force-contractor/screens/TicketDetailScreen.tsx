@@ -6,15 +6,16 @@ import { MainFrame } from '../components/MainFrame';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SETTINGS_BIOMETRIC_KEY } from './ProfileScreen';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 
-const DEV_MODE = true;
 
 export default function TicketDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const { taskId } = route.params;
+  const { taskId, assigned } = route.params;
 
-  const [taskStatus, setTaskStatus] = useState<'not_started' | 'in_progress' | 'ready_to_submit'>('not_started');
+  const [taskStatus, setTaskStatus] = useState<'to_do' | 'in_progress' | 'completed'>('to_do');
   const [notes, setNotes] = useState('');
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationStep, setVerificationStep] = useState<'initial' | 'biometric' | 'pin' | 'location' | 'success' | 'error'>('initial');
@@ -23,6 +24,8 @@ export default function TicketDetailScreen() {
   const [scanState, setScanState] = useState<'idle' | 'scanning' | 'failed'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [startLocation, setStartLocation] = useState<Location.LocationObject | null>(null);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
+  const [listening, setListening] = useState(false);
 
   const pinRefs = useRef<(TextInput | null)[]>([null, null, null, null, null, null]);
 
@@ -71,19 +74,70 @@ export default function TicketDetailScreen() {
     return () => clearTimeout(t);
   }, [verificationStep]);
 
+  useSpeechRecognitionEvent('start', () => setListening(true));
+  useSpeechRecognitionEvent('end', () => setListening(false));
+  useSpeechRecognitionEvent('result', (event) => {
+    if (event.results[0]?.transcript) {
+      setNotes(prev => (prev ? prev + ' ' : '') + event.results[0].transcript);
+    }
+  });
+  useSpeechRecognitionEvent('error', (event) => {
+    console.warn('Speech error:', event.error, event.message);
+    setListening(false);
+  });
+
   const task = {
     id: taskId,
     title: 'Install Gas Pump at Station #42',
-    status: taskStatus,
     deadline: 'March 21, 2026 at 5:00 PM',
     location: '1234 Main Street, San Francisco, CA 94102',
     description: 'Install new gas pump model XR-500 at station #42. Ensure proper connection to underground tank and test all safety mechanisms before completion.',
-    photosRequired: 3,
-    photosSubmitted: taskStatus === 'ready_to_submit' ? 3 : 0,
+    pointOfContact: { name: 'John Martinez', phone: '+1 (555) 012-3456' },
+    photosRequired: 1,
+    photosMax: 5,
+    photosSubmitted: photoUris.length,
   };
 
-  const toggleListening = () => {
-    Alert.alert('Coming Soon', 'Voice input will be available in a future update.');
+  // ── TODO: Real data integration ─────────────────────────────────────────────
+  //  delete placeholder above and use this:
+  //
+  // 1. Add near other useState declarations:
+  //   const [taskData, setTaskData] = useState<any | null>(null);
+  //
+  // 2. Add after existing useEffects:
+  //   useEffect(() => {
+  //     api.get(`/tickets/${taskId}`).then(data => {
+  //       setTaskData(data);
+  //       setTaskStatus(data.status);   // backend values: 'to_do' | 'in_progress' | 'completed'
+  //       setNotes(data.notes ?? '');
+  //     });
+  //   }, [taskId]);
+  //
+  // 3. Replace placeholder task object with:
+  //   const task = {
+  //     id:            taskData.id,
+  //     title:         taskData.service_type ?? taskData.description.slice(0, 60),
+  //     deadline:      taskData.due_date,
+  //     location:      taskData.route,
+  //     description:   taskData.description,
+  //     pointOfContact: { name: taskData.poc_name, phone: taskData.poc_phone },  // confirm field names with backend team — no poc field exists yet
+  //     photosRequired: 1,             // frontend-only — no backend field
+  //     photosMax:      5,             // frontend-only — no backend field
+  //     photosSubmitted: photoUris.length,
+  //   };
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  const toggleListening = async () => {
+    if (listening) {
+      ExpoSpeechRecognitionModule.stop();
+      return;
+    }
+    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) {
+      Alert.alert('Permission Required', 'Microphone and speech recognition access is needed.');
+      return;
+    }
+    ExpoSpeechRecognitionModule.start({ lang: 'en-US', continuous: false });
   };
 
   const handleOpenMaps = () => {
@@ -114,19 +168,47 @@ export default function TicketDetailScreen() {
   };
 
   const handleTakePhoto = async () => {
-    let geoTag = null;
-    try {
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      geoTag = { lat: loc.coords.latitude, lng: loc.coords.longitude, timestamp: loc.timestamp };
-
-      const existing = await AsyncStorage.getItem(`photo_log_${task.id}`) ?? '[]';
-      const log = JSON.parse(existing);
-      log.push(geoTag);
-      await AsyncStorage.setItem(`photo_log_${task.id}`, JSON.stringify(log));
-    } catch {
-      // Non-blocking — don't prevent photo if GPS fails
+    if (photoUris.length >= task.photosMax) return;
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      const uri = result.assets[0].uri;
+      setPhotoUris(prev => [...prev, uri]);
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const geoTag = { lat: loc.coords.latitude, lng: loc.coords.longitude, timestamp: loc.timestamp, uri };
+        const existing = await AsyncStorage.getItem(`photo_log_${task.id}`) ?? '[]';
+        const log = JSON.parse(existing);
+        log.push(geoTag);
+        await AsyncStorage.setItem(`photo_log_${task.id}`, JSON.stringify(log));
+      } catch {
+        // Non-blocking — don't prevent photo if GPS fails
+      }
     }
-    navigation.navigate('TakePhoto' as never, { taskId, geoTag } as never);
+  };
+
+  const handleUploadPhoto = async () => {
+    if (photoUris.length >= task.photosMax) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets[0]?.uri) {
+      const uri = result.assets[0].uri;
+      setPhotoUris(prev => [...prev, uri]);
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const geoTag = { lat: loc.coords.latitude, lng: loc.coords.longitude, timestamp: loc.timestamp, uri };
+        const existing = await AsyncStorage.getItem(`photo_log_${task.id}`) ?? '[]';
+        const log = JSON.parse(existing);
+        log.push(geoTag);
+        await AsyncStorage.setItem(`photo_log_${task.id}`, JSON.stringify(log));
+      } catch {
+        // Non-blocking — don't prevent photo if GPS fails
+      }
+    }
   };
 
   const handleCompleteTask = async () => {
@@ -162,11 +244,7 @@ export default function TicketDetailScreen() {
     setErrorMessage('');
 
     setTimeout(() => {
-      if (DEV_MODE) {
-        setVerificationStep('location');
-        return;
-      }
-      // PRODUCTION: real LocalAuthentication
+      setVerificationStep('location');
     }, 1500);
   };
 
@@ -186,19 +264,18 @@ export default function TicketDetailScreen() {
     setVerificationStep('location');
   };
 
+  const handleAcceptTask = () => {
+    // TODO: API call to accept task
+    navigation.goBack();
+  };
+
+  const handleDeclineTask = () => {
+    // TODO: API call to decline task
+    navigation.goBack();
+  };
+
   return (
     <MainFrame header='home'>
-
-      {/* ── Back Header ── */}
-      <View style={styles.backHeader}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color="white" />
-        </TouchableOpacity>
-        <View style={styles.backHeaderText}>
-          <Text style={styles.backTitle}>Task Details</Text>
-          <Text style={styles.backSubtitle}>ID: #{task.id}</Text>
-        </View>
-      </View>
 
       {/* ── Task Title + Status ── */}
       <View style={styles.section}>
@@ -206,15 +283,29 @@ export default function TicketDetailScreen() {
         <View style={styles.statusBadge}>
           <View style={[styles.statusDot, {
             backgroundColor:
-              taskStatus === 'not_started' ? '#6b7280' :
+              taskStatus === 'to_do' ? '#6b7280' :
               taskStatus === 'in_progress' ? '#f97316' : '#22c55e'
           }]} />
           <Text style={styles.statusText}>
-            {taskStatus === 'not_started' ? 'Not Started' :
+            {taskStatus === 'to_do' ? 'Not Started' :
              taskStatus === 'in_progress' ? 'In Progress' : 'Ready to Submit'}
           </Text>
         </View>
       </View>
+
+      {/* ── Accept and Decline Buttons ── */}
+      {!assigned && (
+        <View style={styles.assignRow}>
+          <TouchableOpacity style={styles.acceptBtn} onPress={handleAcceptTask}>
+            <Ionicons name="checkmark" size={12} color="white" />
+            <Text style={styles.btnText}>Accept</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.declineBtn} onPress={handleDeclineTask}>
+            <Ionicons name="close" size={12} color="white" />
+            <Text style={styles.btnText}>Decline</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ── Location ── */}
       <TouchableOpacity style={styles.infoCard} onPress={handleOpenMaps}>
@@ -239,6 +330,18 @@ export default function TicketDetailScreen() {
         </View>
       </View>
 
+      {/* ── Point of Contact ── */}
+      <View style={styles.infoCard}>
+        <View style={styles.infoIcon}>
+          <Ionicons name="person" size={18} color="#ff8c00" />
+        </View>
+        <View style={styles.infoText}>
+          <Text style={styles.infoLabel}>Point of Contact</Text>
+          <Text style={styles.infoValue}>{task.pointOfContact.name}</Text>
+          <Text style={styles.taskDetail}>{task.pointOfContact.phone}</Text>
+        </View>
+      </View>
+
       {/* ── Description ── */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Description</Text>
@@ -246,12 +349,15 @@ export default function TicketDetailScreen() {
       </View>
 
       {/* ── Notes — only when in progress ── */}
-      {taskStatus !== 'not_started' && (
+      {taskStatus !== 'to_do' && (
         <View style={styles.card}>
           <View style={styles.cardRow}>
             <Text style={styles.cardTitle}>Notes & Issues</Text>
-            <TouchableOpacity style={styles.micBtn} onPress={toggleListening}>
-              <Ionicons name="mic" size={18} color="#ff8c00" />
+            <TouchableOpacity
+              style={[styles.micBtn, listening && { backgroundColor: '#ff8c00', borderRadius: 8, padding: 8 }]}
+              onPress={toggleListening}
+            >
+              <Ionicons name={listening ? 'stop-circle' : 'mic'} size={18} color={listening ? '#fff' : '#ff8c00'} />
             </TouchableOpacity>
           </View>
           <TextInput
@@ -268,40 +374,50 @@ export default function TicketDetailScreen() {
       )}
 
       {/* ── Photos ── */}
-      {taskStatus !== 'not_started' && (
+      {taskStatus !== 'to_do' && (
         <View style={styles.card}>
           <View style={styles.cardRow}>
             <Text style={styles.cardTitle}>Photos</Text>
-            <Text style={styles.photoCount}>{task.photosSubmitted}/{task.photosRequired}</Text>
+            <Text style={styles.photoCount}>{photoUris.length}/{task.photosRequired}</Text>
           </View>
           <View style={styles.photoRow}>
             {[...Array(task.photosRequired)].map((_, i) => (
-              <TouchableOpacity
+              <View
                 key={i}
-                style={[styles.photoSlot, i < task.photosSubmitted && styles.photoSlotDone]}
-                onPress={handleTakePhoto}
+                style={[styles.photoSlot, i < photoUris.length && styles.photoSlotDone]}
               >
                 <Ionicons
-                  name={i < task.photosSubmitted ? 'checkmark-circle' : 'camera'}
+                  name={i < photoUris.length ? 'checkmark-circle' : 'camera'}
                   size={24}
-                  color={i < task.photosSubmitted ? '#22c55e' : '#6b7280'}
+                  color={i < photoUris.length ? '#22c55e' : '#6b7280'}
                 />
-              </TouchableOpacity>
+              </View>
             ))}
           </View>
-        </View>
-      )}
+            {photoUris.length < task.photosMax && (
+              <View style={styles.photoActions}>
+                <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto}>
+                  <Ionicons name="camera" size={16} color="#ff8c00" />
+                  <Text style={styles.photoBtnText}>Take Photo</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.photoBtn} onPress={handleUploadPhoto}>
+                  <Ionicons name="images" size={16} color="#ff8c00" />
+                  <Text style={styles.photoBtnText}>Upload Photo</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            </View>
+          )}
 
       {/* ── Actions ── */}
       <View style={styles.actions}>
-        {taskStatus === 'not_started' && (
+        {taskStatus === 'to_do' && assigned && (
           <TouchableOpacity style={styles.btnPrimary} onPress={handleStartTask}>
             <Ionicons name="play-circle" size={20} color="white" />
             <Text style={styles.btnText}>Start Task</Text>
           </TouchableOpacity>
         )}
         {taskStatus === 'in_progress' && (
-          <>
             <TouchableOpacity
               style={task.photosSubmitted >= task.photosRequired ? styles.btnSuccess : styles.btnOutline}
               onPress={handleCompleteTask}
@@ -312,7 +428,6 @@ export default function TicketDetailScreen() {
                 {task.photosSubmitted >= task.photosRequired ? 'Complete Task' : `Need ${task.photosRequired - task.photosSubmitted} more photo(s)`}
               </Text>
             </TouchableOpacity>
-          </>
         )}
       </View>
 
@@ -464,26 +579,7 @@ const CARD_BG = 'rgba(255,255,255,0.1)';
 const BORDER  = 'rgba(255,255,255,0.15)';
 
 const styles = StyleSheet.create({
-  backHeader: {
-    width: '90%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: 16,
-    marginBottom: 16,
-  },
-  backBtn: {
-    width: 40, height: 40,
-    borderRadius: 8,
-    backgroundColor: CARD_BG,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backHeaderText: { flex: 1 },
-  backTitle: { fontSize: 17, fontFamily: 'poppins-bold', color: 'white' },
-  backSubtitle: { fontSize: 11, color: '#9ca3af' },
-
-  section: { width: '90%', marginBottom: 12 },
+  section: { width: '90%', marginBottom: 12, marginTop: 16 },
   taskTitle: { fontSize: 20, fontFamily: 'poppins-bold', color: 'white', marginBottom: 8 },
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -630,4 +726,41 @@ const styles = StyleSheet.create({
   hintText:    { fontSize: 12, color: '#9ca3af', textAlign: 'center' },
   pinLink:     { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' },
   pinLinkText: { fontSize: 13, fontFamily: 'poppins-bold', color: '#ff8c00', textDecorationLine: 'underline' },
+  photoActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  photoBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,140,0,0.4)',
+    backgroundColor: 'rgba(255,140,0,0.08)',
+  },
+  photoBtnText: { fontSize: 12, fontFamily: 'poppins-bold', color: '#ff8c00' },
+
+  taskDetail: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  assignRow: {
+    width: '90%',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginBottom: 8,
+  },
+  acceptBtn: {
+    backgroundColor: '#ff8c00',
+    borderRadius: 8, paddingVertical: 8,
+    paddingHorizontal: 14,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 6,
+  },
+  declineBtn: {
+    backgroundColor: '#dc2626',
+    borderRadius: 8, paddingVertical: 8,
+    paddingHorizontal: 14,
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: 6,
+  },
 });
