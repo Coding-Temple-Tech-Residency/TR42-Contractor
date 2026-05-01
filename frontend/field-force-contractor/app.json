@@ -25,7 +25,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#0C1427",
         "foregroundImage": "./assets/images/FieldForceIconLarge.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
+        "backgroundImage": "./assets/images/IconBackDrop.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
@@ -43,7 +43,7 @@
     "splash": {
       "backgroundColor": "#0E182E",
       "image": "./assets/images/SplashLogo.png",
-      "resizeMode": "cover"
+      "resizeMode": "contain"
 
     },
     "plugins": [

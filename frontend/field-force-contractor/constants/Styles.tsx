@@ -134,7 +134,7 @@ export const Styles = {
   Chat: StyleSheet.create({
 
    screen:{flex:1},
-   container:{width:"100%",height:"100%", padding:10},
+   container:{width:"100%",height:"100%", padding:15,paddingBottom:100},
    sendBar:{position:"absolute",left:0,right:0,width:"100%",zIndex:10,elevation:10},
    messageBoxReceived:{flexDirection:"row", justifyContent:"flex-start",width:"100%", alignItems:"center"},
    messageBoxSent:{flexDirection:"row", justifyContent:"flex-end",width:"100%",alignItems:"center"},

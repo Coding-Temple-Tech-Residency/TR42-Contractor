@@ -21,40 +21,39 @@ type TypeMessage = {
     id:string
     message:string
     senderId:string
-    utcTimeStamp:string
-    
-  
-   
+    utcTimeStamp:string  
 }
 
 const FOOTER_MENU_HEIGHT = 110;
 const KEYBOARD_GAP = 8;
 
-
 //Demo Chat sessions database
 const demoSessions = [
    {sessionid:"123456",
-    members: ["1","2"]
+    user_one_id:"1",
+    user_two_id:"2"
+    
    },
    {sessionid:"1234567",
-    members: ["1","3"]
+    user_one_id:"1",
+    user_two_id:"3"
    },
    {sessionid:"12345678",
-    members: ["1","4"]
+    user_one_id:"1",
+    user_two_id:"4"
    }
 ]
-
 
 const createSession = (userA:string,userB:string) => {
   //Checks the demo database to ensure that a message session does not already exist that contains the 2 contacts before creating a new one
   let session;
-  if(demoSessions.some(p=> p.members.includes(userA) && p.members.includes(userB)) === false){
+  if(demoSessions.some(p => [p.user_one_id,p.user_two_id].includes(userA) && [p.user_one_id,p.user_two_id].includes(userB)) === false){
     session = InitID.getId();
-    demoSessions.push({sessionid:session,members:[userA,userB]}) // create new session in demo database
+    demoSessions.push({sessionid:session,user_one_id:userA,user_two_id:userB}) // create new session in demo database
   }
   else{
    // if a session already exist for the 2 provided contacts return that message session id
-    session = demoSessions.find(p => p.members.includes(userA) && p.members.includes(userB))?.sessionid || ""
+    session = demoSessions.find(p => [p.user_one_id,p.user_two_id].includes(userA) && [p.user_one_id,p.user_two_id].includes(userB))?.sessionid || ""
   }
  
  return(session);
@@ -62,19 +61,18 @@ const createSession = (userA:string,userB:string) => {
  
 export const Chat:FC = (props) =>{
 
-
     const route = useRoute<any>()
+    const maxPerLoad = 50;
     const {name,contactId} = route.params
-
+    const [Test,setTest] = useState(false);
     const {userInfo} = useContext(AppContext)
     const sessionId = createSession(userInfo.userid || "",contactId)  
     const {height: windowHeight} = useWindowDimensions();
     const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>()
-   
-   
+    const MaxMessage = 10;
+    let MessageSent = useRef(0);
     let contactuser = getUser(contactId);
     let CONTACTNAME = `${contactuser?.firstName} ${contactuser?.lastName}`
-
 
       //Demo Messages database 
     const demoMessages:TypeMessage[] = [
@@ -86,13 +84,12 @@ export const Chat:FC = (props) =>{
     ]
    
     const {reverseStack} = useContext(AppContext);
-    const [messages,setMessage] = useState(demoMessages);
+    const [messages,setMessage] = useState(demoMessages.splice((demoMessages.length >= maxPerLoad) ? demoMessages.length - maxPerLoad : 0, demoMessages.length));
     const scrollRef = useRef<ScrollView>(null);
-    const [send,setSend] = useState<MessageType>("received");
     const [searchBarBottom,setSearchBarBottom] = useState(FOOTER_MENU_HEIGHT);
-
+    const lastSync = useRef("");
+    const messageIds = useRef(new Set(demoMessages.map(item => item.id)));
   
-
     useEffect(() => {
         const showSubscription = Keyboard.addListener(
             Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -107,35 +104,60 @@ export const Chat:FC = (props) =>{
                 setSearchBarBottom(FOOTER_MENU_HEIGHT);
             }
         );
+           const syncMessages = setInterval(() =>{   
+                 
+                  const newMessages = demoMessages.filter(t => t.utcTimeStamp >= lastSync.current).filter(p => {
+                    if(!messageIds.current.has(p.id)){
+                        messageIds.current.add(p.id)
+                        return(true)
+                    }    
+                    return(false)          
+                })
+                  lastSync.current = TimeFormater.getTimeStamp("UTC-DATE")
+                  if(newMessages.length > 0){
+                    setMessage(prev => [...prev,...newMessages])  
+                    console.log("Found " + newMessages.length + " New Messages")
+                  
+                  }       
+                    console.log("Checking Messages")    
+                            
+                    },5000)
 
         return () => {
             showSubscription.remove();
             hideSubscription.remove();
+            clearInterval(syncMessages);
         };
     }, [windowHeight]);
-  
    
-    const SendMessage = (mesg:string) =>{
-        let sendersid;
-        
-        if(send === "sent"){ //Testing Data will be removed in production 
+   const StartTest = () =>{
 
-            setSend("received");
-            sendersid = contactId
-          
+     if(Test === false){
+
+              const tm = setInterval(() =>{
+                     if(MaxMessage > MessageSent.current){
+                            console.log("Testing" + MessageSent.current);
+                            demoMessages.push( {sessionId:sessionId, id:InitID.getId(),message:"Test Message " + MessageSent.current,senderId:contactId, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")})
+                            MessageSent.current++
+                     }
+                     else{
+                        clearInterval(tm);
+                        return;
+                     }
+ 
+                    },5000)
+                    setTest(true);
         }
-        else{
 
-            setSend("sent");
-            sendersid = userInfo.userid
-          
-        }
-
+   }
+  
+    const SendMessage = (mesg:string) =>{ 
+        StartTest();
         setMessage(prev => [...prev,{
             sessionId:sessionId,
             id:InitID.getId(),
             message:mesg,
-            senderId: sendersid,
+            senderId: userInfo.userid,
             utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")
         }]);
         Keyboard.dismiss()
@@ -182,12 +204,13 @@ export const Chat:FC = (props) =>{
     <MainFrame headerMenu={["Menu2",[name]]}>
           <ScrollView
             ref={scrollRef}
-            style={Styles.Chat.container}
             onContentSizeChange={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
           >
-            {
-               returnMessages(reverseStack)
-            }
+            <View style={Styles.Chat.container}>
+                {
+                returnMessages(reverseStack)
+                }
+           </View>
           </ScrollView>
     </MainFrame>
     <View style={[Styles.Chat.sendBar, {bottom: searchBarBottom}]}>

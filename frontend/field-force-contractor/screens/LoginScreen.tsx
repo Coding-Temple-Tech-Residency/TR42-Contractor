@@ -65,7 +65,7 @@ const fieldConfig = FIELD_CONFIG[LOGIN_FIELD];
 //  true  = any non-empty username + password (6+ chars) succeeds immediately.
 //  Set to false when the backend is ready.
 // ─────────────────────────────────────────────────────────────────────────────
-const DEV_MODE = false;
+const DEV_MODE = true;
 
 const isValidEmail = (value: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
