@@ -268,8 +268,10 @@ export const Chat:FC = (props) =>{
     }
    
     return(<>
-    <View style={Styles.Chat.screen}>
-    <MainFrame headerMenu={["Menu2",[name]]}>
+  
+    <MainFrame headerMenu={["Menu2",[name]]} injectFooter={
+        <SearchBar placeHolder="Message..." buttonText="Send" multiline onClick={(msg:string)=>{(msg) && SendMessage(msg)}} resetOnSubmit={true}/>
+        }>
         
             <ScrollView
                 ref={scrollRef}
@@ -280,14 +282,14 @@ export const Chat:FC = (props) =>{
                     {
                     returnMessages(reverseStack)
                     }
-            </View>
+                </View>
             </ScrollView>
           
     </MainFrame>
-    <View style={[Styles.Chat.sendBar, {bottom: searchBarBottom}]}>
-        <SearchBar placeHolder="Message..." buttonText="Send" multiline onClick={(msg:string)=>{(msg) && SendMessage(msg)}} resetOnSubmit={true}/>
-    </View>
-    </View>
+  
+        
+  
+   
 
     </>)
 
