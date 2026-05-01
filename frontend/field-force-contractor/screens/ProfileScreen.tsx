@@ -4,14 +4,14 @@
 // Menu rows:
 //   License       — contractor license details
 //   Task History  — full history of completed and incomplete tasks
-//   Settings      — biometric preference + appearance toggle
+//   Settings      — biometric preference + chat direction toggle
 //   Logout        — clears session and returns to Login
 //
-// Settings modal persists two preferences via AsyncStorage:
+// Settings modal persists preferences via AsyncStorage / AppContext:
 //   Default biometric method  — read by BiometricScreen on next login
-//   Appearance (dark/light)   — applied app-wide via ThemeContext
+//   Chat direction (reverseStack) — top-down or bottom-up message stacking
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -33,11 +33,11 @@ import { MainFrame } from '../components/MainFrame';
 import { useTheme }           from '../contexts/ThemeContext';
 import { spacing, radius, fontSize, fonts } from '../constants/theme';
 import { useAuth }            from '../contexts/AuthContext';
+import { AppContext }         from '../contexts/AppContext';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Profile'>;
 
 export const SETTINGS_BIOMETRIC_KEY  = 'settings:defaultBiometric';
-export const SETTINGS_LIGHT_MODE_KEY = 'settings:lightMode';
 
 // ── Placeholder contractor data ───────────────────────────────
 // Replace with real data from AuthContext or the backend API
@@ -99,13 +99,14 @@ const menuStyles = StyleSheet.create({
 export default function ProfileScreen() {
   const navigation = useNavigation<Nav>();
   const { logout } = useAuth();
-  const { colors, lightMode, setLightMode } = useTheme();
+  const { colors, lightMode } = useTheme();
+  const { reverseStack, setReverseStack } = useContext(AppContext);
 
   const [settingsOpen,     setSettingsOpen]     = useState(false);
   const [isSaving,         setIsSaving]         = useState(false);
   const [defaultBiometric, setDefaultBiometric] = useState<'fingerprint' | 'face'>('fingerprint');
-  const [draftBiometric,   setDraftBiometric]   = useState<'fingerprint' | 'face'>('fingerprint');
-  const [draftLightMode,   setDraftLightMode]   = useState(false);
+  const [draftBiometric,      setDraftBiometric]      = useState<'fingerprint' | 'face'>('fingerprint');
+  const [draftReverseStack,   setDraftReverseStack]   = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -122,7 +123,7 @@ export default function ProfileScreen() {
 
   const openSettings = () => {
     setDraftBiometric(defaultBiometric);
-    setDraftLightMode(lightMode);
+    setDraftReverseStack(reverseStack);
     setSettingsOpen(true);
   };
 
@@ -130,13 +131,13 @@ export default function ProfileScreen() {
     setIsSaving(true);
     try {
       await AsyncStorage.setItem(SETTINGS_BIOMETRIC_KEY, draftBiometric);
-      await setLightMode(draftLightMode);
+      setReverseStack(draftReverseStack);
       setDefaultBiometric(draftBiometric);
       setSettingsOpen(false);
       Alert.alert(
         'Settings Saved',
         `Default biometric: ${draftBiometric === 'face' ? 'Face ID' : 'Fingerprint'}.\n` +
-        `Appearance: ${draftLightMode ? 'Light Mode' : 'Dark Mode'}.`,
+        `Chat direction: ${draftReverseStack ? 'Bottom-up' : 'Top-down'}.`,
       );
     } catch {
       Alert.alert('Error', 'Could not save settings. Please try again.');
@@ -266,31 +267,31 @@ export default function ProfileScreen() {
             ))}
           </View>
 
-          {/* Appearance */}
-          <Text style={[modalStyles.sectionLabel, { color: colors.textMuted, marginTop: spacing.xl }]}>APPEARANCE</Text>
+          {/* Chat direction */}
+          <Text style={[modalStyles.sectionLabel, { color: colors.textMuted, marginTop: spacing.xl }]}>CHAT DIRECTION</Text>
           <Text style={[modalStyles.sectionHint, { color: colors.textMuted }]}>
-            Switch between dark and light mode.
+            Choose whether chat messages stack from the top down or from the bottom up.
           </Text>
 
           <View style={[modalStyles.appearanceRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
             <View style={modalStyles.appearanceLeft}>
               <Ionicons
-                name={draftLightMode ? 'sunny-outline' : 'moon-outline'}
+                name={draftReverseStack ? 'arrow-up-outline' : 'arrow-down-outline'}
                 size={22}
                 color={colors.primary}
               />
               <View>
                 <Text style={[modalStyles.appearanceTitle, { color: colors.textWhite }]}>
-                  {draftLightMode ? 'Light Mode' : 'Dark Mode'}
+                  {draftReverseStack ? 'Bottom-up' : 'Top-down'}
                 </Text>
                 <Text style={[modalStyles.appearanceHint, { color: colors.textMuted }]}>
-                  {draftLightMode ? 'Light theme active' : 'Dark theme active'}
+                  {draftReverseStack ? 'Newest messages appear at the top' : 'Newest messages appear at the bottom'}
                 </Text>
               </View>
             </View>
             <Switch
-              value={draftLightMode}
-              onValueChange={setDraftLightMode}
+              value={draftReverseStack}
+              onValueChange={setDraftReverseStack}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#ffffff"
             />
@@ -315,7 +316,7 @@ export default function ProfileScreen() {
           <View style={[modalStyles.noteBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
             <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
             <Text style={[modalStyles.noteText, { color: colors.textMuted }]}>
-              Biometric preference takes effect on next login. Light mode applies to the whole app immediately.
+              Biometric preference takes effect on next login. Chat direction applies immediately.
             </Text>
           </View>
 

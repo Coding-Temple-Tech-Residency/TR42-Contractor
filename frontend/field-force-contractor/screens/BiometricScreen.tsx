@@ -93,27 +93,22 @@ export default function BiometricScreen() {
     setTimeout(async () => {
       if (DEV_MODE) {
         await login(pendingToken, pendingUser);
-        // No navigation.replace here — login() flips isAuthenticated, which
-        // causes RootNavigator to swap the Auth stack out for the Protected
-        // stack. The Protected stack opens directly at its initialRouteName
-        // (Inspection). Calling replace() on the now-unmounted Auth navigator
-        // would throw "Home not handled by any navigator".
-        if(onSuccess){
+        if (onSuccess) {
           go(onSuccess);
-        }else{
-          return;
+        } else {
+          navigation.replace('Dashboard');
         }
-        
+        return; // ← stop here, don't fall through to the real scan logic below
       }
+
       const scanWorked = Math.random() > 0.3;
       if (scanWorked) {
         await login(pendingToken, pendingUser);
-        // See comment above — let RootNavigator handle the stack swap.
-       if(onSuccess){
-        go(onSuccess);
-       }else{
-        return;
-       }
+        if (onSuccess) {
+          go(onSuccess);
+        } else {
+          navigation.replace('Dashboard');
+        }
       } else {
         setScanState('failed');
       }
@@ -121,7 +116,7 @@ export default function BiometricScreen() {
   };
 
   const handleForceFail = () => setScanState('failed');
-  const handleUsePIN    = () => navigation.replace('OfflineLogin');
+  const handleUsePIN = () => navigation.replace('OfflineLogin', { pendingToken, pendingUser });
 
   const getScanIcon      = () => selectedMethod === 'face' ? 'scan' : 'finger-print';
   const getScanIconColor = () => {

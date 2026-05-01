@@ -66,7 +66,10 @@ export type RootStackParamList = {
 
   // ── Troy — Auth screens ──────────────────────────────────────
   Login: undefined;
-  OfflineLogin: undefined;
+  OfflineLogin: {
+    pendingToken: string;
+    pendingUser: { id: number; username: string; role: string };
+  };
 
   // BiometricCheck receives the pending token and user from LoginScreen.
   // login() is NOT called until the biometric scan succeeds here, ensuring

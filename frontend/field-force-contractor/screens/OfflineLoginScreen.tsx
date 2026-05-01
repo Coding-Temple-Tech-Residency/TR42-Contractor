@@ -7,6 +7,10 @@
 // Flow:
 //   BiometricScreen (fails) → "Use PIN instead" → OfflineLoginScreen (this screen)
 //
+// BiometricScreen passes pendingToken + pendingUser as route params so that
+// on a correct PIN, login() can be called and auth completes identically to
+// a successful biometric scan — landing the contractor on the Dashboard.
+//
 // "Reset PIN" opens an inline modal that collects the user's email and alerts
 // them that the vendor will send a new PIN after identity verification.
 //
@@ -33,19 +37,24 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons }      from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../App';
 import { MainFrame }          from '../components/MainFrame';
 import { colors, spacing, radius, fontSize, fonts } from '../constants/theme';
+import { useAuth }            from '../contexts/AuthContext';
 
-type Nav = NativeStackNavigationProp<RootStackParamList, 'OfflineLogin'>;
+type Nav   = NativeStackNavigationProp<RootStackParamList, 'OfflineLogin'>;
+type Route = RouteProp<RootStackParamList, 'OfflineLogin'>;
 
 const DEV_PIN = '123456'; // DEV ONLY — remove before production
 
 export default function OfflineLoginScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation                    = useNavigation<Nav>();
+  const route                         = useRoute<Route>();
+  const { login }                     = useAuth();
+  const { pendingToken, pendingUser }  = route.params;
 
   // PIN state
   const [pin,      setPin]      = useState('');
@@ -66,7 +75,7 @@ export default function OfflineLoginScreen() {
     setPinError('');
   };
 
-  const handlePinLogin = () => {
+  const handlePinLogin = async () => {
     if (pin.length === 0) {
       setPinError('Please enter your 6-digit PIN.');
       return;
@@ -80,11 +89,8 @@ export default function OfflineLoginScreen() {
       setPinError('Incorrect PIN. Please try again.');
       return;
     }
-    // TODO (Troy): when offline auth is implemented, complete the auth flow
-    // here (e.g. restore stored token/user and call useAuth().login(...)) so
-    // the Protected stack mounts naturally. Until then redirect to a route
-    // that exists in the unauthenticated stack.
-    navigation.replace('Login' as any);
+    await login(pendingToken, pendingUser);
+    navigation.replace('Dashboard');
   };
 
   // ── Reset PIN modal handlers ──────────────────────────────
