@@ -26,7 +26,8 @@ type TypeMessage = {
 
 const FOOTER_MENU_HEIGHT = 110;
 const KEYBOARD_GAP = 8;
-
+   const MAXPERLOAD = 2;
+    const INTIALLOAD = 10;
 //Demo Chat sessions database
 const demoSessions = [
    {sessionid:"123456",
@@ -58,12 +59,15 @@ const createSession = (userA:string,userB:string) => {
  
  return(session);
 }
+const messageSlice = (messages:TypeMessage[],load:number) =>{
+   
+   return(messages.slice((messages.length >= load) ? messages.length - load : 0,messages.length))
 
+}
 export const Chat:FC = (props) =>{
 
     const route = useRoute<any>()
-    const maxPerLoad = 2;
-    const initalLoad = 50;
+ 
     const {name,contactId} = route.params
     const [Test,setTest] = useState(false);
     const {userInfo} = useContext(AppContext)
@@ -77,40 +81,50 @@ export const Chat:FC = (props) =>{
     let CONTACTNAME = `${contactuser?.firstName} ${contactuser?.lastName}`
      
 
-    const previousDemoMessages =  useRef<TypeMessage[]> ([
+    //Demo Messages database 
+     const previousDemoMessages =  useRef<TypeMessage[]> ([
 
-      {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
-    {sessionId:sessionId,id:InitID.getId(),message:"Hello",senderId:contactId, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
-    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
-    {sessionId:sessionId,id:InitID.getId(),message:"Hi",senderId:contactId,utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")},
-    {sessionId:sessionId,id:InitID.getId(),message:"How are you doing?",senderId:userInfo.userid, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")}, 
-     {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
-    {sessionId:sessionId,id:InitID.getId(),message:"Hello",senderId:contactId, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
-    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
-    {sessionId:sessionId,id:InitID.getId(),message:"Hi",senderId:contactId,utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")},
-    {sessionId:sessionId,id:InitID.getId(),message:"How are you doing?",senderId:userInfo.userid, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")}, 
+        {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+        {sessionId:sessionId,id:InitID.getId(),message:"Hello",senderId:contactId, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
+        {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
 
+        {sessionId:sessionId, id:InitID.getId(),message:"Hey, are you free later?",senderId:userInfo.userid, utcTimeStamp:"2025-01-10T08:15:12.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Yeah, what’s up?",senderId:contactId, utcTimeStamp:"2025-01-10T08:16:45.000Z"},
+        {sessionId:sessionId, id:InitID.getId(),message:"Wanted to go over that project",senderId:userInfo.userid, utcTimeStamp:"2025-01-11T09:05:30.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Sure, give me a bit",senderId:contactId, utcTimeStamp:"2025-01-11T09:06:10.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"No rush 👍",senderId:userInfo.userid, utcTimeStamp:"2025-01-12T10:20:00.000Z"},
 
+        {sessionId:sessionId, id:InitID.getId(),message:"Did you check the email?",senderId:userInfo.userid, utcTimeStamp:"2025-01-13T11:00:00.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Not yet, I will now",senderId:contactId, utcTimeStamp:"2025-01-13T11:02:15.000Z"},
+        {sessionId:sessionId, id:InitID.getId(),message:"Cool, let me know what you think",senderId:userInfo.userid, utcTimeStamp:"2025-01-14T12:30:45.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Looks good to me",senderId:contactId, utcTimeStamp:"2025-01-14T12:31:20.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Awesome, I’ll move forward then",senderId:userInfo.userid, utcTimeStamp:"2025-01-15T13:10:05.000Z"},
+
+        {sessionId:sessionId, id:InitID.getId(),message:"You heading to the meeting?",senderId:userInfo.userid, utcTimeStamp:"2025-01-16T14:22:00.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Yeah, almost there",senderId:contactId, utcTimeStamp:"2025-01-16T14:23:40.000Z"},
+        {sessionId:sessionId, id:InitID.getId(),message:"Save me a seat lol",senderId:userInfo.userid, utcTimeStamp:"2025-01-17T15:45:55.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Got you 😂",senderId:contactId, utcTimeStamp:"2025-01-17T15:47:10.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Appreciate it",senderId:userInfo.userid, utcTimeStamp:"2025-01-18T16:05:25.000Z"},
+
+        {sessionId:sessionId, id:InitID.getId(),message:"Did the build pass?",senderId:userInfo.userid, utcTimeStamp:"2025-01-19T17:30:00.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Yeah just finished",senderId:contactId, utcTimeStamp:"2025-01-19T17:32:12.000Z"},
+        {sessionId:sessionId, id:InitID.getId(),message:"Nice, pushing to prod?",senderId:userInfo.userid, utcTimeStamp:"2025-01-20T18:40:33.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"In a few mins",senderId:contactId, utcTimeStamp:"2025-01-20T18:41:50.000Z"},
+        {sessionId:sessionId,id:InitID.getId(),message:"Cool, I’ll keep an eye on it",senderId:userInfo.userid, utcTimeStamp:"2025-01-21T19:55:10.000Z"},
 
     ])
-      //Demo Messages database 
-    const demoMessages = useRef<TypeMessage[]> ([
-    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
-    {sessionId:sessionId,id:InitID.getId(),message:"Hello",senderId:contactId, utcTimeStamp:"2026-03-23T23:28:27.788Z"}, 
-    {sessionId:sessionId, id:InitID.getId(),message:"Hello",senderId:userInfo.userid, utcTimeStamp:"2026-03-24T23:28:27.788Z"}, 
    
-    
-    ])
+   
    
     const {reverseStack} = useContext(AppContext);
-    const [messages,setMessage] = useState(demoMessages.current.splice((demoMessages.current.length >= initalLoad) ? demoMessages.current.length - initalLoad : 0, demoMessages.current.length));
+    const [messages,setMessage] = useState(messageSlice(previousDemoMessages.current,INTIALLOAD));
     const scrollRef = useRef<ScrollView>(null);
     const [searchBarBottom,setSearchBarBottom] = useState(FOOTER_MENU_HEIGHT);
-    const lastSync = useRef("");
-    const messageIds = useRef(new Set(demoMessages.current.map(item => item.id)));
-    const fromSet = useRef((previousDemoMessages.current.length > maxPerLoad) ? previousDemoMessages.current.length - maxPerLoad : 0);
+    const lastSync = useRef(TimeFormater.getTimeStamp("UTC-DATE"));
+    const messageIds = useRef(new Set(messageSlice(previousDemoMessages.current,INTIALLOAD).map(item => item.id)));
+    const fromSet = useRef((previousDemoMessages.current.length >= INTIALLOAD) ? previousDemoMessages.current.length - INTIALLOAD - MAXPERLOAD : 0);
     const toSet = useRef(previousDemoMessages.current.length);
-    const [refresh,setRefresh] = useState(false);
+
     useEffect(() => {
         const showSubscription = Keyboard.addListener(
             Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -125,9 +139,11 @@ export const Chat:FC = (props) =>{
                 setSearchBarBottom(FOOTER_MENU_HEIGHT);
             }
         );
-           const syncMessages = setInterval(() =>{   
+           const syncMessages = (messages:TypeMessage[]) =>{
+            
+            const tm = setInterval(() =>{   
                  
-                  const newMessages = demoMessages.current.filter(t => t.utcTimeStamp >= lastSync.current).filter(p => {
+                  const newMessages = messages.filter(t => t.utcTimeStamp >= lastSync.current).filter(p => {
                     if(!messageIds.current.has(p.id)){
                         messageIds.current.add(p.id)
                         return(true)
@@ -140,21 +156,19 @@ export const Chat:FC = (props) =>{
                     console.log("Found " + newMessages.length + " New Messages")
                   
                   }       
-                    console.log("Checking Messages")    
+                   
                             
                     },5000)
-
+                    return(tm)
+                }
+               const tm = syncMessages(previousDemoMessages.current);
         return () => {
             showSubscription.remove();
             hideSubscription.remove();
-            clearInterval(syncMessages);
+            clearInterval(tm);
         };
     }, [windowHeight]);
-    useEffect(() => {
-     
-        console.log(refresh)
-
-    },[refresh])
+   
    
    const StartTest = () =>{
 
@@ -163,7 +177,7 @@ export const Chat:FC = (props) =>{
               const tm = setInterval(() =>{
                      if(MaxMessage > MessageSent.current){
                             console.log("Testing" + MessageSent.current);
-                            demoMessages.current.push( {sessionId:sessionId, id:InitID.getId(),message:"Test Message " + MessageSent.current,senderId:contactId, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")})
+                            previousDemoMessages.current.push( {sessionId:sessionId, id:InitID.getId(),message:"Test Message " + MessageSent.current,senderId:contactId, utcTimeStamp:TimeFormater.getTimeStamp("UTC-DATE")})
                             MessageSent.current++
                      }
                      else{
@@ -195,9 +209,7 @@ export const Chat:FC = (props) =>{
       const awaitUpdate = async (wait:number) => {
             
           return(new Promise<void>(resolve => 
-              setTimeout(() => {
-               
-                console.log("Done scanning");
+              setTimeout(() => {              
                  resolve();
               },wait)
               
@@ -205,34 +217,35 @@ export const Chat:FC = (props) =>{
              ));
             
          }
-     const loadPrevious = async (wait:number) => {
-             
-         setRefresh(true);
-          
-            console.log(fromSet.current)
-            console.log(toSet.current)
-            if(fromSet.current >= maxPerLoad && fromSet.current !== 0){             
+    const nextSlice = (load:number) =>{
+
+          console.log(fromSet.current)
+          console.log(toSet.current)
+        if(fromSet.current > load){             
               toSet.current = fromSet.current;
-              fromSet.current -= maxPerLoad;
+              fromSet.current -= load;
             }
             else{
                 toSet.current = fromSet.current;
                 fromSet.current = 0;
-            }
-                      
-            const data = previousDemoMessages.current.slice(fromSet.current,toSet.current).filter(p => {
+            }    
+    }
+     const loadPrevious = async (messages:TypeMessage[], wait:number) => {
+                
+            const data = messages.slice(fromSet.current,toSet.current).filter(p => {
                         if(!messageIds.current.has(p.id)){
                             messageIds.current.add(p.id)
                             return(true)
                         }    
                         return(false)          
                     });
-                    console.log(data)
+                    
                 setMessage(prev => [...prev,...data]);
-                         
+
+              nextSlice(MAXPERLOAD)
+
              await awaitUpdate(wait);
-                setRefresh(false);
-                
+                         
     }
     const returnMessages = (reverseOrder?:boolean) =>{
         const currentDate = Trim(TimeFormater.getTimeStamp("LOCAL-DATE",TimeFormater.getTimeStamp("UTC-DATE")))
@@ -271,19 +284,15 @@ export const Chat:FC = (props) =>{
   
     <MainFrame headerMenu={["Menu2",[name]]} injectFooter={
         <SearchBar placeHolder="Message..." buttonText="Send" multiline onClick={(msg:string)=>{(msg) && SendMessage(msg)}} resetOnSubmit={true}/>
-        }>
+        } onRefresh={() => {loadPrevious(previousDemoMessages.current,2000)}}>
         
-            <ScrollView
-                ref={scrollRef}
-                onContentSizeChange={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
-                refreshControl={<RefreshControl onRefresh={() => {loadPrevious(2000)}} refreshing={refresh}/>}
-            >
-                <View style={Styles.Chat.container}>
+            <View style={Styles.Chat.container}>
+              
                     {
                     returnMessages(reverseStack)
                     }
-                </View>
-            </ScrollView>
+                
+            </View>
           
     </MainFrame>
   

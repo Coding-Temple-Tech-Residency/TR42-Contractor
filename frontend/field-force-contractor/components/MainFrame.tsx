@@ -27,7 +27,7 @@
 // inside MainFrame's centered ScrollView.
 // ──────────────────────────────────────────────────────────────────────────────
 
-import { FC, ReactNode,useEffect,useContext, useRef }  from 'react';
+import { FC, ReactNode,useEffect,useContext, useRef, useState}  from 'react';
 import {
   View,
   Text,
@@ -35,6 +35,7 @@ import {
   ImageBackground,
   ScrollView,
   StyleSheet,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons }       from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -112,6 +113,7 @@ type Props = {
   injectHeader?: ReactNode;
   injectFooter?: ReactNode;
   requireAuth?:boolean;
+  onRefresh?:Function
 };
 
 export const MainFrame: FC<Props> = (props) => {
@@ -119,6 +121,7 @@ export const MainFrame: FC<Props> = (props) => {
   const pageName = route.name;
   const {mount,devMode} = useContext(AppContext);
   const {isAuthenticated,isLoading} = useAuth();
+  const [refresh,setRefresh] = useState(false);
  type Nav = NativeStackNavigationProp<RootStackParamList>;
  const publicPages = [
 
@@ -150,10 +153,6 @@ export const MainFrame: FC<Props> = (props) => {
           }
       }
       
-      
-  
-
-
   },[isLoading,isAuthenticated,pageName,requireAuth])
  
 
@@ -171,6 +170,17 @@ export const MainFrame: FC<Props> = (props) => {
     ? props.header
     : 'none';
 
+  const handleRefresh =  () =>{
+
+    setRefresh(true);
+    if(props.onRefresh){
+       
+        props.onRefresh()
+       
+    }
+    setRefresh(false);
+  }
+
   return (
     <ImageBackground
       source={Assets.backgrounds.MainFrame.MainbackgroundImage}
@@ -185,7 +195,7 @@ export const MainFrame: FC<Props> = (props) => {
           {props.injectHeader}
         </View>
 
-        <ScrollView contentContainerStyle={Styles.MainFrame.Body}>
+        <ScrollView contentContainerStyle={Styles.MainFrame.Body} refreshControl={<RefreshControl onRefresh={() => {handleRefresh()}} refreshing={refresh}/>}>
           {props.children}
         </ScrollView>
 
