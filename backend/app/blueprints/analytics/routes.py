@@ -5,14 +5,15 @@ from . import analytics_bp
 from app.util.auth import token_required
 
 
-def _parse_contractor_id(raw):
-    """Safely parse contractor_id; returns (int, None) or (None, error_response)."""
-    if not raw:
+def _validate_contractor_id(raw):
+    """
+    Validate that contractor_id is a non-empty string.
+    All PKs in the schema are TEXT (UUIDs) — never cast to int.
+    Returns (str, None) on success or (None, error_response) on failure.
+    """
+    if not raw or not raw.strip():
         return None, (jsonify({'error': 'contractor_id is required'}), 400)
-    try:
-        return int(raw), None
-    except (ValueError, TypeError):
-        return None, (jsonify({'error': 'contractor_id must be a valid integer'}), 400)
+    return raw.strip(), None
 
 
 def _get_authenticated_contractor(user_id):
@@ -48,7 +49,7 @@ def _execute_query(query, params=None):
 @token_required
 def get_dashboard_stats():
     """Get dashboard stats cards for the authenticated contractor."""
-    contractor_id, err_resp = _parse_contractor_id(request.args.get('contractor_id'))
+    contractor_id, err_resp = _validate_contractor_id(request.args.get('contractor_id'))
     if err_resp:
         return err_resp
 
@@ -68,8 +69,7 @@ def get_dashboard_stats():
     if err:
         return jsonify({'error': f'Total jobs query failed: {err}'}), 500
 
-    # 1.2 Completed Jobs
-    # NOTE: status is uppercase enum per models.py
+    # 1.2 Completed Jobs (status enum is uppercase per schema)
     completed_jobs, err = _execute_query(
         """SELECT COUNT(*) AS completed_jobs FROM ticket
            WHERE assigned_contractor = :contractor_id AND status = 'COMPLETED'""",
@@ -91,8 +91,8 @@ def get_dashboard_stats():
         return jsonify({'error': f'Completion rate query failed: {err}'}), 500
 
     # 1.4 Anomaly Flag Rate
-    # NOTE: geofenceverified / biometricverified don't exist on ticket.
-    # anomaly_flag is the correct column.
+    # anomaly_flag is the correct column on ticket.
+    # geofenceverified / biometricverified do NOT exist in the schema.
     flag_rate, err = _execute_query(
         """SELECT ROUND(
                COUNT(*) FILTER (WHERE anomaly_flag = TRUE)::NUMERIC /
@@ -106,18 +106,19 @@ def get_dashboard_stats():
         return jsonify({'error': f'Flag rate query failed: {err}'}), 500
 
     # 1.5 Average Rating
-    # NOTE: contractorperformance table doesn't exist.
-    # average_rating is a scalar field on the contractor table.
+    # contractor_performance EXISTS in the ERD with (contractor_id, ticket_id, rating integer).
+    # Using live average from contractor_performance.
     avg_rating, err = _execute_query(
-        "SELECT ROUND(average_rating::NUMERIC, 2) AS avg_rating FROM contractor WHERE id = :contractor_id",
+        """SELECT ROUND(AVG(cp.rating)::NUMERIC, 2) AS avg_rating
+           FROM contractor_performance cp
+           WHERE cp.contractor_id = :contractor_id""",
         params
     )
     if err:
         return jsonify({'error': f'Average rating query failed: {err}'}), 500
 
     # 1.6 Total Earnings — BLOCKED
-    # freightamount / paymentstatus don't exist in models.py.
-    # Returning null until the schema decision is made.
+    # freight_amount / payment_status do not exist in the schema.
     total_earnings_value = None
 
     return jsonify({
@@ -126,7 +127,7 @@ def get_dashboard_stats():
         'completion_rate': float(completion_rate[0]['completion_rate'] or 0) if completion_rate else 0,
         'flag_rate': float(flag_rate[0]['flag_rate'] or 0) if flag_rate else 0,
         'avg_rating': float(avg_rating[0]['avg_rating'] or 0) if avg_rating else 0,
-        'total_earnings': total_earnings_value,   # null until freight columns land
+        'total_earnings': total_earnings_value,
     }), 200
 
 
@@ -138,7 +139,7 @@ def get_dashboard_stats():
 @token_required
 def get_job_history():
     """Get paginated job history for the authenticated contractor."""
-    contractor_id, err_resp = _parse_contractor_id(request.args.get('contractor_id'))
+    contractor_id, err_resp = _validate_contractor_id(request.args.get('contractor_id'))
     if err_resp:
         return err_resp
 
@@ -148,7 +149,7 @@ def get_job_history():
         return ownership_error
 
     page = request.args.get('page', 1, type=int)
-    limit = min(request.args.get('limit', 20, type=int), 100)  # cap at 100
+    limit = min(request.args.get('limit', 20, type=int), 100)
     offset = (page - 1) * limit
 
     params = {'contractor_id': contractor_id, 'limit': limit, 'offset': offset}
@@ -160,14 +161,23 @@ def get_job_history():
         t.route,
         t.service_type,
         t.status,
+        t.priority,
         t.anomaly_flag,
         t.anomaly_reason,
         t.start_time,
         t.end_time,
+        t.due_date,
         t.approved_at,
         t.rejected_at,
-        t.created_at
+        t.created_at,
+        t.contractor_start_latitude,
+        t.contractor_start_longitude,
+        t.contractor_end_latitude,
+        t.contractor_end_longitude,
+        cp.rating   AS performance_rating,
+        cp.comments AS performance_comments
     FROM ticket t
+    LEFT JOIN contractor_performance cp ON cp.ticket_id = t.id
     WHERE t.assigned_contractor = :contractor_id
     ORDER BY t.created_at DESC
     LIMIT :limit OFFSET :offset
@@ -204,7 +214,7 @@ def get_job_history():
 @token_required
 def get_performance_trends():
     """Get monthly performance trends for the authenticated contractor."""
-    contractor_id, err_resp = _parse_contractor_id(request.args.get('contractor_id'))
+    contractor_id, err_resp = _validate_contractor_id(request.args.get('contractor_id'))
     if err_resp:
         return err_resp
 
@@ -232,7 +242,6 @@ def get_performance_trends():
         return jsonify({'error': f'Monthly jobs query failed: {err}'}), 500
 
     # Monthly completions by end_time
-    # NOTE: freightamount removed — not in models.py.
     monthly_completions, err = _execute_query(
         """SELECT
                DATE_TRUNC('month', t.end_time) AS month,
@@ -248,7 +257,22 @@ def get_performance_trends():
     if err:
         return jsonify({'error': f'Monthly completions query failed: {err}'}), 500
 
-    # Anomaly rate trend (replaces rating trend — no per-ticket rating or history table)
+    # Rating trend — NOW FULLY SUPPORTED via contractor_performance table (exists in ERD)
+    rating_trend, err = _execute_query(
+        """SELECT
+               DATE_TRUNC('month', cp.created_at) AS month,
+               ROUND(AVG(cp.rating)::NUMERIC, 2)  AS avg_rating,
+               COUNT(*)                            AS rating_count
+           FROM contractor_performance cp
+           WHERE cp.contractor_id = :contractor_id
+           GROUP BY DATE_TRUNC('month', cp.created_at)
+           ORDER BY month DESC LIMIT 12""",
+        params
+    )
+    if err:
+        return jsonify({'error': f'Rating trend query failed: {err}'}), 500
+
+    # Anomaly rate trend
     anomaly_trend, err = _execute_query(
         """SELECT
                DATE_TRUNC('month', t.created_at) AS month,
@@ -269,9 +293,9 @@ def get_performance_trends():
     return jsonify({
         'monthly_jobs': monthly_jobs,
         'monthly_completions': monthly_completions,
+        'rating_trend': rating_trend,
         'anomaly_trend': anomaly_trend,
-        # monthly_earnings: blocked — freight_amount not in schema yet
-        # rating_trend: blocked — no per-record rating history table
+        # monthly_earnings: blocked — freight_amount not in schema
     }), 200
 
 
@@ -279,7 +303,7 @@ def get_performance_trends():
 @token_required
 def get_performance_distribution():
     """Get jobs by route type and status for the authenticated contractor."""
-    contractor_id, err_resp = _parse_contractor_id(request.args.get('contractor_id'))
+    contractor_id, err_resp = _validate_contractor_id(request.args.get('contractor_id'))
     if err_resp:
         return err_resp
 
@@ -321,7 +345,7 @@ def get_performance_distribution():
 @token_required
 def get_contractor_profile():
     """Get profile details for the authenticated contractor."""
-    contractor_id, err_resp = _parse_contractor_id(request.args.get('contractor_id'))
+    contractor_id, err_resp = _validate_contractor_id(request.args.get('contractor_id'))
     if err_resp:
         return err_resp
 
@@ -332,22 +356,21 @@ def get_contractor_profile():
 
     params = {'contractor_id': contractor_id}
 
-    # NOTE: table is auth_user (not auth_users).
-    # Columns: first_name / last_name (not firstname/lastname).
-    # Join via contractor.user_id, NOT contractor.id == auth_user.id.
+    # auth_user confirmed: first_name, last_name, contact_number, email, username, is_active.
+    # profile_photo is bytea — not served here; use a separate endpoint if needed.
+    # Join via contractor.user_id → auth_user.id.
     profile_query = """
     SELECT
-        u.id AS user_id,
+        u.id               AS user_id,
         u.first_name,
         u.last_name,
         u.email,
         u.username,
         u.contact_number,
-        u.profile_photo,
         u.is_active,
-        c.id AS contractor_id,
+        c.id               AS contractor_id,
         c.role,
-        c.status AS contractor_status,
+        c.status           AS contractor_status,
         c.employee_number,
         c.average_rating,
         c.years_experience,
@@ -356,7 +379,10 @@ def get_contractor_profile():
         c.is_certified,
         c.biometric_enrolled,
         c.tickets_completed,
-        c.tickets_open
+        c.tickets_open,
+        c.is_onboarded,
+        c.is_subcontractor,
+        c.is_fte
     FROM auth_user u
     JOIN contractor c ON u.id = c.user_id
     WHERE c.id = :contractor_id
@@ -364,37 +390,89 @@ def get_contractor_profile():
     profile, err = _execute_query(profile_query, params)
     if err:
         return jsonify({'error': f'Profile query failed: {err}'}), 500
-
     if not profile:
         return jsonify({'error': 'Contractor not found'}), 404
 
-    # Compliance flags — licenses/insurance/background-check detail tables
-    # do not exist in models.py. Returning the boolean flags that do exist.
-    compliance_query = """
-    SELECT is_licensed, is_insured, is_certified, biometric_enrolled
-    FROM contractor WHERE id = :contractor_id
-    """
-    compliance, err = _execute_query(compliance_query, params)
+    # Licenses — license table exists in schema
+    licenses, err = _execute_query(
+        """SELECT id, license_type, license_number, license_state,
+                  license_expiration_date, license_verified, license_verified_at
+           FROM license WHERE contractor_id = :contractor_id
+           ORDER BY license_expiration_date DESC""",
+        params
+    )
     if err:
-        return jsonify({'error': f'Compliance query failed: {err}'}), 500
+        return jsonify({'error': f'Licenses query failed: {err}'}), 500
+
+    # Certifications — certification table exists in schema
+    certifications, err = _execute_query(
+        """SELECT id, certification_name, certifying_body, certification_number,
+                  issue_date, expiration_date, certification_verified
+           FROM certification WHERE contractor_id = :contractor_id
+           ORDER BY expiration_date DESC""",
+        params
+    )
+    if err:
+        return jsonify({'error': f'Certifications query failed: {err}'}), 500
+
+    # Insurance — insurance table exists in schema
+    insurance_records, err = _execute_query(
+        """SELECT id, insurance_type, policy_number, provider_name, coverage_amount,
+                  effective_date, expiration_date, insurance_verified,
+                  additional_insurance_required
+           FROM insurance WHERE contractor_id = :contractor_id
+           ORDER BY expiration_date DESC""",
+        params
+    )
+    if err:
+        return jsonify({'error': f'Insurance query failed: {err}'}), 500
+
+    # Background check — most recent
+    bg_check, err = _execute_query(
+        """SELECT id, background_check_passed, background_check_date, background_check_provider
+           FROM background_check WHERE contractor_id = :contractor_id
+           ORDER BY background_check_date DESC LIMIT 1""",
+        params
+    )
+    if err:
+        return jsonify({'error': f'Background check query failed: {err}'}), 500
+
+    # Drug test — most recent
+    drug_test, err = _execute_query(
+        """SELECT id, drug_test_passed, drug_test_date
+           FROM drug_test WHERE contractor_id = :contractor_id
+           ORDER BY drug_test_date DESC LIMIT 1""",
+        params
+    )
+    if err:
+        return jsonify({'error': f'Drug test query failed: {err}'}), 500
 
     return jsonify({
         'profile': profile[0],
-        'compliance_flags': compliance[0] if compliance else {},
-        # 'certifications': blocked — licenses/insurance/background detail tables
-        #   don't exist in models.py yet.
+        'licenses': licenses,
+        'certifications': certifications,
+        'insurance': insurance_records,
+        'background_check': bg_check[0] if bg_check else None,
+        'drug_test': drug_test[0] if drug_test else None,
     }), 200
 
 
 # =================================================================
 # PART 5: NOTIFICATIONS
 # =================================================================
+#
+# SCHEMA NOTES:
+#   Table: notification (singular, NOT notifications)
+#   Columns: id, message, recipient (text), level (SUCCESS/DANGER/INFO), created_at
+#   NO is_read column — unread count is NOT supported by the current schema.
+#   NO title column. NO type column. NO user_id column.
+#   recipient is a plain text field assumed to store auth_user.id.
 
 @analytics_bp.route('/notifications', methods=['GET'])
 @token_required
 def get_notifications():
     """Get notifications for the authenticated contractor."""
-    contractor_id, err_resp = _parse_contractor_id(request.args.get('contractor_id'))
+    contractor_id, err_resp = _validate_contractor_id(request.args.get('contractor_id'))
     if err_resp:
         return err_resp
 
@@ -405,33 +483,33 @@ def get_notifications():
 
     params = {'contractor_id': contractor_id}
 
-    # NOTE: notifications.user_id is a FK to auth_user, not contractor.
-    # The column is is_read (not isread), created_at (not createdat).
-    # Join through contractor to get the auth_user's user_id.
-    unread, err = _execute_query(
-        """SELECT COUNT(*) AS unread_count
-           FROM notifications n
-           JOIN contractor c ON c.user_id = n.user_id
-           WHERE c.id = :contractor_id AND n.is_read = FALSE""",
-        params
-    )
-    if err:
-        return jsonify({'error': f'Unread count query failed: {err}'}), 500
-
+    # Join contractor → auth_user to resolve recipient (assumed to be auth_user.id).
+    # Note: is_read does not exist in the schema — cannot filter unread.
     recent, err = _execute_query(
-        """SELECT n.id, n.title, n.message, n.type, n.is_read, n.created_at
-           FROM notifications n
-           JOIN contractor c ON c.user_id = n.user_id
+        """SELECT n.id, n.message, n.level, n.created_at
+           FROM notification n
+           JOIN contractor c ON c.user_id = n.recipient
            WHERE c.id = :contractor_id
-           ORDER BY n.created_at DESC LIMIT 10""",
+           ORDER BY n.created_at DESC LIMIT 20""",
         params
     )
     if err:
-        return jsonify({'error': f'Recent notifications query failed: {err}'}), 500
+        return jsonify({'error': f'Notifications query failed: {err}'}), 500
+
+    total, err = _execute_query(
+        """SELECT COUNT(*) AS total_notifications
+           FROM notification n
+           JOIN contractor c ON c.user_id = n.recipient
+           WHERE c.id = :contractor_id""",
+        params
+    )
+    if err:
+        return jsonify({'error': f'Notification count query failed: {err}'}), 500
 
     return jsonify({
-        'unread_count': unread[0]['unread_count'] if unread else 0,
-        'recent_notifications': recent,
+        'notifications': recent,
+        'total': total[0]['total_notifications'] if total else 0,
+        # unread_count: not available — is_read column does not exist in schema
     }), 200
 
 
@@ -443,7 +521,7 @@ def get_notifications():
 @token_required
 def get_active_work():
     """Get active tickets for the authenticated contractor."""
-    contractor_id, err_resp = _parse_contractor_id(request.args.get('contractor_id'))
+    contractor_id, err_resp = _validate_contractor_id(request.args.get('contractor_id'))
     if err_resp:
         return err_resp
 
@@ -454,9 +532,8 @@ def get_active_work():
 
     params = {'contractor_id': contractor_id}
 
-    # NOTE: status values are uppercase. 'accepted', 'in_transit', 'arrived'
-    # don't match models.py — closest equivalents are ASSIGNED / IN_PROGRESS.
-    # If the mobile team uses different intermediate statuses, align with them here.
+    # Status enum values from schema: UNASSIGNED, ASSIGNED, IN_PROGRESS,
+    # COMPLETED, PENDING_APPROVAL, APPROVED, REJECTED
     active_query = """
     SELECT
         t.id,
@@ -464,8 +541,10 @@ def get_active_work():
         t.route,
         t.service_type,
         t.status,
+        t.priority,
         t.start_time,
         t.due_date,
+        t.estimated_duration,
         t.contractor_start_latitude,
         t.contractor_start_longitude,
         t.contractor_end_latitude,
