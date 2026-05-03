@@ -1,8 +1,29 @@
 -- ============================================================
--- TR42 Contractor Mobile App - Analytics Queries
--- Sprint 2-3: Data Design + Mock Dashboard
--- Based on: Vendor Database ERD (dbdiagram.io)
--- Team: TR42 Contractor Team (Team B)
+-- TR42 Contractor Mobile App - Analytics Queries (CORRECTED)
+-- Schema source of truth: backend/app/models.py
+-- Fixed by: schema reconciliation against live models.py
+-- ============================================================
+--
+-- KEY CORRECTIONS vs. original analytics_queries.sql:
+--   tickets           → ticket        (table name)
+--   contractorid      → assigned_contractor
+--   createdat         → created_at
+--   anomalyflag       → anomaly_flag
+--   pickupdatetime    → start_time
+--   deliverydatetime  → end_time
+--   workorders        → work_order
+--   auth_users/users  → auth_user
+--   status 'completed'→ 'COMPLETED'  (enum is uppercase)
+--   freightamount     → REMOVED (not in models.py)
+--   paymentstatus     → REMOVED (not in models.py)
+--   geofenceverified  → REMOVED (use anomaly_flag instead)
+--   biometricverified → REMOVED (use contractor.biometric_enrolled)
+--   ticketnumber      → REMOVED (not in models.py)
+--   pickuplocation    → REMOVED (not in models.py)
+--   deliverylocation  → REMOVED (not in models.py)
+--   rating (on ticket)→ REMOVED (not in models.py)
+--   contractorperformance table → REMOVED (doesn't exist)
+--                     → replaced with contractor.average_rating
 -- ============================================================
 
 -- ============================================================
@@ -10,292 +31,277 @@
 -- ============================================================
 
 -- 1.1 Total Jobs (tickets assigned to contractor)
--- Purpose: Display total number of jobs in stats card
 SELECT
     COUNT(*) AS total_jobs
-FROM tickets
-WHERE contractorid = :contractor_id;
+FROM ticket
+WHERE assigned_contractor = :contractor_id;
 
 -- 1.2 Completed Jobs
--- Purpose: Count of completed tickets
 SELECT
     COUNT(*) AS completed_jobs
-FROM tickets
-WHERE contractorid = :contractor_id
-    AND status = 'completed';
+FROM ticket
+WHERE assigned_contractor = :contractor_id
+    AND status = 'COMPLETED';
 
 -- 1.3 Completion Rate
--- Purpose: Percentage of completed vs total jobs
 SELECT
     ROUND(
-        COUNT(*) FILTER (WHERE status = 'completed')::NUMERIC /
+        COUNT(*) FILTER (WHERE status = 'COMPLETED')::NUMERIC /
         NULLIF(COUNT(*), 0) * 100,
         2
     ) AS completion_rate
-FROM tickets
-WHERE contractorid = :contractor_id;
+FROM ticket
+WHERE assigned_contractor = :contractor_id;
 
--- 1.4 Flag Rate (geofence or biometric failures)
--- Purpose: Percentage of jobs with verification issues
+-- 1.4 Anomaly/Flag Rate
+-- NOTE: geofenceverified and biometricverified don't exist.
+-- anomaly_flag on the ticket model is the equivalent signal.
 SELECT
     ROUND(
-        COUNT(*) FILTER (WHERE geofenceverified = FALSE OR biometricverified = FALSE)::NUMERIC /
+        COUNT(*) FILTER (WHERE anomaly_flag = TRUE)::NUMERIC /
         NULLIF(COUNT(*), 0) * 100,
         2
     ) AS flag_rate
-FROM tickets
-WHERE contractorid = :contractor_id
-    AND status = 'completed';
+FROM ticket
+WHERE assigned_contractor = :contractor_id
+    AND status = 'COMPLETED';
 
 -- 1.5 Average Rating
--- Purpose: Contractor's average performance rating
+-- NOTE: contractorperformance table does NOT exist.
+-- average_rating is a denormalized field on the contractor table itself.
 SELECT
-    ROUND(AVG(rating), 2) AS avg_rating
-FROM contractorperformance
-WHERE contractorid = :contractor_id;
+    ROUND(average_rating::NUMERIC, 2) AS avg_rating
+FROM contractor
+WHERE id = :contractor_id;
 
--- 1.6 Total Earnings (sum of freight amounts for completed jobs)
--- Purpose: Total earnings from completed deliveries
-SELECT
-    COALESCE(SUM(freightamount), 0) AS total_earnings
-FROM tickets
-WHERE contractorid = :contractor_id
-    AND status = 'completed'
-    AND paymentstatus = 'paid';
+-- 1.6 Total Earnings
+-- NOTE: freightamount and paymentstatus do NOT exist on the ticket model.
+-- These columns are on the roadmap discussion — queries are blocked until
+-- schema decision is made. Placeholder returning NULL until columns are added.
+SELECT NULL AS total_earnings;
+-- Once the columns are added, replace with:
+-- SELECT COALESCE(SUM(freight_amount), 0) AS total_earnings
+-- FROM ticket
+-- WHERE assigned_contractor = :contractor_id
+--   AND status = 'COMPLETED'
+--   AND payment_status = 'paid';
+
 
 -- ============================================================
 -- PART 2: JOB HISTORY TABLE
 -- ============================================================
 
 -- 2.1 Job History with Pagination and Sorting
--- Purpose: Display all jobs in sortable, paginated table
 SELECT
     t.id,
-    t.ticketnumber,
     t.description,
     t.route,
-    t.pickuplocation,
-    t.deliverylocation,
-    t.servicetype,
-    t.freightamount,
-    t.fuelcost,
+    t.service_type,
     t.status,
-    t.paymentstatus,
-    t.pickupdatetime,
-    t.deliverydatetime,
-    t.geofenceverified,
-    t.biometricverified,
-    t.createdat,
-    w.workordername,
-    v.vendorname,
-    c.companyname AS client_name
-FROM tickets t
-LEFT JOIN workorders w ON t.workorderid = w.id
-LEFT JOIN vendor v ON t.vendorid = v.id
-LEFT JOIN client c ON w.clientid = c.id
-WHERE t.contractorid = :contractor_id
-ORDER BY t.createdat DESC
+    t.anomaly_flag,
+    t.anomaly_reason,
+    t.start_time,
+    t.end_time,
+    t.approved_at,
+    t.rejected_at,
+    t.created_at,
+    t.contractor_start_latitude,
+    t.contractor_start_longitude,
+    t.contractor_end_latitude,
+    t.contractor_end_longitude,
+    w.description AS work_order_description
+FROM ticket t
+LEFT JOIN work_order w ON t.work_order_id = w.id
+WHERE t.assigned_contractor = :contractor_id
+ORDER BY t.created_at DESC
 LIMIT :page_size OFFSET :offset;
 
 -- 2.2 Job History Count (for pagination total pages)
 SELECT COUNT(*) AS total_count
-FROM tickets
-WHERE contractorid = :contractor_id;
+FROM ticket
+WHERE assigned_contractor = :contractor_id;
+
 
 -- ============================================================
 -- PART 3: PERFORMANCE CHARTS
 -- ============================================================
 
 -- 3.1 Monthly Job Trend (jobs per month)
--- Purpose: Line chart showing job volume over time
 SELECT
-    DATE_TRUNC('month', t.createdat) AS month,
+    DATE_TRUNC('month', t.created_at) AS month,
     COUNT(*) AS job_count,
-    COUNT(*) FILTER (WHERE t.status = 'completed') AS completed_count,
-    COUNT(*) FILTER (WHERE t.status IN ('assigned', 'accepted', 'in_transit', 'arrived')) AS active_count
-FROM tickets t
-WHERE t.contractorid = :contractor_id
-GROUP BY DATE_TRUNC('month', t.createdat)
+    COUNT(*) FILTER (WHERE t.status = 'COMPLETED') AS completed_count,
+    COUNT(*) FILTER (WHERE t.status IN ('ASSIGNED', 'IN_PROGRESS')) AS active_count
+FROM ticket t
+WHERE t.assigned_contractor = :contractor_id
+GROUP BY DATE_TRUNC('month', t.created_at)
 ORDER BY month DESC
 LIMIT 12;
 
--- 3.2 Monthly Earnings Trend
--- Purpose: Bar chart showing earnings over time
+-- 3.2 Monthly Completion Trend by end_time (replaces earnings — freightamount removed)
+-- Once freight/earnings columns are added, extend this query to include SUM(freight_amount).
 SELECT
-    DATE_TRUNC('month', t.deliverydatetime) AS month,
-    COALESCE(SUM(t.freightamount), 0) AS monthly_earnings,
-    COALESCE(SUM(t.fuelcost), 0) AS monthly_fuel_cost,
-    COALESCE(SUM(t.freightamount - t.fuelcost), 0) AS monthly_profit
-FROM tickets t
-WHERE t.contractorid = :contractor_id
-    AND t.status = 'completed'
-    AND t.paymentstatus = 'paid'
-    AND t.deliverydatetime IS NOT NULL
-GROUP BY DATE_TRUNC('month', t.deliverydatetime)
+    DATE_TRUNC('month', t.end_time) AS month,
+    COUNT(*) AS completed_count
+FROM ticket t
+WHERE t.assigned_contractor = :contractor_id
+    AND t.status = 'COMPLETED'
+    AND t.end_time IS NOT NULL
+GROUP BY DATE_TRUNC('month', t.end_time)
 ORDER BY month DESC
 LIMIT 12;
 
--- 3.3 Rating Trend Over Time
--- Purpose: Line chart showing performance rating trends
+-- 3.3 Anomaly Trend Over Time (replaces rating trend — no per-ticket rating or history table)
+-- NOTE: There is no contractorperformance table and no per-ticket rating column.
+-- average_rating is a single scalar on the contractor record.
+-- This query tracks anomaly_flag rate per month as the closest available signal.
 SELECT
-    DATE_TRUNC('month', cp.createdat) AS month,
-    ROUND(AVG(cp.rating), 2) AS avg_rating,
-    ROUND(AVG(cp.qualityscore), 2) AS avg_quality_score,
+    DATE_TRUNC('month', t.created_at) AS month,
     ROUND(
-        COUNT(*) FILTER (WHERE cp.ontime = TRUE)::NUMERIC /
+        COUNT(*) FILTER (WHERE t.anomaly_flag = TRUE)::NUMERIC /
         NULLIF(COUNT(*), 0) * 100, 2
-    ) AS ontime_percentage,
-    ROUND(
-        COUNT(*) FILTER (WHERE cp.safetycompliant = TRUE)::NUMERIC /
-        NULLIF(COUNT(*), 0) * 100, 2
-    ) AS safety_compliance_percentage
-FROM contractorperformance cp
-WHERE cp.contractorid = :contractor_id
-GROUP BY DATE_TRUNC('month', cp.createdat)
+    ) AS anomaly_rate_pct,
+    COUNT(*) AS total_tickets
+FROM ticket t
+WHERE t.assigned_contractor = :contractor_id
+GROUP BY DATE_TRUNC('month', t.created_at)
 ORDER BY month DESC
 LIMIT 12;
 
 -- 3.4 Jobs by Route Type
--- Purpose: Pie/donut chart showing distribution of job routes
 SELECT
     t.route,
     COUNT(*) AS job_count,
     ROUND(
         COUNT(*)::NUMERIC / SUM(COUNT(*)) OVER() * 100, 2
     ) AS percentage
-FROM tickets t
-WHERE t.contractorid = :contractor_id
+FROM ticket t
+WHERE t.assigned_contractor = :contractor_id
+  AND t.route IS NOT NULL
 GROUP BY t.route
 ORDER BY job_count DESC;
 
 -- 3.5 Jobs by Status
--- Purpose: Stacked bar showing job status distribution
 SELECT
     t.status,
     COUNT(*) AS job_count
-FROM tickets t
-WHERE t.contractorid = :contractor_id
+FROM ticket t
+WHERE t.assigned_contractor = :contractor_id
 GROUP BY t.status
 ORDER BY job_count DESC;
+
 
 -- ============================================================
 -- PART 4: CONTRACTOR PROFILE DATA
 -- ============================================================
 
 -- 4.1 Contractor Profile
--- Purpose: Load contractor details for profile section
+-- NOTE: table is auth_user (not auth_users or users).
+-- Columns: first_name, last_name (not firstname/lastname).
+-- Contractor.user_id is the FK back to auth_user.
 SELECT
     u.id AS user_id,
-    u.firstname,
-    u.lastname,
+    u.first_name,
+    u.last_name,
     u.email,
-    u.phone,
-    u.status AS user_status,
+    u.username,
+    u.contact_number,
+    u.profile_photo,
+    u.is_active,
     c.id AS contractor_id,
-    c.employeetype,
-    c.cdl_number,
-    c.cdl_expiry,
-    c.dot_number,
+    c.role,
     c.status AS contractor_status,
-    v.vendorname,
-    v.companyemail AS vendor_email
-FROM users u
-JOIN contractor c ON u.id = c.userid
-JOIN vendor v ON c.vendorid = v.id
+    c.employee_number,
+    c.average_rating,
+    c.years_experience,
+    c.is_licensed,
+    c.is_insured,
+    c.is_certified,
+    c.biometric_enrolled,
+    c.tickets_completed,
+    c.tickets_open
+FROM auth_user u
+JOIN contractor c ON u.id = c.user_id
 WHERE c.id = :contractor_id;
 
--- 4.2 Contractor Certifications Status
--- Purpose: Display license, insurance, and compliance status
+-- 4.2 Compliance / Certification Status
+-- NOTE: licenses, insurance, backgroundchecks tables do NOT exist in models.py.
+-- is_licensed, is_insured, is_certified are boolean flags on the contractor table.
+-- Until those detail tables exist, surface the boolean flags from step 4.1 above.
+-- Placeholder query shown below for when the detail tables are added.
 SELECT
-    'License' AS document_type,
-    l.licensenumber AS document_number,
-    l.licensetype AS type,
-    l.expirationdate,
-    l.status,
-    CASE
-        WHEN l.expirationdate < CURRENT_DATE THEN 'EXPIRED'
-        WHEN l.expirationdate < CURRENT_DATE + INTERVAL '30 days' THEN 'EXPIRING_SOON'
-        ELSE 'VALID'
-    END AS validity_status
-FROM licenses l
-WHERE l.contractorid = :contractor_id
-UNION ALL
-SELECT
-    'Insurance' AS document_type,
-    i.policynumber,
-    i.policytype,
-    i.expirationdate,
-    i.status,
-    CASE
-        WHEN i.expirationdate < CURRENT_DATE THEN 'EXPIRED'
-        WHEN i.expirationdate < CURRENT_DATE + INTERVAL '30 days' THEN 'EXPIRING_SOON'
-        ELSE 'VALID'
-    END AS validity_status
-FROM insurance i
-WHERE i.contractorid = :contractor_id
-UNION ALL
-SELECT
-    'Background Check' AS document_type,
-    b.id,
-    b.result,
-    b.checkdate AS expirationdate,
-    b.result AS status,
-    CASE
-        WHEN b.result = 'pass' THEN 'VALID'
-        WHEN b.result = 'fail' THEN 'FAILED'
-        ELSE 'PENDING'
-    END AS validity_status
-FROM backgroundchecks b
-WHERE b.contractorid = :contractor_id
-ORDER BY document_type;
+    c.is_licensed,
+    c.is_insured,
+    c.is_certified,
+    c.biometric_enrolled
+FROM contractor c
+WHERE c.id = :contractor_id;
+
 
 -- ============================================================
 -- PART 5: NOTIFICATIONS
 -- ============================================================
 
 -- 5.1 Unread Notification Count
--- Purpose: Display unread count badge in notification center
+-- NOTE: notifications table uses user_id (auth_user FK), not contractorid or userid.
+-- is_read uses underscore, not isread.
+-- To query by contractor, join contractor → auth_user to get the user_id.
 SELECT COUNT(*) AS unread_count
-FROM notifications
-WHERE userid = :user_id AND isread = FALSE;
+FROM notifications n
+JOIN contractor c ON c.user_id = n.user_id
+WHERE c.id = :contractor_id
+  AND n.is_read = FALSE;
 
 -- 5.2 Recent Notifications
--- Purpose: Display list of recent notifications
 SELECT
-    id,
-    title,
-    message,
-    type,
-    isread,
-    createdat
-FROM notifications
-WHERE userid = :user_id
-ORDER BY createdat DESC
+    n.id,
+    n.title,
+    n.message,
+    n.type,
+    n.is_read,
+    n.created_at
+FROM notifications n
+JOIN contractor c ON c.user_id = n.user_id
+WHERE c.id = :contractor_id
+ORDER BY n.created_at DESC
 LIMIT 10;
+
 
 -- ============================================================
 -- PART 6: ACTIVE WORK
 -- ============================================================
 
 -- 6.1 Current Active Tickets
--- Purpose: Show jobs in progress for contractor
+-- Status values are uppercase: ASSIGNED, IN_PROGRESS, PENDING_APPROVAL
 SELECT
     t.id,
-    t.ticketnumber,
     t.description,
     t.route,
-    t.pickuplocation,
-    t.deliverylocation,
-    t.freightamount,
+    t.service_type,
     t.status,
-    t.pickupdatetime,
-    w.workordername
-FROM tickets t
-LEFT JOIN workorders w ON t.workorderid = w.id
-WHERE t.contractorid = :contractor_id
-    AND t.status IN ('accepted', 'in_transit', 'arrived')
-ORDER BY t.pickupdatetime DESC;
+    t.start_time,
+    t.due_date,
+    t.contractor_start_latitude,
+    t.contractor_start_longitude,
+    t.contractor_end_latitude,
+    t.contractor_end_longitude,
+    t.anomaly_flag,
+    w.description AS work_order_description
+FROM ticket t
+LEFT JOIN work_order w ON t.work_order_id = w.id
+WHERE t.assigned_contractor = :contractor_id
+    AND t.status IN ('ASSIGNED', 'IN_PROGRESS', 'PENDING_APPROVAL')
+ORDER BY t.start_time DESC;
+
 
 -- ============================================================
--- END OF ANALYTICS QUERIES
+-- COLUMNS PENDING SCHEMA DECISION (do NOT add until confirmed)
+-- These appeared in the original queries but don't exist in models.py
+-- and are not currently on the roadmap in models.py:
+--   ticket.freight_amount / freightamount
+--   ticket.payment_status / paymentstatus
+--   ticket.ticket_number  / ticketnumber
+--   ticket.pickup_location / pickuplocation
+--   ticket.delivery_location / deliverylocation
+-- If these are added to models.py, update the queries above accordingly.
 -- ============================================================
