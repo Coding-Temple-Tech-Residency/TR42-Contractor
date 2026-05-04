@@ -60,6 +60,7 @@ export default function InspectionScreen() {
   const navigation = useNavigation<Nav>();
   const route      = useRoute<Route>();
   const bypassGate = (route.params as any)?.bypassGate === true;
+  const taskId = (route.params as any)?.taskId as number | undefined;
 
   const [template,      setTemplate]      = useState<ChecklistTemplate | null>(null);
   const [loading,       setLoading]        = useState(true);
@@ -147,7 +148,11 @@ export default function InspectionScreen() {
         template_id: template.id,
         skipped: true,
       });
-      navigation.replace('Dashboard');
+      if (taskId) {
+        navigation.navigate('TicketDetail' as never, { taskId, inspectionDone: true } as never);
+      } else {
+        navigation.replace('Dashboard');
+      }
     } catch (err) {
       const apiErr = err as ApiError;
       setSubmitError(apiErr.error || 'Failed to skip inspection.');
@@ -167,7 +172,11 @@ export default function InspectionScreen() {
         template_id: template.id,
         no_issues_found: true,
       });
-      navigation.replace('Dashboard');
+      if (taskId) {
+        navigation.navigate('TicketDetail' as never, { taskId, inspectionDone: true } as never);
+      } else {
+        navigation.replace('Dashboard');
+      }
     } catch (err) {
       const apiErr = err as ApiError;
       setSubmitError(apiErr.error || 'Failed to submit inspection.');
@@ -195,7 +204,11 @@ export default function InspectionScreen() {
         no_issues_found: false,
         results,
       });
-      navigation.replace('Dashboard');
+      if (taskId) {
+      navigation.navigate('TicketDetail' as never, { taskId, inspectionDone: true } as never);
+      } else {
+        navigation.replace('Dashboard');
+      }
     } catch (err) {
       const apiErr = err as ApiError;
       setSubmitError(apiErr.error || 'Failed to submit inspection.');
