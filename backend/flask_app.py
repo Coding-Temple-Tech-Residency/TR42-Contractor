@@ -11,10 +11,13 @@ from app.models import db
 config = 'ProductionConfig' if os.environ.get('RENDER') else 'DevelopmentConfig'
 app = create_app(config)
 
-with app.app_context():
-    # Tables need to be dropped once for initial setup
-    # db.drop_all()
-    db.create_all()
+# Auto-init tables only against sqlite (throwaway local dev) or when explicitly
+# requested via INIT_DB=1. Against shared Postgres (Supabase) the schema is
+# managed externally — never let backend boot mutate it.
+db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+if db_uri.startswith('sqlite') or os.environ.get('INIT_DB') == '1':
+    with app.app_context():
+        db.create_all()
 
 
 if __name__ == '__main__':

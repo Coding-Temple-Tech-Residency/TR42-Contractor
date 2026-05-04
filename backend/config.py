@@ -38,7 +38,12 @@ class _PhotoUploadDefaults:
 
 
 class DevelopmentConfig(_PhotoUploadDefaults):
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///app.db'
+    # Read DATABASE_URL from env (Supabase / shared Postgres) and fall back to a
+    # local sqlite file when unset. The postgres:// → postgresql:// swap matches
+    # SQLAlchemy's required dialect prefix.
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        'DATABASE_URL', 'sqlite:///app.db'
+    ).replace('postgres://', 'postgresql://', 1)
     DEBUG = True
     CACHE_TYPE =  "SimpleCache"
     CACHE_DEFAULT_TIMEOUT = 300
