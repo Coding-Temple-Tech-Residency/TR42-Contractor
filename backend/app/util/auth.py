@@ -39,7 +39,8 @@ def token_required(f):
         
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-            request.user_id = int(data['sub'])
+            # auth_user.id is now text/UUID. Don't coerce to int.
+            request.user_id = data['sub']
             request.user_role = data['role']
 
         except jose.exceptions.ExpiredSignatureError:
