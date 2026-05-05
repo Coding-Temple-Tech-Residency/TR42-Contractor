@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import Date, String, Integer, Float, ForeignKey, Table, Column, Boolean, DateTime
+from sqlalchemy import Date, String, Integer, Float, ForeignKey, Table, Column, Boolean, DateTime, LargeBinary, Numeric
 from datetime import date, datetime, timezone
 
 class Base(DeclarativeBase):
@@ -366,45 +366,38 @@ class Address(Base):
 
 
 # ── Ticket photos ─────────────────────────────────────────────────────────────
-# Photos uploaded by a contractor against a ticket they're assigned to. The
-# bytes live in the configured Storage backend (filesystem now, S3 later);
-# this row stores only metadata + an opaque storage_key.
+# Photos uploaded by a contractor against a ticket they're assigned to. Bytes
+# live in the photo_content column (bytea) per the team decision recorded in
+# the 4/24 ERD meeting: "File storage using bytes in PostgreSQL was
+# acknowledged as an acceptable approach for now."
 #
-# Security-relevant columns:
-#   submission_uuid — client-supplied UUIDv4, unique. Lets the mobile app
-#       retry safely after a flaky network: a duplicate upload returns the
-#       existing row instead of creating a second copy.
-#   content_hash    — sha256 of the SANITISED bytes (post EXIF strip /
-#       re-encode), for audit and future dedupe.
-#   exif_lat/lng    — GPS pulled from EXIF BEFORE the strip, so we keep an
-#       integrity signal for anomaly scoring against work_order coords.
+# Schema mirrors the live Supabase table exactly. Text/UUID PKs match Daniel's
+# canonical ERD (other models in this file are still Integer; full conversion
+# is tracked separately).
+#
+# Offline sync note: submission_uuid + content_hash are not in the Supabase
+# table yet. Proposal sent to Daniel to add them so the mobile offline queue
+# can retry uploads idempotently. Until then, retries from a flaky network
+# will produce duplicate rows.
 
 class TicketPhoto(Base):
     """A photo a contractor uploaded against a ticket."""
     __tablename__ = 'ticket_photo'
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    ticket_id: Mapped[int] = mapped_column(ForeignKey('ticket.id'), nullable=False, index=True)
-    uploaded_by: Mapped[int] = mapped_column(ForeignKey('contractor.id'), nullable=False, index=True)
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    ticket_id: Mapped[str] = mapped_column(ForeignKey('ticket.id'), nullable=False, index=True)
+    photo_content: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    latitude: Mapped[float] = mapped_column(Numeric, nullable=True)
+    longitude: Mapped[float] = mapped_column(Numeric, nullable=True)
+    uploaded_by: Mapped[str] = mapped_column(ForeignKey('contractor.id'), nullable=False, index=True)
 
-    submission_uuid: Mapped[str] = mapped_column(String(36), nullable=False, unique=True)
-    storage_key: Mapped[str] = mapped_column(String(500), nullable=False)
-    content_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
-
-    # EXIF-extracted GPS, captured before the strip. May be None when the
-    # mobile app converted/sanitised the photo client-side or when the
-    # original camera didn't tag location.
-    exif_lat: Mapped[float] = mapped_column(Float, nullable=True)
-    exif_lng: Mapped[float] = mapped_column(Float, nullable=True)
-
-    # Lambda default — evaluated per row. (Unwrapped `datetime.now(...)` would
-    # freeze at import time and stamp every row with the same timestamp.)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
-        nullable=False,
+        nullable=True,
     )
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
+    updated_by: Mapped[str] = mapped_column(ForeignKey('auth_user.id'), nullable=False)
 
     ticket = relationship("Ticket")

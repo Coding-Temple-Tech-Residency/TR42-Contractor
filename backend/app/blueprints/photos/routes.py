@@ -1,43 +1,43 @@
 """Photo upload / list / fetch endpoints for ticket photos.
 
 Auth model:
-    Only the contractor *currently assigned* to a ticket can upload, list, or
+    Only the contractor currently assigned to a ticket can upload, list, or
     fetch its photos. Vendor / operator read access lives in a separate
     surface and isn't wired here yet.
 
-Threat-model coverage (see threat-model table in the PR description):
+Storage:
+    Bytes live in TicketPhoto.photo_content (Postgres bytea) per the team
+    decision. No separate storage backend, no orphan files to clean up.
+
+Threat-model coverage:
     - IDOR: every read joins through Ticket.assigned_contractor and matches
-      the caller's auth user id; misses return 404 (no existence leak).
-    - Polyglots: Pillow strict-parse + sanitised re-encode strips anything
-      that isn't pixels.
-    - Path traversal: storage keys are server-generated; FilesystemStorage
-      rejects keys outside its root.
+      the caller's contractor row; misses return 404 (no existence leak).
+    - Polyglots: Pillow strict-parse rejects non-images.
     - Decompression bombs: Image.MAX_IMAGE_PIXELS in photo_validation.
     - DoS: MAX_CONTENT_LENGTH (Flask) + MAX_PHOTO_BYTES (route) +
       MAX_PHOTOS_PER_TICKET cap.
-    - Idempotency: client-supplied submission_uuid is unique-indexed; replays
-      return the existing row.
-    - EXIF leak: stripped before storage; lat/lng captured separately for
-      anomaly scoring.
+    - EXIF leak: stripped on re-encode before storage; lat/lng captured
+      separately for anomaly scoring.
+
+Idempotency / offline retry:
+    Not currently supported on the Supabase schema. Proposal sent to Daniel
+    to add submission_uuid + content_hash columns. Until then, retries from
+    the mobile offline queue may produce duplicate rows.
 """
 import io
 import logging
 import uuid as uuid_mod
 
 from flask import current_app, jsonify, request, send_file, url_for
-from sqlalchemy.exc import IntegrityError
 
 from app.models import Contractor, Ticket, TicketPhoto, db
 from app.util.auth import token_required
 from app.util.photo_validation import (
-    FORMAT_TO_EXTENSION,
     PhotoValidationError,
     extract_gps,
-    sha256_hex,
     strip_exif_and_reencode,
     validate_image,
 )
-from app.util.storage import StorageKeyError, make_photo_storage_key
 
 from . import photos_bp
 from .schemas import photo_schema
@@ -47,12 +47,7 @@ log = logging.getLogger(__name__)
 
 # ── Auth scoping helpers ────────────────────────────────────────────────────
 def _get_contractor_for_request_user():
-    """Resolve the Contractor row for the caller, or None if they aren't one.
-
-    The JWT carries the auth user id; Contractor.user_id is the FK back to
-    that. Required because Ticket.assigned_contractor references contractor.id
-    (the contractor's own primary key), not the auth user id.
-    """
+    """Resolve the Contractor row for the caller, or None if they aren't one."""
     return (
         db.session.query(Contractor)
         .filter(Contractor.user_id == request.user_id)
@@ -64,7 +59,7 @@ def _get_ticket_for_assigned_contractor(ticket_id, contractor):
     """Return the Ticket if the caller is its assigned contractor; else None.
 
     Returning None on miss OR auth failure (rather than a 403) means we don't
-    leak whether a ticket id exists — same response either way.
+    leak whether a ticket id exists.
     """
     return (
         db.session.query(Ticket)
@@ -104,13 +99,10 @@ def upload_photo():
     """Upload one image tied to a ticket the caller is assigned to.
 
     Multipart fields:
-        ticket_id        (int, required)
-        photo            (file, required)
-        submission_uuid  (str, optional but recommended for offline-sync)
-
-    The submission_uuid is what makes the mobile offline queue safe: when
-    connectivity flickers and the same upload is retried, we de-dup on this
-    UUID instead of creating a second copy.
+        ticket_id   (str, required)  UUID of the parent ticket
+        photo       (file, required) the image
+        latitude    (float, optional) capture-time GPS, falls back to EXIF
+        longitude   (float, optional) capture-time GPS, falls back to EXIF
     """
     contractor = _get_contractor_for_request_user()
     if not contractor:
@@ -118,42 +110,30 @@ def upload_photo():
         return jsonify({'error': 'forbidden'}), 403
 
     # ── Field parsing ─────────────────────────────────────────────────────
-    ticket_id_raw = request.form.get('ticket_id', '')
-    if not ticket_id_raw.isdigit():
-        return jsonify({'error': 'ticket_id is required and must be an integer'}), 400
-    ticket_id = int(ticket_id_raw)
+    ticket_id = (request.form.get('ticket_id') or '').strip()
+    if not ticket_id:
+        return jsonify({'error': 'ticket_id is required'}), 400
 
     upload = request.files.get('photo')
     if upload is None or not upload.filename:
         return jsonify({'error': 'photo file is required'}), 400
 
-    submission_uuid = (
-        request.form.get('submission_uuid')
-        or request.headers.get('X-Submission-UUID')
-    )
-    if submission_uuid:
+    # Optional client-supplied GPS overrides the EXIF lat/lng if present.
+    def _parse_optional_float(name):
+        raw = request.form.get(name)
+        if raw is None or raw == '':
+            return None, None
         try:
-            uuid_mod.UUID(submission_uuid)
-        except (TypeError, ValueError):
-            return jsonify({'error': 'submission_uuid must be a valid UUID'}), 400
-    else:
-        # Server-generated fallback so callers without the header still get
-        # idempotent storage rows. The client just won't be able to retry
-        # without producing a different UUID — that's fine for the basic case.
-        submission_uuid = str(uuid_mod.uuid4())
+            return float(raw), None
+        except ValueError:
+            return None, jsonify({'error': f'{name} must be a number'}), 400
 
-    # ── Idempotency: existing row? ────────────────────────────────────────
-    existing = (
-        db.session.query(TicketPhoto)
-        .filter(TicketPhoto.submission_uuid == submission_uuid)
-        .first()
-    )
-    if existing:
-        # Re-validate ownership before serving — otherwise an attacker who
-        # knew/guessed someone else's submission_uuid could fish for photos.
-        if existing.uploaded_by != contractor.id:
-            return jsonify({'error': 'forbidden'}), 403
-        return jsonify(_serialise(existing)), 200
+    client_lat, err = _parse_optional_float('latitude')
+    if err:
+        return err
+    client_lng, err = _parse_optional_float('longitude')
+    if err:
+        return err
 
     # ── Authorisation: caller must be the assigned contractor ─────────────
     ticket = _get_ticket_for_assigned_contractor(ticket_id, contractor)
@@ -186,64 +166,31 @@ def upload_photo():
 
     # ── Validate as image (Pillow + bomb cap) ─────────────────────────────
     try:
-        img, fmt, mime_type = validate_image(raw_bytes)
+        img, fmt, _mime_type = validate_image(raw_bytes)
     except PhotoValidationError as e:
         return jsonify({'error': str(e)}), 400
 
-    # GPS BEFORE strip — we want this signal even though we drop EXIF.
+    # GPS BEFORE strip — keep it as a signal even though we drop EXIF.
     exif_lat, exif_lng = extract_gps(img)
+    final_lat = client_lat if client_lat is not None else exif_lat
+    final_lng = client_lng if client_lng is not None else exif_lng
 
-    # Re-encode without metadata. Bytes are now safe to store.
+    # Re-encode without metadata. Bytes are now safe to store in the DB.
     sanitised_bytes = strip_exif_and_reencode(img, fmt)
-    content_hash = sha256_hex(sanitised_bytes)
 
-    extension = FORMAT_TO_EXTENSION.get(fmt, fmt.lower())
-    storage = current_app.config['PHOTO_STORAGE']
-
-    try:
-        storage_key = make_photo_storage_key(ticket_id, extension)
-    except StorageKeyError as e:
-        log.exception('storage key generation failed')
-        return jsonify({'error': str(e)}), 500
-
-    try:
-        bytes_written = storage.save(storage_key, io.BytesIO(sanitised_bytes))
-    except Exception:
-        log.exception('storage save failed for ticket %s key %s', ticket_id, storage_key)
-        return jsonify({'error': 'storage error'}), 500
-
-    # ── Persist metadata row ──────────────────────────────────────────────
+    # ── Persist row ───────────────────────────────────────────────────────
     photo = TicketPhoto(
+        id=str(uuid_mod.uuid4()),
         ticket_id=ticket_id,
+        photo_content=sanitised_bytes,
+        latitude=final_lat,
+        longitude=final_lng,
         uploaded_by=contractor.id,
-        submission_uuid=submission_uuid,
-        storage_key=storage_key,
-        content_hash=content_hash,
-        mime_type=mime_type,
-        byte_size=bytes_written,
-        exif_lat=exif_lat,
-        exif_lng=exif_lng,
+        created_by=request.user_id,
+        updated_by=request.user_id,
     )
     db.session.add(photo)
-    try:
-        db.session.commit()
-    except IntegrityError:
-        # Race: a concurrent upload won with the same UUID. Roll back, clean
-        # up the orphan file we just wrote, and serve the canonical row.
-        db.session.rollback()
-        try:
-            storage.delete(storage_key)
-        except Exception:
-            log.exception('failed to clean up orphan storage key %s', storage_key)
-
-        winner = (
-            db.session.query(TicketPhoto)
-            .filter(TicketPhoto.submission_uuid == submission_uuid)
-            .first()
-        )
-        if winner and winner.uploaded_by == contractor.id:
-            return jsonify(_serialise(winner)), 200
-        return jsonify({'error': 'submission conflict'}), 409
+    db.session.commit()
 
     return jsonify(_serialise(photo)), 201
 
@@ -252,11 +199,14 @@ def upload_photo():
 @photos_bp.route('', methods=['GET'])
 @token_required
 def list_photos():
-    """List photos for a ticket the caller is assigned to."""
-    ticket_id_raw = request.args.get('ticket_id', '')
-    if not ticket_id_raw.isdigit():
+    """List photos for a ticket the caller is assigned to.
+
+    Returns metadata only. Bytes are fetched per-photo via GET /api/photos/<id>
+    so the list response stays small.
+    """
+    ticket_id = (request.args.get('ticket_id') or '').strip()
+    if not ticket_id:
         return jsonify({'error': 'ticket_id query param is required'}), 400
-    ticket_id = int(ticket_id_raw)
 
     contractor = _get_contractor_for_request_user()
     if not contractor:
@@ -276,7 +226,7 @@ def list_photos():
 
 
 # ── GET /api/photos/<id> — fetch bytes ──────────────────────────────────────
-@photos_bp.route('/<int:photo_id>', methods=['GET'])
+@photos_bp.route('/<photo_id>', methods=['GET'])
 @token_required
 def get_photo(photo_id):
     """Stream the photo bytes if the caller is the assigned contractor."""
@@ -288,24 +238,9 @@ def get_photo(photo_id):
     if not photo:
         return jsonify({'error': 'photo not found'}), 404
 
-    storage = current_app.config['PHOTO_STORAGE']
-    try:
-        stream = storage.open(photo.storage_key)
-    except StorageKeyError:
-        # Storage row exists but file is missing — treat as 404 from caller's
-        # perspective and log loudly so we notice corruption.
-        log.error(
-            'storage key missing for photo %s (ticket %s, key %s)',
-            photo.id, photo.ticket_id, photo.storage_key,
-        )
-        return jsonify({'error': 'photo not found'}), 404
-    except Exception:
-        log.exception('storage open failed for photo %s', photo_id)
-        return jsonify({'error': 'storage error'}), 500
-
     response = send_file(
-        stream,
-        mimetype=photo.mime_type,
+        io.BytesIO(photo.photo_content),
+        mimetype='image/jpeg',
         as_attachment=False,
         conditional=False,
         max_age=0,
