@@ -155,7 +155,7 @@ def get_latest_inspection():
 # GET /inspections/<id>
 # Returns a specific inspection by ID.
 # ─────────────────────────────────────────────────────────────────────────────
-@inspections_bp.route('/<int:inspection_id>', methods=['GET'])
+@inspections_bp.route('/<inspection_id>', methods=['GET'])
 @token_required
 def get_inspection(inspection_id):
     inspection = db.session.get(Inspections, inspection_id)

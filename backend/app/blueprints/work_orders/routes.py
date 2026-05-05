@@ -36,7 +36,7 @@ def get_work_order_for_request_user(work_order_id):
     return work_order, None
 
 
-@work_orders_bp.route('/<int:work_order_id>', methods=['GET'])
+@work_orders_bp.route('/<work_order_id>', methods=['GET'])
 @token_required
 def get_work_order(work_order_id):
     work_order, error_response = get_work_order_for_request_user(work_order_id)

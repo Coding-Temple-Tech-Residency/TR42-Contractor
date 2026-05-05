@@ -1,16 +1,68 @@
 # ── Backend (Python / Flask) ───────────────────────────────────
+# Secrets & local data
+.env
+.env.*
+!.env.example
 backend/.env
 backend/instance/
+backend/uploads/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python virtualenvs
+venv/
+.venv/
+env/
+backend/venv/
+backend/.venv/
+
+# Python bytecode & caches
 __pycache__/
 *.pyc
 *.pyo
-.expo/
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+htmlcov/
 
-# ── Frontend (Node / Expo) ────────────────────────────────────
+# ── Frontend (Node / Expo / React Native) ──────────────────────
 node_modules/
+.expo/
+.expo-shared/
+dist/
+build/
+web-build/
+*.tsbuildinfo
 
-# ── IDE / OS ──────────────────────────────────────────────────
-.DS_Store
-Thumbs.db
+# ── IDE / Editor ───────────────────────────────────────────────
+.vscode/
+# Exception: keep the frontend's shared VS Code settings (recommended extensions
+# + project formatter config) so all devs get a consistent editor setup.
+!frontend/field-force-contractor/.vscode/
+.idea/
+.vs/
 *.swp
 *.swo
+*~
+
+# ── OS ─────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ───────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pip-log.txt
+
+# ── Personal meeting prep / scratch (not for team repo) ────────
+generate_erd_meeting_deck.py
+tr42_erd_meeting.pptx
+WORKLOG.md
