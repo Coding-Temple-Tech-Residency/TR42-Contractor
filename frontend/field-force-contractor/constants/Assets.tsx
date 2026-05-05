@@ -16,7 +16,8 @@ export const Assets = {
   logos: {
     ffLogoName: require("../assets/images/ff-logo-name.png"), 
     FieldForceLogo: require("../assets/images/ForceFiledicon.png"),
-    FieldForceLogoText: require("../assets/images/FileForceText.png")
+    FieldForceLogoText: require("../assets/images/FileForceText.png"),
+    loading:require("@/assets/images/loading.gif")
   },
 
   // ── Icons ─────────────────────────────────────────────────

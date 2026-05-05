@@ -36,6 +36,12 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  GestureResponderEvent,
+  LayoutChangeEvent,
+  PanResponder,
+  PanResponderGestureState,
 } from 'react-native';
 import { Ionicons }       from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -113,7 +119,22 @@ type Props = {
   injectHeader?: ReactNode;
   injectFooter?: ReactNode;
   requireAuth?:boolean;
-  onRefresh?:Function
+  onRefresh?:Function;
+  onScroll?:(
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+    touch?: number,
+    movement?: number,
+    metrics?: ScrollMetrics
+  ) => void;
+  onTouch?: (touch: number, metrics?: ScrollMetrics) => void;
+  onMovement?: (movement: number, metrics?: ScrollMetrics) => void;
+  onTouchEnd?: () => void;
+};
+
+type ScrollMetrics = {
+  scrollY: number;
+  layoutHeight: number;
+  contentHeight: number;
 };
 
 export const MainFrame: FC<Props> = (props) => {
@@ -122,6 +143,14 @@ export const MainFrame: FC<Props> = (props) => {
   const {mount,devMode} = useContext(AppContext);
   const {isAuthenticated,isLoading} = useAuth();
   const [refresh,setRefresh] = useState(false);
+  const [touch,setTouch] = useState<number>();
+  const [dragMove,setDragMove] = useState<number>();
+  const touchStart = useRef<number | undefined>(undefined);
+  const scrollMetrics = useRef<ScrollMetrics>({
+    scrollY: 0,
+    layoutHeight: 0,
+    contentHeight: 0,
+  });
  type Nav = NativeStackNavigationProp<RootStackParamList>;
  const publicPages = [
 
@@ -180,6 +209,81 @@ export const MainFrame: FC<Props> = (props) => {
     }
     setRefresh(false);
   }
+  const handleScroll = (event:NativeSyntheticEvent<NativeScrollEvent>) =>{
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    scrollMetrics.current = {
+      scrollY: contentOffset.y,
+      layoutHeight: layoutMeasurement.height,
+      contentHeight: contentSize.height,
+    };
+
+    if(props.onScroll){
+     props.onScroll(event,touch,dragMove,scrollMetrics.current)
+    }
+  }
+  const handleLayout = (event:LayoutChangeEvent) =>{
+    scrollMetrics.current = {
+      ...scrollMetrics.current,
+      layoutHeight: event.nativeEvent.layout.height,
+    };
+  }
+  const handleContentSizeChange = (_width:number,height:number) =>{
+    scrollMetrics.current = {
+      ...scrollMetrics.current,
+      contentHeight: height,
+    };
+  }
+  const handleTouchStart = (pageY:number) =>{
+    touchStart.current = pageY;
+    setTouch(pageY);
+    setDragMove(0);
+    props.onTouch?.(pageY,scrollMetrics.current);
+    props.onMovement?.(0,scrollMetrics.current);
+  }
+  const handleTouchMove = (pageY:number) =>{
+    const movement = (touchStart.current ?? pageY) - pageY;
+    setTouch(pageY);
+    setDragMove(movement);
+    props.onTouch?.(pageY,scrollMetrics.current);
+    props.onMovement?.(movement,scrollMetrics.current);
+  }
+  const handleTouchEnd = () =>{
+    touchStart.current = undefined;
+    setDragMove(0);
+    props.onMovement?.(0,scrollMetrics.current);
+    props.onTouchEnd?.();
+  }
+  const isAtBottom = () =>{
+    const { scrollY, layoutHeight, contentHeight } = scrollMetrics.current;
+    return(contentHeight <= layoutHeight || layoutHeight + scrollY >= contentHeight - 10);
+  }
+  const shouldCaptureBottomPull = (_event:GestureResponderEvent, gestureState:PanResponderGestureState) =>{
+    return(
+      isAtBottom() &&
+      gestureState.dy < -5 &&
+      Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
+    );
+  }
+  const handleBottomPullMove = (event:GestureResponderEvent, gestureState:PanResponderGestureState) =>{
+    const movement = Math.max(0, -gestureState.dy);
+    setTouch(event.nativeEvent.pageY);
+    setDragMove(movement);
+    props.onTouch?.(event.nativeEvent.pageY,scrollMetrics.current);
+    props.onMovement?.(movement,scrollMetrics.current);
+  }
+  const bottomPullResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: shouldCaptureBottomPull,
+      onMoveShouldSetPanResponderCapture: shouldCaptureBottomPull,
+      onPanResponderGrant: (event) => {
+        handleTouchStart(event.nativeEvent.pageY);
+      },
+      onPanResponderMove: handleBottomPullMove,
+      onPanResponderRelease: handleTouchEnd,
+      onPanResponderTerminate: handleTouchEnd,
+      onShouldBlockNativeResponder: () => false,
+    })
+  ).current;
 
   return (
     <ImageBackground
@@ -195,9 +299,23 @@ export const MainFrame: FC<Props> = (props) => {
           {props.injectHeader}
         </View>
 
-        <ScrollView contentContainerStyle={Styles.MainFrame.Body} refreshControl={<RefreshControl onRefresh={() => {handleRefresh()}} refreshing={refresh}/>}>
-          {props.children}
-        </ScrollView>
+        <View style={{flex: 1}} {...bottomPullResponder.panHandlers}>
+          <ScrollView
+            style={{flex: 1}}
+            contentContainerStyle={Styles.MainFrame.Body}
+            onScroll={(event:NativeSyntheticEvent<NativeScrollEvent>) => {handleScroll(event)}}
+            onLayout={(event:LayoutChangeEvent) => {handleLayout(event)}}
+            onContentSizeChange={(width:number,height:number) => {handleContentSizeChange(width,height)}}
+            onTouchStart={(event:GestureResponderEvent) => {handleTouchStart(event.nativeEvent.pageY)}}
+            onTouchMove={(event:GestureResponderEvent) => {handleTouchMove(event.nativeEvent.pageY)}}
+            onTouchEnd={() => {handleTouchEnd()}}
+            onTouchCancel={() => {handleTouchEnd()}}
+            scrollEventThrottle={16}
+            refreshControl={<RefreshControl onRefresh={() => {handleRefresh()}} refreshing={refresh}/>}
+          >
+            {props.children}
+          </ScrollView>
+        </View>
 
         <View style={Styles.MainFrame.Footer}>
           {props.injectFooter}

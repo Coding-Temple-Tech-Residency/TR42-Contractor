@@ -1,6 +1,6 @@
 import {Styles} from "@/constants/Styles"
 import React, {FC, ReactNode,useContext,useEffect,useRef,useState} from "react"
-import {Keyboard,Platform,ScrollView,useWindowDimensions,View,Text, RefreshControl} from "react-native"
+import {Keyboard,Platform,ScrollView,useWindowDimensions,View,Text, Image} from "react-native"
 import { MainFrame } from "@/components/MainFrame"
 import { useRoute } from '@react-navigation/native'
 import { SearchBar } from "@/components/SearchBar"
@@ -11,11 +11,15 @@ import { useNavigation } from "@react-navigation/native"
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "@/App"
 import { AppContext,getUser} from "@/contexts/AppContext"
+import { canUseBiometricAuthentication } from "expo-secure-store"
+import { Assets } from "@/constants/Assets"
+import { createIconSetFromFontello } from "@expo/vector-icons"
 
 type Props = {
 
     children:ReactNode
 }
+
 type TypeMessage = {
     sessionId:string
     id:string
@@ -23,9 +27,16 @@ type TypeMessage = {
     senderId:string
     utcTimeStamp:string  
 }
+type ScrollMetrics = {
+    scrollY: number
+    layoutHeight: number
+    contentHeight: number
+}
 
 const FOOTER_MENU_HEIGHT = 110;
 const KEYBOARD_GAP = 8;
+const LOAD_PREVIOUS_DRAG_DISTANCE = 20;
+const LOAD_PREVIOUS_HOLD_TIME = 2000;
    const MAXPERLOAD = 2;
     const INTIALLOAD = 10;
 //Demo Chat sessions database
@@ -80,7 +91,6 @@ export const Chat:FC = (props) =>{
     let contactuser = getUser(contactId);
     let CONTACTNAME = `${contactuser?.firstName} ${contactuser?.lastName}`
      
-
     //Demo Messages database 
      const previousDemoMessages =  useRef<TypeMessage[]> ([
 
@@ -114,8 +124,6 @@ export const Chat:FC = (props) =>{
 
     ])
    
-   
-   
     const {reverseStack} = useContext(AppContext);
     const [messages,setMessage] = useState(messageSlice(previousDemoMessages.current,INTIALLOAD));
     const scrollRef = useRef<ScrollView>(null);
@@ -124,7 +132,11 @@ export const Chat:FC = (props) =>{
     const messageIds = useRef(new Set(messageSlice(previousDemoMessages.current,INTIALLOAD).map(item => item.id)));
     const fromSet = useRef((previousDemoMessages.current.length >= INTIALLOAD) ? previousDemoMessages.current.length - INTIALLOAD - MAXPERLOAD : 0);
     const toSet = useRef(previousDemoMessages.current.length);
-
+    const [loading,setLoading] = useState(false);
+    const loadingPreviousMessages = useRef(false);
+    const lastScrollY = useRef(0);
+    const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isAtBottomRef = useRef(false);
     useEffect(() => {
         const showSubscription = Keyboard.addListener(
             Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -156,8 +168,7 @@ export const Chat:FC = (props) =>{
                     console.log("Found " + newMessages.length + " New Messages")
                   
                   }       
-                   
-                            
+                                              
                     },5000)
                     return(tm)
                 }
@@ -166,9 +177,9 @@ export const Chat:FC = (props) =>{
             showSubscription.remove();
             hideSubscription.remove();
             clearInterval(tm);
+            clearHoldTimer();
         };
     }, [windowHeight]);
-   
    
    const StartTest = () =>{
 
@@ -219,8 +230,7 @@ export const Chat:FC = (props) =>{
          }
     const nextSlice = (load:number) =>{
 
-          console.log(fromSet.current)
-          console.log(toSet.current)
+    
         if(fromSet.current > load){             
               toSet.current = fromSet.current;
               fromSet.current -= load;
@@ -230,9 +240,11 @@ export const Chat:FC = (props) =>{
                 fromSet.current = 0;
             }    
     }
-     const loadPrevious = async (messages:TypeMessage[], wait:number) => {
+    const previousMessages = async (messages:TypeMessage[], wait:number) => {
                 
-            const data = messages.slice(fromSet.current,toSet.current).filter(p => {
+            const data = messages.slice(fromSet.current,toSet.current).sort(
+                (a,b) => new Date(a.utcTimeStamp).getTime() - new Date(b.utcTimeStamp).getTime()
+            ).filter(p => {
                         if(!messageIds.current.has(p.id)){
                             messageIds.current.add(p.id)
                             return(true)
@@ -246,6 +258,53 @@ export const Chat:FC = (props) =>{
 
              await awaitUpdate(wait);
                          
+    }
+    const clearHoldTimer = () =>{
+        if(holdTimer.current){
+            clearTimeout(holdTimer.current);
+            holdTimer.current = null;
+        }
+        if(!loadingPreviousMessages.current){
+            setLoading(false);
+        }
+    }
+    const loadPreviousAfterHold = () =>{
+        if(holdTimer.current || loadingPreviousMessages.current){
+            return;
+        }
+
+        setLoading(true);
+        holdTimer.current = setTimeout(async () =>{
+            holdTimer.current = null;
+            if(loadingPreviousMessages.current || fromSet.current >= toSet.current){
+                setLoading(false);
+                return;
+            }
+
+            loadingPreviousMessages.current = true;
+            setLoading(true);
+            try{
+                await previousMessages(previousDemoMessages.current,2000);
+            }
+            finally{
+                setLoading(false);
+                loadingPreviousMessages.current = false;
+            }
+        }, LOAD_PREVIOUS_HOLD_TIME);
+    }
+    const hasPreviousMessages = () =>{
+        return(fromSet.current < toSet.current);
+    }
+    const updateBottomState = (metrics?:ScrollMetrics) =>{
+        if(metrics){
+            isAtBottomRef.current = metrics.layoutHeight + metrics.scrollY >= metrics.contentHeight - 10;
+        }
+        return(isAtBottomRef.current);
+    }
+    const startPreviousMessagesHold = (metrics?:ScrollMetrics) =>{
+        if(updateBottomState(metrics) && hasPreviousMessages() && !loadingPreviousMessages.current){
+            loadPreviousAfterHold();
+        }
     }
     const returnMessages = (reverseOrder?:boolean) =>{
         const currentDate = Trim(TimeFormater.getTimeStamp("LOCAL-DATE",TimeFormater.getTimeStamp("UTC-DATE")))
@@ -279,12 +338,42 @@ export const Chat:FC = (props) =>{
                 return(msgs);
 
     }
-   
+    const scroll = async (event:any,touch?:number,movement = 0,metrics?:ScrollMetrics) =>{
+         const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent
+         const scrollY = contentOffset.y;
+         const scrollDelta = scrollY - lastScrollY.current;
+         lastScrollY.current = scrollY;
+         updateBottomState(metrics ?? {
+            scrollY,
+            layoutHeight: layoutMeasurement.height,
+            contentHeight: contentSize.height,
+         });
+         const isDraggingUp = movement > LOAD_PREVIOUS_DRAG_DISTANCE || scrollDelta > 0;
+         if(isAtBottomRef.current && isDraggingUp){
+          startPreviousMessagesHold(metrics);
+         }
+         else if(!isAtBottomRef.current || !hasPreviousMessages()){
+          clearHoldTimer();
+         }
+    }
+    const movement = (movement = 0,metrics?:ScrollMetrics) =>{
+        if(movement > LOAD_PREVIOUS_DRAG_DISTANCE){
+            startPreviousMessagesHold(metrics);
+        }
+        else{
+            clearHoldTimer();
+        }
+    }
     return(<>
   
     <MainFrame headerMenu={["Menu2",[name]]} injectFooter={
+        <>
+        {loading && <View style={Styles.Chat.loadingContainer}>
+                <Image source={Assets.logos.loading} style={Styles.Chat.loading}/>
+            </View>}
         <SearchBar placeHolder="Message..." buttonText="Send" multiline onClick={(msg:string)=>{(msg) && SendMessage(msg)}} resetOnSubmit={true}/>
-        } onRefresh={() => {loadPrevious(previousDemoMessages.current,2000)}}>
+        </>
+        } onRefresh={() => {previousMessages(previousDemoMessages.current,2000)}} onScroll={(event:any,touch?:number,movement?:number,metrics?:ScrollMetrics) => {scroll(event,touch,movement,metrics)}} onMovement={(move:number,metrics?:ScrollMetrics) => {movement(move,metrics)}} onTouchEnd={() => {clearHoldTimer()}}>
         
             <View style={Styles.Chat.container}>
               
@@ -293,7 +382,6 @@ export const Chat:FC = (props) =>{
                     }
                 
             </View>
-          
     </MainFrame>
   
         
